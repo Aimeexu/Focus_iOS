@@ -27,6 +27,7 @@ struct CustomTabBarView: View {
             // 自定义 TabBar
             TabBarView(selectedTab: $selectedTab)
         }
+        .ignoresSafeArea(.container, edges: .bottom) // 让整个视图忽略底部安全区域
     }
 }
 
@@ -34,27 +35,34 @@ struct TabBarView: View {
     @Binding var selectedTab: CustomTabBarView.Tab
 
     var body: some View {
-        ZStack {
-            // 波浪形背景 - 向下凹陷效果
-            WaveTabBarBackground(selectedTab: selectedTab)
-                .fill(Color.brown)
-                .frame(height: 60)
-                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
-                .animation(.spring(response: 0.5, dampingFraction: 0.75, blendDuration: 0.2), value: selectedTab)
+        VStack(spacing: 0) {
+            // 原有的TabBar内容 - 保持不变
+            ZStack {
+                WaveTabBarBackground(selectedTab: selectedTab)
+                    .fill(Color.brown)
+                    .frame(height: 48)
+                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75, blendDuration: 0.2), value: selectedTab)
 
-            // Tab 按钮
-            HStack {
-                tabButton(imageName: "house", tab: .home)
-                Spacer()
-                tabButton(imageName: "checkmark.square", tab: .tasks)
-                Spacer()
-                tabButton(imageName: "chart.bar", tab: .chart)
-                Spacer()
-                tabButton(imageName: "gearshape", tab: .settings)
+                // Tab 按钮
+                HStack {
+                    tabButton(imageName: "house", tab: .home)
+                    Spacer()
+                    tabButton(imageName: "checkmark.square", tab: .tasks)
+                    Spacer()
+                    tabButton(imageName: "chart.bar", tab: .chart)
+                    Spacer()
+                    tabButton(imageName: "gearshape", tab: .settings)
+                }
+                .padding(.horizontal, 30)
+                .padding(.bottom, 0)
             }
-            .padding(.horizontal, 30)
-            .padding(.bottom, 0)
+            
+            // 底部安全区域高度的纯色占位
+            Color.brown
+                .frame(height: 34) // 底部安全区域的典型高度
         }
+        .ignoresSafeArea(.container, edges: .bottom) // 让整个TabBar从最底部开始
     }
 
     private func tabButton(imageName: String, tab: CustomTabBarView.Tab) -> some View {
