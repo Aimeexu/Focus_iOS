@@ -40,6 +40,7 @@ struct TabBarView: View {
                 .fill(Color.brown)
                 .frame(height: 60)
                 .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
+                .animation(.spring(response: 0.5, dampingFraction: 0.75, blendDuration: 0.2), value: selectedTab)
 
             // Tab 按钮
             HStack {
@@ -90,20 +91,20 @@ struct WaveTabBarBackground: Shape {
         ]
         
         let selectedPosition = tabPositions[selectedTab] ?? width * 0.125
-        let dipWidth: CGFloat = 100  // 凹陷的宽度
+        let dipWidth: CGFloat = 130  // 增加凹陷的宽度，让开始和结束位置更宽
         let dipDepth: CGFloat = 44  // 凹陷的深度
-        let flatBottomWidth: CGFloat = 40  // 底部平滑区域的宽度
+        let flatBottomWidth: CGFloat = 34  // 底部平滑区域的宽度
 
         // 从左上角开始
         path.move(to: CGPoint(x: 0, y: 0))
 
-        // 左侧到凹陷前的平线
+        // 左侧到凹陷前的平线 - 开始位置提前
         let dipStartX = selectedPosition - dipWidth / 2
         if dipStartX > 0 {
             path.addLine(to: CGPoint(x: dipStartX, y: 0))
         }
         
-        // 创建向下凹陷的曲线 - 更平滑的底部
+        // 创建向下凹陷的曲线 - 结束位置延后
         let dipEndX = selectedPosition + dipWidth / 2
         let flatStartX = selectedPosition - flatBottomWidth / 2
         let flatEndX = selectedPosition + flatBottomWidth / 2
@@ -111,22 +112,22 @@ struct WaveTabBarBackground: Shape {
         // 凹陷的左侧曲线 - 从平面向下弯曲到平滑底部的开始
         path.addCurve(
             to: CGPoint(x: flatStartX, y: dipDepth),
-            control1: CGPoint(x: dipStartX + 16, y: 0),
-            control2: CGPoint(x: flatStartX - 20, y: dipDepth)
+            control1: CGPoint(x: dipStartX + 18, y: 0),
+            control2: CGPoint(x: flatStartX - 18, y: dipDepth)
         )
         
-        // 底部的平滑圆弧
+        // 底部的平滑圆弧 - 稍微调整控制点让底部更圆润
         path.addCurve(
             to: CGPoint(x: flatEndX, y: dipDepth),
-            control1: CGPoint(x: selectedPosition - 16, y: dipDepth + 2),
-            control2: CGPoint(x: selectedPosition + 20, y: dipDepth + 2)
+            control1: CGPoint(x: selectedPosition - 18, y: dipDepth + 3),
+            control2: CGPoint(x: selectedPosition + 18, y: dipDepth + 3)
         )
         
         // 凹陷的右侧曲线 - 从平滑底部向上回到平面
         path.addCurve(
             to: CGPoint(x: dipEndX, y: 0),
-            control1: CGPoint(x: flatEndX + 16, y: dipDepth),
-            control2: CGPoint(x: dipEndX - 20, y: 0)
+            control1: CGPoint(x: flatEndX + 18, y: dipDepth),
+            control2: CGPoint(x: dipEndX - 18, y: 0)
         )
         
         // 右侧到右边缘的平线
