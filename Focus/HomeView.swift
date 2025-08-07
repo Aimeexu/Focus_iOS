@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var isTimerRunning = false
     @State private var selectedLocation = "Gym"
     @State private var timer: Timer?
+    @State private var showLocationSelection = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -26,7 +27,7 @@ struct HomeView: View {
 
                     // 位置标签
                     Button(action: {
-                        // 选择位置逻辑
+                        showLocationSelection = true
                     }) {
                         HStack(spacing: 8) {
                             Image(systemName: "location.fill")
@@ -92,6 +93,23 @@ struct HomeView: View {
             }
         }
         .background(Color(.systemBackground))
+        .overlay(
+            // 标签选择弹窗
+            Group {
+                if showLocationSelection {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showLocationSelection = false
+                        }
+                    
+                    LocationSelectionView(
+                        selectedLocation: $selectedLocation,
+                        isPresented: $showLocationSelection
+                    )
+                }
+            }
+        )
         .onDisappear {
             timer?.invalidate()
         }
