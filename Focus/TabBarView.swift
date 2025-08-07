@@ -13,7 +13,7 @@ struct CustomTabBarView: View {
             Group {
                 switch selectedTab {
                 case .home:
-                    Color.white
+                    HomeView()
                 case .tasks:
                     Color.white
                 case .chart:
@@ -151,6 +151,8 @@ struct WaveTabBarBackground: Shape {
         return path
     }
 }
+
+
 
 #Preview {
     CustomTabBarView()
