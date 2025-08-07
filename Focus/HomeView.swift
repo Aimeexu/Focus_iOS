@@ -93,6 +93,7 @@ struct HomeView: View {
             }
         }
         .background(Color(.systemBackground))
+        .ignoresSafeArea(.keyboard) // 忽略键盘安全区域
         .overlay(
             // 标签选择弹窗
             Group {

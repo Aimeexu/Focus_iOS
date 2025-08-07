@@ -28,6 +28,7 @@ struct CustomTabBarView: View {
             TabBarView(selectedTab: $selectedTab)
         }
         .ignoresSafeArea(.container, edges: .bottom) // 让整个视图忽略底部安全区域
+        .ignoresSafeArea(.keyboard) // 忽略键盘，防止TabBar被推上去
     }
 }
 
