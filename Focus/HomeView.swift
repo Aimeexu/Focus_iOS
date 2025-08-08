@@ -13,6 +13,8 @@ struct HomeView: View {
     @State private var selectedLocation = "Gym"
     @State private var timer: Timer?
     @State private var showLocationSelection = false
+    @State private var showMusicSelection = false
+    @State private var selectedMusic: String = "music.note"
 
     var body: some View {
         GeometryReader { geometry in
@@ -20,10 +22,14 @@ struct HomeView: View {
                 VStack(spacing: 0) {
 
                     // 顶部音乐图标
-                    Image(systemName: "music.note")
-                        .font(.system(size: 28, weight: .medium))
-                        .foregroundColor(.brown)
-                        .padding(.top, 34)
+                    Button(action: {
+                        showMusicSelection = true
+                    }) {
+                        Image(systemName: selectedMusic)
+                            .font(.system(size: 28, weight: .medium))
+                            .foregroundColor(.brown)
+                    }
+                        .padding(.top, 60)
 
                     // 位置标签
                     Button(action: {
@@ -45,7 +51,7 @@ struct HomeView: View {
                         .background(Color(.systemGray6))
                         .cornerRadius(20)
                     }
-                    .padding(.top, 100)
+                    .padding(.top, 80)
 
                     // 计时器圆圈
                     ZStack {
@@ -95,8 +101,9 @@ struct HomeView: View {
         .background(Color(.systemBackground))
         .ignoresSafeArea(.keyboard) // 忽略键盘安全区域
         .overlay(
-            // 标签选择弹窗
+            // 弹窗层
             Group {
+                // 标签选择弹窗
                 if showLocationSelection {
                     Color.black.opacity(0.3)
                         .ignoresSafeArea()
@@ -107,6 +114,20 @@ struct HomeView: View {
                     LocationSelectionView(
                         selectedLocation: $selectedLocation,
                         isPresented: $showLocationSelection
+                    )
+                }
+                
+                // 音乐选择弹窗
+                if showMusicSelection {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showMusicSelection = false
+                        }
+                    
+                    MusicSelectionView(
+                        isPresented: $showMusicSelection,
+                        selectedMusic: $selectedMusic
                     )
                 }
             }

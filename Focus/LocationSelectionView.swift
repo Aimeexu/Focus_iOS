@@ -14,7 +14,7 @@ struct LocationSelectionView: View {
     @State private var newLocationText = ""
     @FocusState private var isTextFieldFocused: Bool
     
-    @State private var locations = ["Gym", "Read", "Work", "Paint", "Nap"]
+    @State private var locations = ["Gym", "Read"]
     
     var body: some View {
         VStack(spacing: 0) {
