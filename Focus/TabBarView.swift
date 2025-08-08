@@ -17,7 +17,7 @@ struct CustomTabBarView: View {
                 case .tasks:
                     Color.white
                 case .chart:
-                    Color.white
+                    StatisticsView()
                 case .settings:
                     Color.white
                 }
