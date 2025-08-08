@@ -48,7 +48,8 @@ struct StatisticsView: View {
                         }
                     }
                 }
-                
+                .padding(.top, 40)
+
                 // 图表类型切换按钮
                 HStack {
                     Spacer()
@@ -124,7 +125,7 @@ struct StatisticsView: View {
                                 .foregroundColor(.primary)
                         }
                     }
-                    .padding(.bottom, 60)
+                    .padding(.bottom, 120)
                 }
             }
         }

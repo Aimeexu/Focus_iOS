@@ -133,7 +133,7 @@ struct BarChartView: View {
                 .frame(maxWidth: .infinity)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 60)
+            .padding(.bottom, 120)
         }
         .background(Color(.systemBackground))
     }
