@@ -257,11 +257,6 @@ struct User: Codable {
     let email: String
 }
 
-struct LoginRequest: Codable {
-    let username: String
-    let password: String
-}
-
 struct LoginResponse: Codable {
     let token: String
     let user: User

@@ -23,7 +23,7 @@ struct RegisterRequest: Codable {
 }
 
 struct LoginRequest: Codable {
-    let email: String
+    let account: String
     let password: String
 }
 
@@ -71,8 +71,8 @@ class AuthService {
     private init() {}
     
     // 基础URL - 稍后你可以替换
-    private let baseURL = "https://your-api-domain.com/api"
-    
+    private let baseURL = "https://ds2.tapgame.cn"
+
     // MARK: - 用户注册
     func register(
         username: String,
@@ -114,15 +114,15 @@ class AuthService {
     
     // MARK: - 用户登录
     func login(email: String, password: String) async throws -> AuthResponse {
-        let loginRequest = LoginRequest(email: email, password: password)
+        let loginRequest = LoginRequest(account: email, password: password)
         
         let parameters: [String: Any] = [
-            "email": loginRequest.email,
+            "email": loginRequest.account,
             "password": loginRequest.password
         ]
         
         let response: AuthResponse = try await NetworkManager.shared.post(
-            url: "\(baseURL)/auth/login",
+            url: "\(baseURL)/app/user/login",
             parameters: parameters,
             headers: [
                 "Content-Type": "application/json",
