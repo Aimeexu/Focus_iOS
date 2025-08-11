@@ -2,158 +2,156 @@ import SwiftUI
 
 struct CustomTabBarView: View {
     @State private var selectedTab: Tab = .home
+    @State private var currentOffsetX: CGFloat = 0
 
-    enum Tab {
+    enum Tab: CaseIterable {
         case home, tasks, chart, settings
     }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // 页面内容
             Group {
                 switch selectedTab {
                 case .home:
                     HomeView()
                 case .tasks:
-                    Color.white
+                    Color.white.overlay(Text("Tasks").font(.largeTitle))
                 case .chart:
                     StatisticsView()
                 case .settings:
-                    Color.white
+                    Color.white.overlay(Text("Settings").font(.largeTitle))
                 }
             }
             .ignoresSafeArea()
 
-            // 自定义 TabBar
-            TabBarView(selectedTab: $selectedTab)
-        }
-        .ignoresSafeArea(.container, edges: .bottom) // 让整个视图忽略底部安全区域
-        .ignoresSafeArea(.keyboard) // 忽略键盘，防止TabBar被推上去
-    }
-}
+            VStack(spacing: 0) {
+                ZStack {
+                    GeometryReader { geometry in
+                        let tabWidth = geometry.size.width / CGFloat(Tab.allCases.count)
 
-struct TabBarView: View {
-    @Binding var selectedTab: CustomTabBarView.Tab
+                        WaveTabBarBackground()
+                            .fill(Color.brown)
+                            .frame(width: geometry.size.width, height: 60)
+                            .offset(x: currentOffsetX)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: currentOffsetX)
 
-    var body: some View {
-        VStack(spacing: 0) {
-            // 原有的TabBar内容 - 保持不变
-            ZStack {
-                WaveTabBarBackground(selectedTab: selectedTab)
-                    .fill(Color.brown)
-                    .frame(height: 48)
+                        HStack {
+                            ForEach(Tab.allCases, id: \.self) { tab in
+                                Spacer()
+                                tabButton(for: tab, tabWidth: tabWidth)
+                                Spacer()
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    .frame(height: 60)
+                    .clipped()
                     .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75, blendDuration: 0.2), value: selectedTab)
-
-                // Tab 按钮
-                HStack {
-                    tabButton(imageName: "house", tab: .home)
-                    Spacer()
-                    tabButton(imageName: "checkmark.square", tab: .tasks)
-                    Spacer()
-                    tabButton(imageName: "chart.bar", tab: .chart)
-                    Spacer()
-                    tabButton(imageName: "gearshape", tab: .settings)
                 }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 0)
+
+                Color.brown
+                    .frame(height: 34) // safe area
             }
-            
-            // 底部安全区域高度的纯色占位
-            Color.brown
-                .frame(height: 34) // 底部安全区域的典型高度
+            .ignoresSafeArea(.container, edges: .bottom)
         }
-        .ignoresSafeArea(.container, edges: .bottom) // 让整个TabBar从最底部开始
+        .ignoresSafeArea(.keyboard)
     }
 
-    private func tabButton(imageName: String, tab: CustomTabBarView.Tab) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+    private func tabButton(for tab: Tab, tabWidth: CGFloat) -> some View {
+        let icons: [Tab: String] = [
+            .home: "house",
+            .tasks: "checkmark.square",
+            .chart: "chart.bar",
+            .settings: "gearshape"
+        ]
+
+        return Button {
+            let currentIndex = Tab.allCases.firstIndex(of: selectedTab) ?? 0
+            let newIndex = Tab.allCases.firstIndex(of: tab) ?? 0
+            let diff = CGFloat(newIndex - currentIndex)
+
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                currentOffsetX += diff * tabWidth
                 selectedTab = tab
             }
         } label: {
-            Image(systemName: imageName)
+            Image(systemName: icons[tab] ?? "circle")
                 .font(.system(size: 24, weight: .medium))
                 .foregroundColor(selectedTab == tab ? Color.green : Color.white)
                 .frame(width: 44, height: 44)
-                .offset(y: selectedTab == tab ? -6 : 0) // 选中时向下偏移到凹陷中
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedTab)
+                .offset(y: selectedTab == tab ? -6 : 0)
         }
     }
 }
 
-// 波浪形 Path - 向下凹陷效果
 struct WaveTabBarBackground: Shape {
-    let selectedTab: CustomTabBarView.Tab
-    
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let width = rect.width
         let height = rect.height
-        
-        // 根据选中的tab确定凹陷位置
-        let tabPositions: [CustomTabBarView.Tab: CGFloat] = [
-            .home: width * 0.13,
-            .tasks: width * 0.375,
-            .chart: width * 0.625,
-            .settings: width * 0.875
-        ]
-        
-        let selectedPosition = tabPositions[selectedTab] ?? width * 0.125
-        let dipWidth: CGFloat = 130  // 增加凹陷的宽度，让开始和结束位置更宽
-        let dipDepth: CGFloat = 44  // 凹陷的深度
-        let flatBottomWidth: CGFloat = 34  // 底部平滑区域的宽度
 
-        // 从左上角开始
-        path.move(to: CGPoint(x: 0, y: 0))
+        let tabCount: CGFloat = 4
+        let tabWidth = width / tabCount
+        let dipWidth: CGFloat = 130
+        let dipDepth: CGFloat = 44
+        let flatBottomWidth: CGFloat = 34
 
-        // 左侧到凹陷前的平线 - 开始位置提前
+        // 默认凹陷在第一个 tab（后续通过 offset 移动）
+        let selectedPosition = tabWidth * 0.125
+
         let dipStartX = selectedPosition - dipWidth / 2
-        if dipStartX > 0 {
-            path.addLine(to: CGPoint(x: dipStartX, y: 0))
-        }
-        
-        // 创建向下凹陷的曲线 - 结束位置延后
         let dipEndX = selectedPosition + dipWidth / 2
         let flatStartX = selectedPosition - flatBottomWidth / 2
         let flatEndX = selectedPosition + flatBottomWidth / 2
-        
-        // 凹陷的左侧曲线 - 从平面向下弯曲到平滑底部的开始
+
+        path.move(to: .zero)
+
+        if dipStartX > 0 {
+            path.addLine(to: CGPoint(x: dipStartX, y: 0))
+        }
+
         path.addCurve(
             to: CGPoint(x: flatStartX, y: dipDepth),
             control1: CGPoint(x: dipStartX + 18, y: 0),
             control2: CGPoint(x: flatStartX - 18, y: dipDepth)
         )
-        
-        // 底部的平滑圆弧 - 稍微调整控制点让底部更圆润
+
         path.addCurve(
             to: CGPoint(x: flatEndX, y: dipDepth),
             control1: CGPoint(x: selectedPosition - 18, y: dipDepth + 3),
             control2: CGPoint(x: selectedPosition + 18, y: dipDepth + 3)
         )
-        
-        // 凹陷的右侧曲线 - 从平滑底部向上回到平面
+
         path.addCurve(
             to: CGPoint(x: dipEndX, y: 0),
             control1: CGPoint(x: flatEndX + 18, y: dipDepth),
             control2: CGPoint(x: dipEndX - 18, y: 0)
         )
-        
-        // 右侧到右边缘的平线
+
         if dipEndX < width {
             path.addLine(to: CGPoint(x: width, y: 0))
         }
-        
-        // 右边缘向下到底部
+
         path.addLine(to: CGPoint(x: width, y: height))
         path.addLine(to: CGPoint(x: 0, y: height))
         path.closeSubpath()
-        
+
         return path
     }
 }
 
+// 示例页面占位
+struct HomeView: View {
+    var body: some View {
+        Color.blue.overlay(Text("Home").font(.largeTitle).foregroundColor(.white))
+    }
+}
 
+struct StatisticsView: View {
+    var body: some View {
+        Color.green.overlay(Text("Chart").font(.largeTitle).foregroundColor(.white))
+    }
+}
 
 #Preview {
     CustomTabBarView()
