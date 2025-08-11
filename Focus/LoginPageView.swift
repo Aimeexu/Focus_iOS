@@ -7,7 +7,17 @@
 
 import SwiftUI
 
+// MARK: - 通知名称扩展
+extension Notification.Name {
+    static let userDidLogin = Notification.Name("userDidLogin")
+    static let userDidLogout = Notification.Name("userDidLogout")
+}
+
 struct LoginPageView: View {
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var isLoggedIn = false
+    
     var body: some View {
         ZStack {
             // 背景图片（你可以替换成你的背景图）
@@ -31,14 +41,20 @@ struct LoginPageView: View {
                 VStack(spacing: 24) {
                     // Continue with Apple 按钮
                     Button(action: {
-                        // Apple登录逻辑
+                        testLogin()
                     }) {
                         HStack(spacing: 12) {
-                            Image(systemName: "applelogo")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.white)
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "applelogo")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
                             
-                            Text("Continue with Apple")
+                            Text(isLoading ? "登录中..." : "Continue with Apple")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white)
                         }
@@ -46,8 +62,18 @@ struct LoginPageView: View {
                         .frame(height: 50)
                         .background(Color.black)
                         .cornerRadius(25)
+                        .disabled(isLoading)
                     }
                     .padding(.horizontal, 40)
+                    
+                    // 错误信息显示
+                    if let errorMessage = errorMessage {
+                        Text(errorMessage)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 40)
+                            .multilineTextAlignment(.center)
+                    }
                     
                     // 分隔线和"or"文字
                     HStack {
@@ -100,6 +126,45 @@ struct LoginPageView: View {
                     }
                 }
                 .padding(.bottom, 60) // 给底部留出安全区域空间
+            }
+        }
+        .onChange(of: isLoggedIn) { _, newValue in
+            if newValue {
+                // 登录成功，发送通知让ContentView刷新状态
+                NotificationCenter.default.post(name: .userDidLogin, object: nil)
+            }
+        }
+    }
+    
+    // MARK: - 测试登录方法
+    private func testLogin() {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // 使用测试账号和密码
+                let response = try await AuthService.shared.login(
+                    account: "测试1", // 这里用email字段传account
+                    password: "111"
+                )
+                
+                await MainActor.run {
+                    if response.success {
+                        isLoggedIn = true
+                        print("登录成功: \(response.message)")
+                    } else {
+                        errorMessage = response.message
+                        print("登录失败: \(response.message)")
+                    }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "登录失败: \(error.localizedDescription)"
+                    print("登录错误: \(error)")
+                    isLoading = false
+                }
             }
         }
     }

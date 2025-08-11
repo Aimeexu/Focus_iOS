@@ -71,7 +71,7 @@ class AuthService {
     private init() {}
     
     // 基础URL - 稍后你可以替换
-    private let baseURL = "https://ds2.tapgame.cn"
+    private let baseURL = "http://ds2.tapgame.cn"
 
     // MARK: - 用户注册
     func register(
@@ -113,11 +113,11 @@ class AuthService {
     }
     
     // MARK: - 用户登录
-    func login(email: String, password: String) async throws -> AuthResponse {
-        let loginRequest = LoginRequest(account: email, password: password)
+    func login(account: String, password: String) async throws -> AuthResponse {
+        let loginRequest = LoginRequest(account: account, password: password)
         
         let parameters: [String: Any] = [
-            "email": loginRequest.account,
+            "account": loginRequest.account,
             "password": loginRequest.password
         ]
         
@@ -365,7 +365,7 @@ struct LoginView: View {
         Task {
             do {
                 let response = try await AuthService.shared.login(
-                    email: email,
+                    account: email,
                     password: password
                 )
                 

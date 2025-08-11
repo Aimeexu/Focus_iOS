@@ -66,6 +66,7 @@ class NetworkManager {
     ) async throws -> T {
         
         guard let url = URL(string: url) else {
+            printLog("❌ 请求失败: URL无效 - \(url)")
             throw NetworkError.invalidURL
         }
         
@@ -92,8 +93,11 @@ class NetworkManager {
             }
         }
         
+        // 打印请求日志
+        printRequestLog(url: url.absoluteString, method: method.rawValue, parameters: parameters, headers: headers)
+        
         return try await withCheckedThrowingContinuation { continuation in
-            session.request(
+            let request = session.request(
                 url,
                 method: alamofireMethod,
                 parameters: parameters,
@@ -102,6 +106,9 @@ class NetworkManager {
             )
             .validate()
             .responseDecodable(of: T.self) { response in
+                // 打印响应日志
+                self.printResponseLog(response: response)
+                
                 switch response.result {
                 case .success(let data):
                     continuation.resume(returning: data)
@@ -180,6 +187,145 @@ class NetworkManager {
         )
     }
     
+    // MARK: - 日志打印方法
+    private func printLog(_ message: String) {
+        print("🌐 NetworkManager: \(message)")
+    }
+    
+    private func printRequestLog(url: String, method: String, parameters: [String: Any]?, headers: [String: String]?) {
+        print("\n" + String(repeating: "=", count: 60))
+        print("🚀 网络请求开始")
+        print(String(repeating: "=", count: 60))
+        print("📍 URL: \(url)")
+        print("🔧 Method: \(method)")
+        
+        if let headers = headers, !headers.isEmpty {
+            print("📋 Headers:")
+            for (key, value) in headers {
+                // 隐藏敏感信息
+                let displayValue = key.lowercased().contains("authorization") ? "Bearer ***" : value
+                print("   \(key): \(displayValue)")
+            }
+        }
+        
+        if let parameters = parameters, !parameters.isEmpty {
+            print("📦 Parameters:")
+            for (key, value) in parameters {
+                // 隐藏密码等敏感信息
+                let displayValue = key.lowercased().contains("password") ? "***" : "\(value)"
+                print("   \(key): \(displayValue)")
+            }
+        }
+        
+        print("⏰ 请求时间: \(getCurrentTimeString())")
+        print(String(repeating: "=", count: 60))
+    }
+    
+    private func printUploadLog(url: String, fileName: String, fileSize: Int, parameters: [String: Any]?, headers: [String: String]?) {
+        print("\n" + String(repeating: "=", count: 60))
+        print("📤 文件上传请求开始")
+        print(String(repeating: "=", count: 60))
+        print("📍 URL: \(url)")
+        print("📁 文件名: \(fileName)")
+        print("📏 文件大小: \(formatFileSize(fileSize))")
+        
+        if let headers = headers, !headers.isEmpty {
+            print("📋 Headers:")
+            for (key, value) in headers {
+                let displayValue = key.lowercased().contains("authorization") ? "Bearer ***" : value
+                print("   \(key): \(displayValue)")
+            }
+        }
+        
+        if let parameters = parameters, !parameters.isEmpty {
+            print("📦 Parameters:")
+            for (key, value) in parameters {
+                print("   \(key): \(value)")
+            }
+        }
+        
+        print("⏰ 请求时间: \(getCurrentTimeString())")
+        print(String(repeating: "=", count: 60))
+    }
+    
+    private func printResponseLog<T>(response: DataResponse<T, AFError>) {
+        print("\n" + String(repeating: "-", count: 60))
+        print("📥 网络响应")
+        print(String(repeating: "-", count: 60))
+        
+        if let httpResponse = response.response {
+            let statusCode = httpResponse.statusCode
+            let statusEmoji = getStatusEmoji(statusCode)
+            print("\(statusEmoji) 状态码: \(statusCode)")
+            print("🌐 URL: \(httpResponse.url?.absoluteString ?? "Unknown")")
+        }
+        
+        if let headers = response.response?.allHeaderFields {
+            print("📋 响应Headers:")
+            for (key, value) in headers {
+                print("   \(key): \(value)")
+            }
+        }
+        
+        // 打印响应数据
+        if let data = response.data {
+            print("📊 响应数据大小: \(formatFileSize(data.count))")
+            
+            // 尝试打印JSON格式的响应
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 响应内容:")
+                if let jsonData = jsonString.data(using: .utf8),
+                   let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
+                   let prettyJsonData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
+                   let prettyJsonString = String(data: prettyJsonData, encoding: .utf8) {
+                    print(prettyJsonString)
+                } else {
+                    print(jsonString)
+                }
+            }
+        }
+        
+        // 打印错误信息
+        if let error = response.error {
+            print("❌ 错误信息: \(error.localizedDescription)")
+            if let underlyingError = error.underlyingError {
+                print("🔍 底层错误: \(underlyingError.localizedDescription)")
+            }
+        }
+        
+        print("⏰ 响应时间: \(getCurrentTimeString())")
+        print("⏱️ 请求耗时: \(String(format: "%.3f", response.metrics?.taskInterval.duration ?? 0))秒")
+        print(String(repeating: "-", count: 60) + "\n")
+    }
+    
+    private func getStatusEmoji(_ statusCode: Int) -> String {
+        switch statusCode {
+        case 200...299:
+            return "✅"
+        case 300...399:
+            return "🔄"
+        case 400...499:
+            return "⚠️"
+        case 500...599:
+            return "❌"
+        default:
+            return "❓"
+        }
+    }
+    
+    private func formatFileSize(_ bytes: Int) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytes))
+    }
+    
+    private func getCurrentTimeString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        return formatter.string(from: Date())
+    }
+    
     // MARK: - 上传文件
     func upload<T: Codable>(
         url: String,
@@ -201,6 +347,9 @@ class NetworkManager {
                 httpHeaders.add(name: key, value: value)
             }
         }
+        
+        // 打印上传请求日志
+        printUploadLog(url: url.absoluteString, fileName: fileName, fileSize: data.count, parameters: parameters, headers: headers)
         
         return try await withCheckedThrowingContinuation { continuation in
             session.upload(
@@ -227,6 +376,9 @@ class NetworkManager {
             )
             .validate()
             .responseDecodable(of: T.self) { response in
+                // 打印响应日志
+                self.printResponseLog(response: response)
+                
                 switch response.result {
                 case .success(let data):
                     continuation.resume(returning: data)
