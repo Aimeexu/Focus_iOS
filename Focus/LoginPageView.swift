@@ -20,24 +20,16 @@ struct LoginPageView: View {
     
     var body: some View {
         ZStack {
-            // 背景图片（你可以替换成你的背景图）
+            // 背景图片
             Image("login_background") // 替换成你的背景图片名称
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .ignoresSafeArea()
-            
-            // 如果没有背景图，可以用这个渐变色作为临时背景
-            LinearGradient(
-                colors: [Color.brown.opacity(0.8), Color.green.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 Spacer()
                 
-                // 底部登录区域
+                // 白色卡片容器
                 VStack(spacing: 24) {
                     // Continue with Apple 按钮
                     Button(action: {
@@ -60,72 +52,67 @@ struct LoginPageView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color.black)
-                        .cornerRadius(25)
+                        .background(AppColors.Semantic.darkBrown)
+                        .cornerRadius(20)
                         .disabled(isLoading)
                     }
-                    .padding(.horizontal, 40)
                     
                     // 错误信息显示
                     if let errorMessage = errorMessage {
                         Text(errorMessage)
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.red)
-                            .padding(.horizontal, 40)
+                            .foregroundColor(AppColors.Semantic.error)
                             .multilineTextAlignment(.center)
                     }
                     
                     // 分隔线和"or"文字
                     HStack {
                         Rectangle()
-                            .fill(Color.white.opacity(0.3))
+                            .fill(AppColors.Brand.primary)
                             .frame(height: 1)
                         
                         Text("or")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(AppColors.Brand.primary)
                             .padding(.horizontal, 16)
                         
                         Rectangle()
-                            .fill(Color.white.opacity(0.3))
+                            .fill(AppColors.Brand.primary)
                             .frame(height: 1)
                     }
-                    .padding(.horizontal, 40)
                     
                     // 社交登录按钮
-                    HStack(spacing: 24) {
+                    HStack(spacing: 50) {
                         // Facebook按钮
                         Button(action: {
                             // Facebook登录逻辑
                         }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.blue)
-                                    .frame(width: 50, height: 50)
-                                
-                                Text("f")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
+                            Image("facebook_logo")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 30, height: 30)
+                                .clipShape(Circle())
                         }
                         
                         // Google按钮
                         Button(action: {
                             // Google登录逻辑
                         }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.white)
-                                    .frame(width: 50, height: 50)
-                                
-                                Text("G")
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundColor(.red)
-                            }
+                            Image("google_logo")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 30, height: 30)
+                                .clipShape(Circle())
+                                .shadow(color: AppColors.Neutral.gray100, radius: 2, x: 0, y: 1)
                         }
                     }
                 }
-                .padding(.bottom, 60) // 给底部留出安全区域空间
+                .padding(32)
+                .background(AppColors.Background.card)
+                .cornerRadius(25)
+                .shadow(color: AppColors.Neutral.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 80) // 给底部留出安全区域空间
             }
         }
         .onChange(of: isLoggedIn) { _, newValue in

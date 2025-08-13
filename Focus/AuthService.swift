@@ -312,12 +312,6 @@ class AuthService {
         return UserDefaults.standard.string(forKey: "auth_token")
     }
     
-    private func clearAuthData() {
-        UserDefaults.standard.removeObject(forKey: "auth_token")
-        UserDefaults.standard.removeObject(forKey: "user_info")
-        UserDefaults.standard.removeObject(forKey: "token_expiration")
-    }
-    
     // MARK: - 检查登录状态
     func isLoggedIn() -> Bool {
         guard let token = getAuthToken() else { return false }
@@ -334,6 +328,13 @@ class AuthService {
     func getCurrentUser() -> UserInfo? {
         guard let userData = UserDefaults.standard.data(forKey: "user_info") else { return nil }
         return try? JSONDecoder().decode(UserInfo.self, from: userData)
+    }
+    
+    // MARK: - 清除认证数据（公开方法）
+    func clearAuthData() {
+        UserDefaults.standard.removeObject(forKey: "auth_token")
+        UserDefaults.standard.removeObject(forKey: "user_info")
+        UserDefaults.standard.removeObject(forKey: "token_expiration")
     }
 }
 

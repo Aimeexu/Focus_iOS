@@ -19,7 +19,7 @@ struct CustomTabBarView: View {
                 case .chart:
                     StatisticsView()
                 case .settings:
-                    Color.white
+                    SettingsView()
                 }
             }
             .ignoresSafeArea()

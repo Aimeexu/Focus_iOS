@@ -26,6 +26,11 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogin)) { _ in
             isLoggedIn = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
+            isLoggedIn = false
+        }.onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
+            isLoggedIn = false
+        }
     }
     
     private func checkLoginStatus() {

@@ -13,7 +13,7 @@ struct AppColors {
     // MARK: - 品牌色
     struct Brand {
         /// 主品牌色 - 绿色
-        static let primary = Color(hex: "1fae5d")
+        static let primary = Color(hex: "67A12A")
     }
     
     // MARK: - 中性色
@@ -50,7 +50,7 @@ struct AppColors {
         
         /// 橄榄绿 - 用于辅助色
         static let oliveGreen = Color(hex: "b7baa0")
-        
+
         /// 浅灰 - 用于禁用状态
         static let lightGray = Color(hex: "FBF4EC")
         
