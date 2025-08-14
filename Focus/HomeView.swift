@@ -27,7 +27,7 @@ struct HomeView: View {
                     Button(action: {
                         showMusicSelection = true
                     }) {
-                        Image("noise")
+                        Image("silent")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 36, height: 36)

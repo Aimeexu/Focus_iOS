@@ -18,106 +18,99 @@ struct MusicSelectionView: View {
         var icon: String {
             switch self {
             case .rain:
-                return "cloud.rain.fill"
+                return "rain"
             case .wave:
-                return "water.waves"
+                return "river"
             case .forest:
-                return "leaf.fill"
+                return "jungle"
             case .wind:
-                return "wind"
+                return "sea"
             case .silence:
-                return "speaker.slash.fill"
-            }
-        }
-        
-        var name: String {
-            switch self {
-            case .rain:
-                return "Rain"
-            case .wave:
-                return "Wave"
-            case .forest:
-                return "Forest"
-            case .wind:
-                return "Wind"
-            case .silence:
-                return "Silence"
+                return "silent"
             }
         }
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // 主内容区域
-            VStack(spacing: 20) {
 
-                // 音量控制条
-                VStack(spacing: 20) {
-                    HStack(spacing: 8) {
-                        ForEach(0..<5) { index in
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.green)
-                                .frame(width: getBarWidth(for: index), height: getBarHeight(for: index))
-                        }
+        ZStack {
+            // 背景
+            AppColors.Background.primary
+                .ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                // 主内容区域
+                VStack(spacing: 0) {
+
+                    // 音量控制条
+                    VStack(spacing: 0) {
+
+                        Image("wave")
+                            .padding(.top, 80)
+
+                        // 分隔线
+                        Rectangle()
+                            .fill(AppColors.Semantic.darkBrown)
+                            .frame(height: 2)
+                            .frame(maxWidth: 180)
+                            .padding(.vertical, 56)
                     }
-                    
-                    // 分隔线
-                    Rectangle()
-                        .fill(Color.gray)
-                        .frame(height: 1)
-                        .frame(maxWidth: 200)
+                    .padding(.top, 30)
+
+                    // 声音选择网格
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 56) {
+                        ForEach(SoundType.allCases.prefix(3), id: \.self) { soundType in
+                            SoundButton(
+                                soundType: soundType,
+                                isSelected: selectedSound == soundType
+                            ) {
+                                selectedSound = soundType
+                            }
+                        }
+
+                        ForEach(SoundType.allCases.suffix(2), id: \.self) { soundType in
+                            SoundButton(
+                                soundType: soundType,
+                                isSelected: selectedSound == soundType
+                            ) {
+                                selectedSound = soundType
+                            }
+                        }
+
+                        // 空白占位，保持布局对称
+                        Color.clear
+                            .frame(width: 48, height: 48)
+                    }
+                    .padding(.horizontal, 10)
+
+                }
+                .padding(.horizontal, 20)
+                .background(Color(.systemGray6))
+
+                // OK 按钮
+                Button(action: {
+                    // 更新选中的音乐图标
+                    selectedMusic = selectedSound.icon
+                    isPresented = false
+                }) {
+                    Text("OK")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 60)
+                        .background(AppColors.Semantic.darkBrown)
                 }
                 .padding(.top, 30)
-                
-                // 声音选择网格
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 20) {
-                    ForEach(SoundType.allCases.prefix(3), id: \.self) { soundType in
-                        SoundButton(
-                            soundType: soundType,
-                            isSelected: selectedSound == soundType
-                        ) {
-                            selectedSound = soundType
-                        }
-                    }
-                    
-                    ForEach(SoundType.allCases.suffix(2), id: \.self) { soundType in
-                        SoundButton(
-                            soundType: soundType,
-                            isSelected: selectedSound == soundType
-                        ) {
-                            selectedSound = soundType
-                        }
-                    }
-                    
-                    // 空白占位，保持布局对称
-                    Color.clear
-                        .frame(width: 50, height: 50)
-                }
-                .padding(.horizontal, 10)
-
             }
-            .padding(.horizontal, 20)
             .background(Color(.systemGray6))
-
-            // OK 按钮
-            Button(action: {
-                // 更新选中的音乐图标
-                selectedMusic = selectedSound.icon
-                isPresented = false
-            }) {
-                Text("OK")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 60)
-                    .background(Color.brown)
-            }
-            .padding(.top, 30)
+            .cornerRadius(25)
+            .overlay(
+                RoundedRectangle(cornerRadius: 25)
+                    .stroke(AppColors.Semantic.darkBrown, lineWidth: 3)
+            )
+            .padding(.horizontal, 40)
+            .padding(.vertical, 30)
         }
-        .background(Color(.systemGray6))
-        .cornerRadius(20)
-        .padding(.horizontal, 40)
-        .padding(.vertical, 30)
     }
     
     private func getBarWidth(for index: Int) -> CGFloat {
@@ -147,16 +140,12 @@ struct SoundButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Image(systemName: soundType.icon)
+                Image(isSelected ? soundType.icon + "_fill" : soundType.icon)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .primary)
+                    .foregroundColor(.white)
                     .frame(width: 50, height: 50)
-                    .background(isSelected ? Color.green : Color.white)
+                    .background(.white)
                     .clipShape(Circle())
-                
-                Text(soundType.name)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.primary)
             }
         }
         .buttonStyle(PlainButtonStyle())
