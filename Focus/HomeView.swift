@@ -68,8 +68,12 @@ struct HomeView: View {
                     }) {
                         ZStack {
                             Circle()
+                                .fill(AppColors.Semantic.lightGray)
+                                .frame(width: 230, height: 230)
+
+                            Circle()
                                 .fill(AppColors.Semantic.beige)
-                                .frame(width: 220, height: 220)
+                                .frame(width: 210, height: 210)
 
                             if isTimerRunning {
                                 Circle()

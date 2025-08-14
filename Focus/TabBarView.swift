@@ -72,9 +72,8 @@ struct TabBarView: View {
                 selectedTab = tab
             }
         } label: {
-            Image(selectedTab == tab ? imageName : imageName + "_fill")
+            Image(selectedTab == tab ? imageName + "_fill" : imageName)
                 .font(.system(size: 24, weight: .medium))
-//                .foregroundColor(selectedTab == tab ? Color.green : Color.white)
                 .frame(width: 44, height: 44)
                 .offset(y: selectedTab == tab ? -6 : 0) // 选中时向下偏移到凹陷中
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedTab)

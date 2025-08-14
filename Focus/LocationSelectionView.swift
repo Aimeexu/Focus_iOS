@@ -7,97 +7,117 @@
 
 import SwiftUI
 
+// 用于获取内容高度的 PreferenceKey
+struct ContentHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct LocationSelectionView: View {
     @Binding var selectedLocation: String
     @Binding var isPresented: Bool
     @State private var isAddingNew = false
     @State private var newLocationText = ""
     @FocusState private var isTextFieldFocused: Bool
+    @State private var contentHeight: CGFloat = 0
     
     @State private var locations = ["Gym", "Read"]
     
     var body: some View {
         VStack(spacing: 0) {
-            // 标签列表区域
-            VStack(spacing: 12) {
-                ForEach(locations, id: \.self) { location in
-                    LocationTagButton(
-                        title: location,
-                        isSelected: selectedLocation == location
-                    ) {
-                        selectedLocation = location
+            // 标签列表区域 - 自适应高度
+            let itemCount = locations.count + 1 // 包括添加按钮
+            let calculatedHeight = CGFloat(itemCount) * 72 + 60 // 每个item 72高度 + 顶部padding (60+0)
+            let finalHeight = min(calculatedHeight, 400) // 最大400高度
+            
+            ScrollView(.vertical, showsIndicators: finalHeight >= 400) {
+                VStack(spacing: 12) {
+                    ForEach(locations, id: \.self) { location in
+                        LocationTagButton(
+                            title: location,
+                            isSelected: selectedLocation == location
+                        ) {
+                            selectedLocation = location
+                        }
                     }
-                }
-                
-                // 添加新标签按钮或输入框
-                if isAddingNew {
-                    HStack(spacing: 8) {
-                        TextField("输入新标签", text: $newLocationText)
-                            .font(.system(size: 16, weight: .medium))
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .frame(height: 50)
-                            .padding(.horizontal, 20)
-                            .background(Color.white)
-                            .cornerRadius(25)
-                            .focused($isTextFieldFocused)
-                        
-                        // OK按钮 - 从右侧滑入
+                    
+                    // 添加新标签按钮或输入框
+                    if isAddingNew {
+                        HStack(spacing: 8) {
+                            TextField("输入新标签", text: $newLocationText)
+                                .font(.system(size: 16, weight: .medium))
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .frame(height: 60)
+                                .padding(.horizontal, 20)
+                                .background(AppColors.Background.primary)
+                                .cornerRadius(12)
+                                .focused($isTextFieldFocused)
+                            
+                            // OK按钮 - 从右侧滑入
+                            Button(action: {
+                                addNewLocation()
+                            }) {
+                                Text("OK")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(AppColors.Text.inverse)
+                                    .frame(width: 50, height: 60)
+                                    .background(AppColors.Brand.primary)
+                                    .cornerRadius(12)
+                            }
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+                        .transition(.opacity)
+                    } else {
                         Button(action: {
-                            addNewLocation()
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                isAddingNew = true
+                                newLocationText = ""
+                            }
+                            // 延迟一点让动画完成后再聚焦
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isTextFieldFocused = true
+                            }
                         }) {
-                            Text("OK")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(width: 50, height: 50)
-                                .background(Color.green)
-                                .cornerRadius(25)
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(AppColors.Brand.primary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 60)
+                                .background(AppColors.Background.primary)
+                                .cornerRadius(12)
                         }
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                        .transition(.opacity)
                     }
-                    .transition(.opacity)
-                } else {
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            isAddingNew = true
-                            newLocationText = ""
-                        }
-                        // 延迟一点让动画完成后再聚焦
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isTextFieldFocused = true
-                        }
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.green)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.white)
-                            .cornerRadius(25)
-                    }
-                    .transition(.opacity)
                 }
+                .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 30)
-            .padding(.bottom, 20)
-            .background(Color(.systemGray6))
+            .frame(height: finalHeight)
+            .padding(.top, 60)
+            .padding(.bottom, 0)
+            .background(AppColors.Semantic.beige)
             
             // Done 按钮
             Button(action: {
                 isPresented = false
             }) {
                 Text("Done")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(AppColors.Text.inverse)
                     .frame(maxWidth: .infinity)
                     .frame(height: 60)
-                    .background(Color.brown)
+                    .background(AppColors.Semantic.darkBrown)
             }
         }
-        .background(Color(.systemGray6))
-        .cornerRadius(20)
-        .padding(.horizontal, 40)
-        .padding(.vertical, 60)
+        .background(AppColors.Semantic.beige)
+        .cornerRadius(25)
+        .overlay(
+            RoundedRectangle(cornerRadius: 25)
+                .stroke(AppColors.Semantic.darkBrown, lineWidth: 3)
+        )
+        .padding(.horizontal, 38)
+        .padding(.vertical, 20)
         .onTapGesture {
             // 点击空白区域取消输入
             if isAddingNew {
@@ -134,21 +154,23 @@ struct LocationTagButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isSelected ? .white : .primary)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundColor(isSelected ? AppColors.Text.inverse : AppColors.Text.primary)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(isSelected ? Color.green : Color.white)
-                .cornerRadius(25)
+                .frame(height: 60)
+                .background(isSelected ? AppColors.Brand.primary : AppColors.Background.primary)
+                .cornerRadius(14)
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
 
 #Preview {
-    LocationSelectionView(
-        selectedLocation: .constant("Gym"),
-        isPresented: .constant(true)
-    )
-    .background(Color.black.opacity(0.3))
+    ZStack {
+        AppColors.Semantic.beige.edgesIgnoringSafeArea(.all)
+        LocationSelectionView(
+            selectedLocation: .constant("Gym"),
+            isPresented: .constant(true)
+        )
+    }
 }
