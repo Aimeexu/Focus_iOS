@@ -24,6 +24,7 @@ struct LocationSelectionView: View {
     @State private var contentHeight: CGFloat = 0
     
     @State private var locations = ["Gym", "Read"]
+    @State private var keyboardHeight: CGFloat = 0
     
     var body: some View {
 
@@ -67,6 +68,10 @@ struct LocationSelectionView: View {
                                         )
                                     )
                                     .focused($isTextFieldFocused)
+                                    .submitLabel(.done)
+                                    .onSubmit {
+                                        addNewLocation()
+                                    }
 
                                 // OK按钮 - 从右侧滑入
                                 Button(action: {
@@ -138,6 +143,7 @@ struct LocationSelectionView: View {
             )
             .padding(.horizontal, 38)
             .padding(.vertical, 20)
+            .offset(y: -keyboardHeight / 2) // 键盘弹起时向上移动
             .onTapGesture {
                 // 点击空白区域取消输入
                 if isAddingNew {
@@ -146,6 +152,18 @@ struct LocationSelectionView: View {
                         isTextFieldFocused = false
                     }
                     newLocationText = ""
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        keyboardHeight = keyboardFrame.height
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    keyboardHeight = 0
                 }
             }
         }
