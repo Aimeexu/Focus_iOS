@@ -123,9 +123,9 @@ struct TimePickerView: View {
                         Text("OK")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white)
-                            .frame(width: 120, height: 50)
+                            .frame(width: 100, height: 66)
                             .background(AppColors.Brand.primary)
-                            .cornerRadius(25)
+                            .cornerRadius(20)
                     }
                     .padding(.bottom, 160)
                 }
