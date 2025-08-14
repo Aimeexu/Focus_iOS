@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct HomeView: View {
     @State private var focusTime = 25 * 60 // 25分钟
@@ -160,6 +161,8 @@ struct HomeView: View {
         }
         .onAppear {
             selectedMinutes = focusTime / 60
+            // 恢复播放之前选择的音乐
+            restoreBackgroundMusic()
         }
         .onChange(of: showTimePicker) { _, isShowing in
             if !isShowing {
@@ -170,6 +173,13 @@ struct HomeView: View {
         .onChange(of: selectedMusic) { _, newMusic in
             // 保存选中的音乐到UserDefaults
             UserDefaults.standard.set(newMusic, forKey: "selectedMusic")
+            // 立即播放新选择的音乐
+            let audioManager = AudioManager.shared
+            if let fileName = getAudioFileName(for: newMusic) {
+                audioManager.playSound(fileName: fileName)
+            } else {
+                audioManager.stopSound() // 如果选择静音，停止播放
+            }
         }
         .onChange(of: selectedLocation) { _, newLocation in
             // 保存选中的位置到UserDefaults
@@ -212,6 +222,36 @@ struct HomeView: View {
         let minutes = seconds / 60
         let remainingSeconds = seconds % 60
         return String(format: "%02d:%02d", minutes, remainingSeconds)
+    }
+    
+    private func restoreBackgroundMusic() {
+        // 根据选中的音乐图标恢复播放
+        let audioManager = AudioManager.shared
+        
+        // 如果当前没有播放音乐，且选择的不是静音，则开始播放
+        if !audioManager.isPlaying && selectedMusic != "silent" {
+            let fileName = getAudioFileName(for: selectedMusic)
+            if let fileName = fileName {
+                audioManager.playSound(fileName: fileName)
+            }
+        }
+    }
+    
+    private func getAudioFileName(for icon: String) -> String? {
+        switch icon {
+        case "rain":
+            return "rain_sound"
+        case "river":
+            return "wave_sound"
+        case "jungle":
+            return "forest_sound"
+        case "sea":
+            return "wind_sound"
+        case "silent":
+            return nil
+        default:
+            return nil
+        }
     }
 }
 

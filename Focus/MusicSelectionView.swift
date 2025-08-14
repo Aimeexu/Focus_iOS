@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct MusicSelectionView: View {
     @Binding var isPresented: Bool
     @Binding var selectedMusic: String
     @State private var selectedSound: SoundType = .silence
+    @StateObject private var audioManager = AudioManager.shared
     
     enum SoundType: CaseIterable {
         case rain, wave, forest, wind, silence
@@ -27,6 +29,21 @@ struct MusicSelectionView: View {
                 return "sea"
             case .silence:
                 return "silent"
+            }
+        }
+        
+        var audioFileName: String? {
+            switch self {
+            case .rain:
+                return "rain_sound"
+            case .wave:
+                return "wave_sound"
+            case .forest:
+                return "forest_sound"
+            case .wind:
+                return "wind_sound"
+            case .silence:
+                return nil // 静音不播放音频
             }
         }
     }
@@ -64,6 +81,7 @@ struct MusicSelectionView: View {
                                 isSelected: selectedSound == soundType
                             ) {
                                 selectedSound = soundType
+                                playSound(for: soundType)
                             }
                         }
 
@@ -73,6 +91,7 @@ struct MusicSelectionView: View {
                                 isSelected: selectedSound == soundType
                             ) {
                                 selectedSound = soundType
+                                playSound(for: soundType)
                             }
                         }
 
@@ -90,6 +109,8 @@ struct MusicSelectionView: View {
                 Button(action: {
                     // 更新选中的音乐图标
                     selectedMusic = selectedSound.icon
+                    // 开始播放选中的音乐
+                    playSound(for: selectedSound)
                     isPresented = false
                 }) {
                     Text("OK")
@@ -114,6 +135,19 @@ struct MusicSelectionView: View {
             // 根据当前选中的音乐图标设置selectedSound
             selectedSound = SoundType.allCases.first { $0.icon == selectedMusic } ?? .silence
         }
+
+    }
+    
+    // 播放音频
+    private func playSound(for soundType: SoundType) {
+        // 如果是静音，停止播放
+        guard let fileName = soundType.audioFileName else {
+            audioManager.stopSound()
+            return
+        }
+        
+        // 播放对应的音频文件
+        audioManager.playSound(fileName: fileName)
     }
     
     private func getBarWidth(for index: Int) -> CGFloat {

@@ -24,11 +24,23 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		F20DFC4F2E4DDF70007C664F /* Exceptions for "Focus" folder in "Compile Sources" phase from "Focus" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = F2B61A672E447C5000CC4F17 /* Sources */;
+			membershipExceptions = (
+				rain_sound.wav,
+				wave_sound.wav,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F2B61A6D2E447C5000CC4F17 /* Focus */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F2B61AD92E49E38100CC4F17 /* Exceptions for "Focus" folder in "Focus" target */,
+				F20DFC4F2E4DDF70007C664F /* Exceptions for "Focus" folder in "Compile Sources" phase from "Focus" target */,
 			);
 			path = Focus;
 			sourceTree = "<group>";
