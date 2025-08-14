@@ -10,7 +10,7 @@ import SwiftUI
 struct MusicSelectionView: View {
     @Binding var isPresented: Bool
     @Binding var selectedMusic: String
-    @State private var selectedSound: SoundType = .rain
+    @State private var selectedSound: SoundType = .silence
     
     enum SoundType: CaseIterable {
         case rain, wave, forest, wind, silence
@@ -32,7 +32,6 @@ struct MusicSelectionView: View {
     }
     
     var body: some View {
-
         ZStack {
             // 背景
             AppColors.Background.primary
@@ -110,6 +109,10 @@ struct MusicSelectionView: View {
             )
             .padding(.horizontal, 40)
             .padding(.vertical, 30)
+        }
+        .onAppear {
+            // 根据当前选中的音乐图标设置selectedSound
+            selectedSound = SoundType.allCases.first { $0.icon == selectedMusic } ?? .silence
         }
     }
     

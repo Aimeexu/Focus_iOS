@@ -10,13 +10,13 @@ import SwiftUI
 struct HomeView: View {
     @State private var focusTime = 25 * 60 // 25分钟
     @State private var isTimerRunning = false
-    @State private var selectedLocation = "Gym"
+    @State private var selectedLocation = UserDefaults.standard.string(forKey: "selectedLocation") ?? "Gym"
     @State private var timer: Timer?
     @State private var showLocationSelection = false
     @State private var showMusicSelection = false
-    @State private var selectedMusic: String = "music.note"
+    @State private var selectedMusic: String = UserDefaults.standard.string(forKey: "selectedMusic") ?? "silent"
     @State private var showTimePicker = false
-    @State private var selectedMinutes = 25
+    @State private var selectedMinutes = UserDefaults.standard.object(forKey: "selectedMinutes") as? Int ?? 25
 
     var body: some View {
         GeometryReader { geometry in
@@ -27,13 +27,13 @@ struct HomeView: View {
                     Button(action: {
                         showMusicSelection = true
                     }) {
-                        Image("silent")
+                        Image(selectedMusic)
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 36, height: 36)
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 42, height: 42)
                             .foregroundColor(AppColors.Semantic.darkBrown)
                     }
-                    .padding(.top, 78)
+                    .padding(.top, 84)
 
                     // 位置标签
                     Button(action: {
@@ -166,6 +166,18 @@ struct HomeView: View {
                 // 时间选择器关闭时，更新focusTime
                 focusTime = selectedMinutes * 60
             }
+        }
+        .onChange(of: selectedMusic) { _, newMusic in
+            // 保存选中的音乐到UserDefaults
+            UserDefaults.standard.set(newMusic, forKey: "selectedMusic")
+        }
+        .onChange(of: selectedLocation) { _, newLocation in
+            // 保存选中的位置到UserDefaults
+            UserDefaults.standard.set(newLocation, forKey: "selectedLocation")
+        }
+        .onChange(of: selectedMinutes) { _, newMinutes in
+            // 保存选中的时间到UserDefaults
+            UserDefaults.standard.set(newMinutes, forKey: "selectedMinutes")
         }
     }
 
