@@ -40,27 +40,27 @@ struct TabBarView: View {
             // 原有的TabBar内容 - 保持不变
             ZStack {
                 WaveTabBarBackground(selectedTab: selectedTab)
-                    .fill(Color.brown)
+                    .fill(AppColors.Semantic.darkBrown)
                     .frame(height: 48)
                     .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
                     .animation(.spring(response: 0.5, dampingFraction: 0.75, blendDuration: 0.2), value: selectedTab)
 
                 // Tab 按钮
                 HStack {
-                    tabButton(imageName: "house", tab: .home)
+                    tabButton(imageName: "home", tab: .home)
                     Spacer()
-                    tabButton(imageName: "checkmark.square", tab: .tasks)
+                    tabButton(imageName: "checkmark", tab: .tasks)
                     Spacer()
-                    tabButton(imageName: "chart.bar", tab: .chart)
+                    tabButton(imageName: "chart", tab: .chart)
                     Spacer()
-                    tabButton(imageName: "gearshape", tab: .settings)
+                    tabButton(imageName: "setting", tab: .settings)
                 }
                 .padding(.horizontal, 30)
                 .padding(.bottom, 0)
             }
             
             // 底部安全区域高度的纯色占位
-            Color.brown
+            AppColors.Semantic.darkBrown
                 .frame(height: 34) // 底部安全区域的典型高度
         }
         .ignoresSafeArea(.container, edges: .bottom) // 让整个TabBar从最底部开始
@@ -72,9 +72,9 @@ struct TabBarView: View {
                 selectedTab = tab
             }
         } label: {
-            Image(systemName: imageName)
+            Image(selectedTab == tab ? imageName : imageName + "_fill")
                 .font(.system(size: 24, weight: .medium))
-                .foregroundColor(selectedTab == tab ? Color.green : Color.white)
+//                .foregroundColor(selectedTab == tab ? Color.green : Color.white)
                 .frame(width: 44, height: 44)
                 .offset(y: selectedTab == tab ? -6 : 0) // 选中时向下偏移到凹陷中
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedTab)

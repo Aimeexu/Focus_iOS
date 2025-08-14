@@ -15,6 +15,8 @@ struct HomeView: View {
     @State private var showLocationSelection = false
     @State private var showMusicSelection = false
     @State private var selectedMusic: String = "music.note"
+    @State private var showTimePicker = false
+    @State private var selectedMinutes = 25
 
     var body: some View {
         GeometryReader { geometry in
@@ -25,80 +27,89 @@ struct HomeView: View {
                     Button(action: {
                         showMusicSelection = true
                     }) {
-                        Image(systemName: selectedMusic)
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.brown)
+                        Image("noise")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 36, height: 36)
+                            .foregroundColor(AppColors.Semantic.darkBrown)
                     }
-                        .padding(.top, 60)
+                    .padding(.top, 78)
 
                     // 位置标签
                     Button(action: {
                         showLocationSelection = true
                     }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "location.fill")
-                                .foregroundColor(.green)
-                                .font(.system(size: 16))
+                        HStack(spacing: 4) {
+                            Image("home_label")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 36, height: 36)
+
                             Text(selectedLocation)
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.primary)
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 14))
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(AppColors.Semantic.darkBrown)
+
+                            Image("home_arrow")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 24, height: 24)
+                                .padding(.leading, -8)
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 0)
                         .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(20)
                     }
-                    .padding(.top, 80)
+                    .padding(.top, 120)
 
                     // 计时器圆圈
-                    ZStack {
-                        Circle()
-                            .fill(Color(.systemGray5).opacity(0.8))
-                            .frame(width: 230, height: 230)
-
-                        Circle()
-                            .fill(Color(.systemGray5).opacity(1))
-                            .frame(width: 210, height: 210)
-
-                        if isTimerRunning {
-                            Circle()
-                                .stroke(Color.green, lineWidth: 4)
-                                .frame(width: 220, height: 220)
-                                .opacity(0.3)
+                    Button(action: {
+                        if !isTimerRunning {
+                            showTimePicker = true
                         }
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.Semantic.beige)
+                                .frame(width: 220, height: 220)
 
-                        Text(timeString(from: focusTime))
-                            .font(.system(size: 42, weight: .medium, design: .monospaced))
-                            .foregroundColor(.primary)
+                            if isTimerRunning {
+                                Circle()
+                                    .stroke(AppColors.Brand.primary, lineWidth: 4)
+                                    .frame(width: 220, height: 220)
+                                    .opacity(0.3)
+                            }
+
+                            Text(timeString(from: focusTime))
+                                .font(.system(size: 42, weight: .medium, design: .monospaced))
+                                .foregroundColor(AppColors.Semantic.darkBrown)
+                        }
                     }
-                    .padding(.top, 40)
+                    .disabled(isTimerRunning)
+                    .padding(.top, 32)
 
                     // Start to Focus 按钮
                     Button(action: {
                         toggleTimer()
                     }) {
                         Text(isTimerRunning ? "Stop Focus" : "Start to Focus")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.white)
-                            .frame(minWidth: 206)
-                            .frame(height: 60)
-                            .background(isTimerRunning ? Color.red : Color.green)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 66)
+                            .background(isTimerRunning ? AppColors.Semantic.error : AppColors.Brand.primary)
                             .cornerRadius(20)
                             .scaleEffect(isTimerRunning ? 0.95 : 1.0)
                             .animation(.easeInOut(duration: 0.2), value: isTimerRunning)
                     }
-                    .padding(.top, 60)
+                    .padding(.horizontal, 90)
+                    .padding(.top, 72)
 
                     // 增大底部空白
-                    Spacer(minLength: 100)
+                    Spacer(minLength: 125)
                 }
                 .frame(maxWidth: .infinity)
             }
         }
-        .background(Color(.systemBackground))
+        .background(AppColors.Background.primary)
         .ignoresSafeArea(.keyboard) // 忽略键盘安全区域
         .overlay(
             // 弹窗层
@@ -130,10 +141,27 @@ struct HomeView: View {
                         selectedMusic: $selectedMusic
                     )
                 }
+                
+                // 时间选择弹窗
+                if showTimePicker {
+                    TimePickerView(
+                        selectedMinutes: $selectedMinutes,
+                        isPresented: $showTimePicker
+                    )
+                }
             }
         )
         .onDisappear {
             timer?.invalidate()
+        }
+        .onAppear {
+            selectedMinutes = focusTime / 60
+        }
+        .onChange(of: showTimePicker) { _, isShowing in
+            if !isShowing {
+                // 时间选择器关闭时，更新focusTime
+                focusTime = selectedMinutes * 60
+            }
         }
     }
 

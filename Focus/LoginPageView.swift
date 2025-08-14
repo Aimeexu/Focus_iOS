@@ -74,7 +74,7 @@ struct LoginPageView: View {
                         Text("or")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(AppColors.Brand.primary)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 4)
                         
                         Rectangle()
                             .fill(AppColors.Brand.primary)
@@ -103,7 +103,6 @@ struct LoginPageView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 30, height: 30)
                                 .clipShape(Circle())
-                                .shadow(color: AppColors.Neutral.gray100, radius: 2, x: 0, y: 1)
                         }
                     }
                 }

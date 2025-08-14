@@ -28,8 +28,6 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
             isLoggedIn = false
-        }.onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
-            isLoggedIn = false
         }
     }
     

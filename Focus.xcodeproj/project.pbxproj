@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F2B61ACD2E49952500CC4F17 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F2B61ACC2E49952500CC4F17 /* Alamofire */; };
+		F20DFC072E4D6CD2007C664F /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F20DFC062E4D6CD2007C664F /* Alamofire */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,7 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F2B61ACD2E49952500CC4F17 /* Alamofire in Frameworks */,
+				F20DFC072E4D6CD2007C664F /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,7 +83,7 @@
 			);
 			name = Focus;
 			packageProductDependencies = (
-				F2B61ACC2E49952500CC4F17 /* Alamofire */,
+				F20DFC062E4D6CD2007C664F /* Alamofire */,
 			);
 			productName = Focus;
 			productReference = F2B61A6B2E447C5000CC4F17 /* Focus.app */;
@@ -114,7 +114,7 @@
 			mainGroup = F2B61A622E447C5000CC4F17;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F2B61ACB2E49952500CC4F17 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				F20DFC052E4D6CD2007C664F /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2B61A6C2E447C5000CC4F17 /* Products */;
@@ -350,20 +350,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		F2B61ACB2E49952500CC4F17 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+		F20DFC052E4D6CD2007C664F /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.10.0;
+				branch = master;
+				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		F2B61ACC2E49952500CC4F17 /* Alamofire */ = {
+		F20DFC062E4D6CD2007C664F /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F2B61ACB2E49952500CC4F17 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			package = F20DFC052E4D6CD2007C664F /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
 		};
 /* End XCSwiftPackageProductDependency section */
