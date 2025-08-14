@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct TimePickerView: View {
     @Binding var selectedMinutes: Int
@@ -13,48 +14,31 @@ struct TimePickerView: View {
     
     @State private var dragOffset: CGFloat = 0
     @State private var lastDragValue: CGFloat = 0
+    @State private var initialIndex: Int = 0
+    @State private var lastSelectedMinutes: Int = 0
     
     // 时间选项（分钟）
     private let timeOptions = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
     
-    // 装饰性线条的位置和角度
-    private let decorativeLines = [
-        (x: 0.2, y: 0.15, angle: 45.0, length: 40.0),
-        (x: 0.8, y: 0.2, angle: -30.0, length: 35.0),
-        (x: 0.15, y: 0.35, angle: 60.0, length: 25.0),
-        (x: 0.85, y: 0.4, angle: -45.0, length: 30.0),
-        (x: 0.3, y: 0.65, angle: 30.0, length: 35.0),
-        (x: 0.75, y: 0.7, angle: -60.0, length: 40.0),
-        (x: 0.1, y: 0.8, angle: 45.0, length: 30.0),
-        (x: 0.9, y: 0.85, angle: -30.0, length: 25.0)
-    ]
-    
     var body: some View {
-        ZStack {
-            // 背景
-            AppColors.Background.primary
-                .ignoresSafeArea()
-            
-            // 装饰性线条
-            GeometryReader { geometry in
-                ForEach(0..<decorativeLines.count, id: \.self) { index in
-                    let line = decorativeLines[index]
-                    Rectangle()
-                        .fill(AppColors.Semantic.beige)
-                        .frame(width: 3, height: line.length)
-                        .rotationEffect(.degrees(line.angle))
-                        .position(
-                            x: geometry.size.width * line.x,
-                            y: geometry.size.height * line.y
-                        )
-                }
-            }
-            .ignoresSafeArea()
-            
-            VStack(spacing: 40) {
-                Spacer()
+        GeometryReader { geometry in
+            ZStack {
+                // 背景
+                AppColors.Background.primary
+                    .ignoresSafeArea()
                 
-                // 时间选择器
+                // 添加背景线条图片 - 居中显示
+                Image("time")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 480, height: 480)
+                    .opacity(0.7)
+                    .position(
+                        x: geometry.size.width * 0.75, // 向右偏移
+                        y: geometry.size.height * 0.5   // 垂直居中
+                    )
+                
+                // 时间选择器 - 与背景图片垂直居中对齐
                 VStack(spacing: 20) {
                     // 上方时间显示（较小）
                     Text(formatTime(getTimeAtOffset(-1)))
@@ -62,7 +46,7 @@ struct TimePickerView: View {
                         .foregroundColor(AppColors.Text.tertiary)
                         .opacity(0.6)
                     
-                    // 主要时间显示（大号）
+                    // 主要时间显示（大号）- 这个会与背景图片中心对齐
                     HStack(alignment: .bottom, spacing: 0) {
                         Text(formatMainTime(selectedMinutes))
                             .font(.system(size: 72, weight: .bold, design: .monospaced))
@@ -80,50 +64,71 @@ struct TimePickerView: View {
                         .foregroundColor(AppColors.Text.tertiary)
                         .opacity(0.6)
                 }
+                .background(AppColors.Background.primary)
+                .position(
+                    x: geometry.size.width * 0.5,
+                    y: geometry.size.height * 0.5
+                )
                 .gesture(
                     DragGesture()
                         .onChanged { gesture in
                             let translation = gesture.translation.height
                             dragOffset = translation
-                        }
-                        .onEnded { gesture in
-                            let translation = gesture.translation.height
-                            let velocity = gesture.velocity.height
                             
-                            // 计算应该移动多少个选项
-                            let itemHeight: CGFloat = 60
-                            var steps = Int((translation + velocity * 0.1) / itemHeight)
+                            // 实时更新选中的时间
+                            let itemHeight: CGFloat = 50 // 每50点切换一个选项
+                            let steps = Int(translation / itemHeight)
                             
-                            // 限制步数
-                            steps = max(-timeOptions.count + 1, min(timeOptions.count - 1, steps))
+                            // 计算新的索引
+                            let newIndex = max(0, min(timeOptions.count - 1, initialIndex - steps))
                             
                             // 更新选中的时间
-                            if let currentIndex = timeOptions.firstIndex(of: selectedMinutes) {
-                                let newIndex = max(0, min(timeOptions.count - 1, currentIndex - steps))
-                                selectedMinutes = timeOptions[newIndex]
+                            if newIndex != timeOptions.firstIndex(of: selectedMinutes) {
+                                let newMinutes = timeOptions[newIndex]
+                                if newMinutes != lastSelectedMinutes {
+                                    // 触发轻微震动
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                    impactFeedback.impactOccurred()
+                                    
+                                    selectedMinutes = newMinutes
+                                    lastSelectedMinutes = newMinutes
+                                }
                             }
-                            
+                        }
+                        .onEnded { gesture in
                             // 重置拖拽偏移
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 dragOffset = 0
                             }
                         }
                 )
-                
-                Spacer()
-                
-                // OK按钮
-                Button(action: {
-                    isPresented = false
-                }) {
-                    Text("OK")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 120, height: 50)
-                        .background(AppColors.Brand.primary)
-                        .cornerRadius(25)
+                .onAppear {
+                    // 记录初始索引和初始选中值
+                    initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
+                    lastSelectedMinutes = selectedMinutes
                 }
-                .padding(.bottom, 60)
+                .onChange(of: selectedMinutes) { _ in
+                    // 当选中时间改变时，更新初始索引（用于下次拖拽）
+                    if dragOffset == 0 { // 只在非拖拽状态下更新
+                        initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
+                    }
+                }
+                
+                // OK按钮 - 向上移动
+                VStack {
+                    Spacer()
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Text("OK")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 120, height: 50)
+                            .background(AppColors.Brand.primary)
+                            .cornerRadius(25)
+                    }
+                    .padding(.bottom, 160)
+                }
             }
         }
     }
