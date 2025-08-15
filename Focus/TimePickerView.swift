@@ -23,6 +23,10 @@ struct DirectionalLottieView: UIViewRepresentable {
         animationView.loopMode = .playOnce
         animationView.animationSpeed = 1.5
         
+        // 加载初始动画并显示第一帧
+        animationView.animation = LottieAnimation.named(animationName)
+        animationView.currentProgress = 0 // 显示第一帧
+        
         containerView.addSubview(animationView)
         animationView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -71,26 +75,16 @@ struct TimePickerView: View {
                 AppColors.Background.primary
                     .ignoresSafeArea()
                 
-                // 背景层 - 默认静态图片和Lottie动画
-                ZStack {
-                    // 默认静态图片
-                    Image("time")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 480, height: 480)
-                        .opacity(shouldAnimate ? 0 : 0.7) // 动画时隐藏静态图片
-                    
-                    // Lottie动画
-                    DirectionalLottieView(
-                        animationName: currentAnimationName,
-                        shouldAnimate: $shouldAnimate,
-                        onAnimationViewCreated: { view in
-                            animationView = view
-                        }
-                    )
-                    .frame(width: 480, height: 480)
-                    .opacity(shouldAnimate ? 0.7 : 0) // 只在动画时显示
-                }
+                // Lottie动画背景
+                DirectionalLottieView(
+                    animationName: currentAnimationName,
+                    shouldAnimate: $shouldAnimate,
+                    onAnimationViewCreated: { view in
+                        animationView = view
+                    }
+                )
+                .frame(width: 480, height: 480)
+                .opacity(0.7)
                 .position(
                     x: geometry.size.width, // 中心位于屏幕右边缘
                     y: geometry.size.height * 0.5   // 垂直居中
@@ -134,7 +128,7 @@ struct TimePickerView: View {
                             dragOffset = translation
                             
                             // 实时更新选中的时间
-                            let itemHeight: CGFloat = 50 // 每50点切换一个选项
+                            let itemHeight: CGFloat = 80 // 每80点切换一个选项，降低敏感度
                             let steps = Int(translation / itemHeight)
                             
                             // 计算新的索引
@@ -158,6 +152,9 @@ struct TimePickerView: View {
                             }
                         }
                         .onEnded { gesture in
+                            // 更新初始索引为当前选中的索引
+                            initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
+                            
                             // 重置拖拽偏移
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 dragOffset = 0
@@ -169,10 +166,11 @@ struct TimePickerView: View {
                     initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
                     lastSelectedMinutes = selectedMinutes
                 }
-                .onChange(of: selectedMinutes) { _ in
-                    // 当选中时间改变时，更新初始索引（用于下次拖拽）
+                .onChange(of: selectedMinutes) { oldValue, newValue in
+                    // 当选中时间改变时，更新lastSelectedMinutes
                     if dragOffset == 0 { // 只在非拖拽状态下更新
-                        initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
+                        lastSelectedMinutes = newValue
+                        initialIndex = timeOptions.firstIndex(of: newValue) ?? 0
                     }
                 }
                 
