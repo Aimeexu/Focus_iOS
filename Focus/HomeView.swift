@@ -8,6 +8,68 @@
 import SwiftUI
 import AVFoundation
 
+// Slide to Quit 按钮组件
+struct SlideToQuitButton: View {
+    let action: () -> Void
+    @State private var dragOffset: CGFloat = 0
+    @State private var isSliding = false
+    
+    private let buttonHeight: CGFloat = 66
+    private let slideThreshold: CGFloat = 200
+    
+    var body: some View {
+        ZStack {
+            // 背景轨道
+            RoundedRectangle(cornerRadius: 33)
+                .fill(AppColors.Brand.primary)
+                .frame(height: buttonHeight)
+            
+            // 滑动按钮
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.Semantic.beige)
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(AppColors.Semantic.darkBrown)
+                }
+                .offset(x: dragOffset)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            let translation = max(0, min(slideThreshold, value.translation.width))
+                            dragOffset = translation
+                            isSliding = translation > 0
+                        }
+                        .onEnded { value in
+                            if dragOffset >= slideThreshold {
+                                // 滑动完成，执行退出操作
+                                action()
+                            }
+                            
+                            // 重置位置
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                dragOffset = 0
+                                isSliding = false
+                            }
+                        }
+                )
+                
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            
+            // 文字
+            Text("Slide to Quit")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .opacity(isSliding ? 0.5 : 1.0)
+        }
+    }
+}
+
 struct HomeView: View {
     @State private var focusTime = 25 * 60 // 25分钟
     @State private var isTimerRunning = false
@@ -36,77 +98,86 @@ struct HomeView: View {
                     }
                     .padding(.top, 84)
 
-                    // 位置标签
-                    Button(action: {
-                        showLocationSelection = true
-                    }) {
-                        HStack(spacing: 4) {
-                            Image("home_label")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 36, height: 36)
+                    // 位置标签 - 只在未运行时显示
+                    if !isTimerRunning {
+                        Button(action: {
+                            showLocationSelection = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image("home_label")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 36, height: 36)
 
-                            Text(selectedLocation)
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(AppColors.Semantic.darkBrown)
+                                Text(selectedLocation)
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(AppColors.Semantic.darkBrown)
 
-                            Image("home_arrow")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 24, height: 24)
-                                .padding(.leading, -8)
-                        }
-                        .padding(.horizontal, 0)
-                        .padding(.vertical, 8)
-                    }
-                    .padding(.top, 120)
-
-                    // 计时器圆圈
-                    Button(action: {
-                        if !isTimerRunning {
-                            showTimePicker = true
-                        }
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(AppColors.Semantic.lightGray)
-                                .frame(width: 230, height: 230)
-
-                            Circle()
-                                .fill(AppColors.Semantic.beige)
-                                .frame(width: 210, height: 210)
-
-                            if isTimerRunning {
-                                Circle()
-                                    .stroke(AppColors.Brand.primary, lineWidth: 4)
-                                    .frame(width: 220, height: 220)
-                                    .opacity(0.3)
+                                Image("home_arrow")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 24, height: 24)
+                                    .padding(.leading, -8)
                             }
-
-                            Text(timeString(from: focusTime))
-                                .font(.system(size: 42, weight: .medium, design: .monospaced))
-                                .foregroundColor(AppColors.Semantic.darkBrown)
+                            .padding(.horizontal, 0)
+                            .padding(.vertical, 8)
                         }
+                        .padding(.top, 120)
                     }
-                    .disabled(isTimerRunning)
-                    .padding(.top, 32)
 
-                    // Start to Focus 按钮
-                    Button(action: {
-                        toggleTimer()
-                    }) {
-                        Text(isTimerRunning ? "Stop Focus" : "Start to Focus")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 66)
-                            .background(isTimerRunning ? AppColors.Semantic.error : AppColors.Brand.primary)
-                            .cornerRadius(20)
-                            .scaleEffect(isTimerRunning ? 0.95 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: isTimerRunning)
+                    // 计时器显示区域
+                    if isTimerRunning {
+                        // 运行时显示大号时间
+                        Text(timeString(from: focusTime))
+                            .font(.system(size: 24, weight: .medium, design: .monospaced))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
+                            .padding(.top, 350)
+                    } else {
+                        // 未运行时显示圆形选择器
+                        Button(action: {
+                            showTimePicker = true
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppColors.Semantic.lightGray)
+                                    .frame(width: 230, height: 230)
+
+                                Circle()
+                                    .fill(AppColors.Semantic.beige)
+                                    .frame(width: 210, height: 210)
+
+                                Text(timeString(from: focusTime))
+                                    .font(.system(size: 42, weight: .medium, design: .monospaced))
+                                    .foregroundColor(AppColors.Semantic.darkBrown)
+                            }
+                        }
+                        .padding(.top, 32)
                     }
-                    .padding(.horizontal, 90)
-                    .padding(.top, 72)
+
+                    // 按钮区域
+                    if isTimerRunning {
+                        // 运行时显示 Slide to Quit 按钮
+                        SlideToQuitButton {
+                            stopTimer()
+                        }
+                        .padding(.horizontal, 60)
+                        .padding(.top, 100)
+                    } else {
+                        // 未运行时显示 Start to Focus 按钮
+                        Button(action: {
+                            toggleTimer()
+                        }) {
+                            Text("Start to Focus")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 66)
+                                .background(AppColors.Brand.primary)
+                                .cornerRadius(20)
+                        }
+                        .padding(.horizontal, 90)
+                        .padding(.top, 72)
+                    }
 
                     // 增大底部空白
                     Spacer(minLength: 125)
