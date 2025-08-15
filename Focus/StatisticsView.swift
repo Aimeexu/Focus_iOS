@@ -20,9 +20,9 @@ struct StatisticsView: View {
     
     // 示例数据
     let focusData = [
-        FocusData(category: "Study", minutes: 10, color: Color.green),
-        FocusData(category: "Work", minutes: 25, color: Color.brown.opacity(0.3)),
-        FocusData(category: "Read", minutes: 20, color: Color.gray.opacity(0.5))
+        FocusData(category: "Study", minutes: 53, color: AppColors.Brand.primary),
+        FocusData(category: "Work", minutes: 210, color: AppColors.Semantic.lightGray),
+        FocusData(category: "Read", minutes: 200, color: AppColors.Semantic.beige)
     ]
     
     var totalMinutes: Int {
@@ -40,10 +40,10 @@ struct StatisticsView: View {
                         }) {
                             Text(period.rawValue)
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(selectedPeriod == period ? .white : .primary)
+                                .foregroundColor(selectedPeriod == period ? AppColors.Text.inverse : AppColors.Text.primary)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 40)
-                                .background(selectedPeriod == period ? Color.red : Color.clear)
+                                .background(selectedPeriod == period ? AppColors.Semantic.error : Color.clear)
                                 .cornerRadius(selectedPeriod == period ? 8 : 0)
                         }
                     }
@@ -58,9 +58,9 @@ struct StatisticsView: View {
                     }) {
                         Image(systemName: showBarChart ? "chart.pie" : "chart.bar")
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.primary)
+                            .foregroundColor(AppColors.Text.primary)
                             .frame(width: 40, height: 40)
-                            .background(Color.gray.opacity(0.1))
+                            .background(AppColors.Background.secondary)
                             .cornerRadius(8)
                     }
                 }
@@ -84,7 +84,7 @@ struct StatisticsView: View {
                         // 中心数字
                         Text("\(totalMinutes)")
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(AppColors.Text.primary)
                         
                         // 标签定位在饼图周围
                         ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
@@ -103,33 +103,33 @@ struct StatisticsView: View {
                         VStack(spacing: 8) {
                             Text("Total Focus")
                                 .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.Text.secondary)
                             
                             Text("\(totalMinutes) m")
                                 .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(AppColors.Text.primary)
                         }
                         
                         // 分隔线
                         Rectangle()
-                            .fill(Color.green)
+                            .fill(AppColors.Brand.primary)
                             .frame(width: 2, height: 40)
                         
                         VStack(spacing: 8) {
                             Text("Focus Sessions")
                                 .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.Text.secondary)
                             
-                            Text("3")
+                            Text("60")
                                 .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(AppColors.Text.primary)
                         }
                     }
                     .padding(.bottom, 120)
                 }
             }
         }
-        .background(Color(.systemBackground))
+        .background(AppColors.Background.primary)
     }
     
     private func labelAngle(for index: Int) -> Angle {
@@ -213,10 +213,10 @@ struct PieChartLabel: View {
         VStack(spacing: 2) {
             Text(data.category)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.primary)
+                .foregroundColor(AppColors.Text.primary)
             Text("\(data.minutes)")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.Text.secondary)
         }
         .offset(x: x, y: y)
     }

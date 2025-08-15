@@ -94,14 +94,14 @@ struct TimePickerView: View {
                 VStack(spacing: 20) {
                     // 上方时间显示（较小）
                     Text(formatTime(getTimeAtOffset(-1)))
-                        .font(.system(size: 24, weight: .medium, design: .monospaced))
+                        .font(.system(size: 24, weight: .medium, design: .rounded))
                         .foregroundColor(AppColors.Text.tertiary)
                         .opacity(0.6)
                     
                     // 主要时间显示（大号）- 这个会与背景图片中心对齐
                     HStack(alignment: .bottom, spacing: 0) {
                         Text(formatMainTime(selectedMinutes))
-                            .font(.system(size: 72, weight: .bold, design: .monospaced))
+                            .font(.system(size: 72, weight: .bold, design: .rounded))
                             .foregroundColor(AppColors.Semantic.darkBrown)
                         
                         Text("M")
@@ -112,7 +112,7 @@ struct TimePickerView: View {
                     
                     // 下方时间显示（较小）
                     Text(formatTime(getTimeAtOffset(1)))
-                        .font(.system(size: 24, weight: .medium, design: .monospaced))
+                        .font(.system(size: 24, weight: .medium, design: .rounded))
                         .foregroundColor(AppColors.Text.tertiary)
                         .opacity(0.6)
                 }

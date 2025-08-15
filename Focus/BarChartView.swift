@@ -56,7 +56,7 @@ struct BarChartView: View {
                         ForEach([100, 80, 60, 40, 20, 0], id: \.self) { value in
                             Text("\(value)")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.Text.secondary)
                                 .frame(height: 30, alignment: .top)
                         }
                     }
@@ -68,13 +68,13 @@ struct BarChartView: View {
                             VStack(spacing: 8) {
                                 // 条形
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.green)
+                                    .fill(AppColors.Brand.primary)
                                     .frame(width: 30, height: CGFloat(data.value) * 180 / CGFloat(maxValue))
                                 
                                 // 日期标签
                                 Text(data.day)
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(AppColors.Text.primary)
                             }
                         }
                     }
@@ -92,50 +92,50 @@ struct BarChartView: View {
                 VStack(spacing: 8) {
                     Text("Total Focus")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.Text.secondary)
                     
                     Text("\(totalFocus) m")
                         .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.Text.primary)
                 }
                 .frame(maxWidth: .infinity)
                 
                 // 分隔线
                 Rectangle()
-                    .fill(Color.green)
+                    .fill(AppColors.Brand.primary)
                     .frame(width: 2, height: 40)
                 
                 VStack(spacing: 8) {
                     Text("Daily Focus")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.Text.secondary)
                     
                     Text("\(dailyAverage) m")
                         .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.Text.primary)
                 }
                 .frame(maxWidth: .infinity)
                 
                 // 分隔线
                 Rectangle()
-                    .fill(Color.green)
+                    .fill(AppColors.Brand.primary)
                     .frame(width: 2, height: 40)
                 
                 VStack(spacing: 8) {
                     Text("Focus Sessions")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.Text.secondary)
                     
                     Text("\(totalSessions)")
                         .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.Text.primary)
                 }
                 .frame(maxWidth: .infinity)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
         }
-        .background(Color(.systemBackground))
+        .background(AppColors.Background.primary)
     }
 }
 
