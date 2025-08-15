@@ -15,33 +15,32 @@ struct SettingsView: View {
             List {
                 // 用户信息部分
                 Section {
-                    if let user = AuthService.shared.getCurrentUser() {
-                        HStack {
-                            // 头像
-                            Circle()
-                                .fill(AppColors.Brand.primary)
-                                .frame(width: 60, height: 60)
-                                .overlay(
-                                    Text(String(user.username.prefix(1)).uppercased())
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.white)
-                                )
+                    let username = UserDefaults.standard.string(forKey: "username") ?? "模拟用户"
+                    HStack {
+                        // 头像
+                        Circle()
+                            .fill(AppColors.Brand.primary)
+                            .frame(width: 60, height: 60)
+                            .overlay(
+                                Text(String(username.prefix(1)).uppercased())
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                            )
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(username)
+                                .font(.headline)
+                                .foregroundColor(AppColors.Text.primary)
                             
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(user.username)
-                                    .font(.headline)
-                                    .foregroundColor(AppColors.Text.primary)
-                                
-                                Text(user.email)
-                                    .font(.subheadline)
-                                    .foregroundColor(AppColors.Text.secondary)
-                            }
-                            
-                            Spacer()
+                            Text("test@example.com")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.Text.secondary)
                         }
-                        .padding(.vertical, 8)
+                        
+                        Spacer()
                     }
+                    .padding(.vertical, 8)
                 }
                 
                 // 设置选项
@@ -132,8 +131,11 @@ struct SettingsView: View {
     }
     
     private func logout() {
-        // 清除本地数据
-        AuthService.shared.clearAuthData()
+        // 清除模拟的登录状态
+        UserDefaults.standard.set(false, forKey: "isLoggedIn")
+        UserDefaults.standard.removeObject(forKey: "username")
+        
+        print("模拟退出登录")
         
         // 发送退出登录通知
         NotificationCenter.default.post(name: .userDidLogout, object: nil)

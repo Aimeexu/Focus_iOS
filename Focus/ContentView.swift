@@ -32,8 +32,9 @@ struct ContentView: View {
     }
     
     private func checkLoginStatus() {
-        // 检查用户是否已经登录
-        isLoggedIn = AuthService.shared.isLoggedIn()
+        // 检查用户是否已经登录（使用UserDefaults模拟）
+        isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+        print("检查登录状态: \(isLoggedIn)")
     }
 }
 

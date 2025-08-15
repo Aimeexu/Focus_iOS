@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVFoundation
+import Lottie
 
 // Slide to Quit 按钮组件
 struct SlideToQuitButton: View {
@@ -70,6 +71,36 @@ struct SlideToQuitButton: View {
     }
 }
 
+// 猫头鹰Lottie动画视图包装器
+struct OwlAnimationView: UIViewRepresentable {
+    let animationName: String
+    
+    func makeUIView(context: Context) -> UIView {
+        let containerView = UIView()
+        let animationView = LottieAnimationView(name: animationName)
+        
+        animationView.contentMode = .scaleAspectFit
+        animationView.loopMode = .loop
+        animationView.animationSpeed = 1.0
+        animationView.play()
+        
+        containerView.addSubview(animationView)
+        animationView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            animationView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            animationView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            animationView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
+            animationView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
+        ])
+        
+        return containerView
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // 不需要更新
+    }
+}
+
 struct HomeView: View {
     @State private var focusTime = 25 * 60 // 25分钟
     @State private var isTimerRunning = false
@@ -127,11 +158,17 @@ struct HomeView: View {
 
                     // 计时器显示区域
                     if isTimerRunning {
-                        // 运行时显示大号时间
-                        Text(timeString(from: focusTime))
-                            .font(.system(size: 24, weight: .medium, design: .monospaced))
-                            .foregroundColor(AppColors.Semantic.darkBrown)
-                            .padding(.top, 350)
+                        VStack(spacing: 40) {
+                            // 猫头鹰动画 - 在中间空白区域
+                            OwlAnimationView(animationName: "owl")
+                                .frame(width: 200, height: 200)
+                                .padding(.top, 150)
+                            
+                            // 运行时显示大号时间
+                            Text(timeString(from: focusTime))
+                                .font(.system(size: 24, weight: .medium, design: .monospaced))
+                                .foregroundColor(AppColors.Semantic.darkBrown)
+                        }
                     } else {
                         // 未运行时显示圆形选择器
                         Button(action: {
