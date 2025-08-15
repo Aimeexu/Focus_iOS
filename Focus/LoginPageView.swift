@@ -6,11 +6,42 @@
 //
 
 import SwiftUI
+import Lottie
 
 // MARK: - 通知名称扩展
 extension Notification.Name {
     static let userDidLogin = Notification.Name("userDidLogin")
     static let userDidLogout = Notification.Name("userDidLogout")
+}
+
+// Lottie动画视图包装器
+struct OwlLottieView: UIViewRepresentable {
+    let animationName: String
+    
+    func makeUIView(context: Context) -> UIView {
+        let containerView = UIView()
+        let animationView = LottieAnimationView(name: animationName)
+        
+        animationView.contentMode = .scaleAspectFit
+        animationView.loopMode = .loop
+        animationView.animationSpeed = 1.0
+        animationView.play()
+        
+        containerView.addSubview(animationView)
+        animationView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            animationView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            animationView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            animationView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
+            animationView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
+        ])
+        
+        return containerView
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // 不需要更新
+    }
 }
 
 struct LoginPageView: View {
@@ -29,8 +60,15 @@ struct LoginPageView: View {
             VStack(spacing: 0) {
                 Spacer()
                 
-                // 白色卡片容器
-                VStack(spacing: 24) {
+                // 白色卡片容器和猫头鹰的组合
+                ZStack {
+                    // 猫头鹰动画 - 位于白色卡片右上方，图层在后面
+                    OwlLottieView(animationName: "owl")
+                        .frame(width: 160, height: 160)
+                        .offset(x: 88, y: -100) // 向右上方移动更多
+
+                    // 白色卡片容器
+                    VStack(spacing: 24) {
                     // Continue with Apple 按钮
                     Button(action: {
                         testLogin()
@@ -105,11 +143,12 @@ struct LoginPageView: View {
                                 .clipShape(Circle())
                         }
                     }
+                    }
+                    .padding(32)
+                    .background(AppColors.Background.card)
+                    .cornerRadius(25)
+                    .shadow(color: AppColors.Neutral.black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
-                .padding(32)
-                .background(AppColors.Background.card)
-                .cornerRadius(25)
-                .shadow(color: AppColors.Neutral.black.opacity(0.1), radius: 10, x: 0, y: 5)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 80) // 给底部留出安全区域空间
             }

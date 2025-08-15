@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var isLoggedIn = true // 测试
+    @State private var isLoggedIn = false // 测试
 
     var body: some View {
         Group {
@@ -33,7 +33,7 @@ struct ContentView: View {
     
     private func checkLoginStatus() {
         // 检查用户是否已经登录
-//        isLoggedIn = AuthService.shared.isLoggedIn()
+        isLoggedIn = AuthService.shared.isLoggedIn()
     }
 }
 
