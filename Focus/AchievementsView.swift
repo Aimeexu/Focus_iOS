@@ -83,15 +83,21 @@ struct AchievementsView: View {
             .padding(.horizontal, 20)
             .padding(.top, 60)
             
-            // 成就分类列表
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 30) {
-                    ForEach(AchievementCategory.allCases, id: \.self) { category in
-                        AchievementSection(category: category, achievements: achievements.filter { $0.category == category })
+            // 根据选中的标签显示不同内容
+            if selectedTab == .friends {
+                // Friends标签页 - 显示成就
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 30) {
+                        ForEach(AchievementCategory.allCases, id: \.self) { category in
+                            AchievementSection(category: category, achievements: achievements.filter { $0.category == category })
+                        }
                     }
+                    .padding(.top, 30)
+                    .padding(.bottom, 120) // 为TabBar留出空间
                 }
-                .padding(.top, 30)
-                .padding(.bottom, 120) // 为TabBar留出空间
+            } else {
+                // Posting标签页 - 显示发布内容
+                PostingView()
             }
         }
         .background(AppColors.Background.primary)
@@ -229,7 +235,7 @@ struct AchievementCard: View {
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(AppColors.Text.inverse)
                             )
-                            .offset(x: 8, y: 8)
+                            .offset(x: 22, y: 14)
                         Spacer()
                     }
                     Spacer()
