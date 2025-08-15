@@ -16,6 +16,7 @@ struct TimePickerView: View {
     @State private var lastDragValue: CGFloat = 0
     @State private var initialIndex: Int = 0
     @State private var lastSelectedMinutes: Int = 0
+    @State private var rotationAngle: Double = 0
     
     // 时间选项（分钟）
     private let timeOptions = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
@@ -27,14 +28,15 @@ struct TimePickerView: View {
                 AppColors.Background.primary
                     .ignoresSafeArea()
                 
-                // 添加背景线条图片 - 居中显示
+                // 添加背景圆形图片 - 移动到屏幕最右边
                 Image("time")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 480, height: 480)
                     .opacity(0.7)
+                    .rotationEffect(.degrees(rotationAngle), anchor: .center) // 以图片中心为旋转中心
                     .position(
-                        x: geometry.size.width * 0.75, // 向右偏移
+                        x: geometry.size.width, // 图片中心位于屏幕右边缘
                         y: geometry.size.height * 0.5   // 垂直居中
                     )
                 
@@ -89,6 +91,9 @@ struct TimePickerView: View {
                                     // 触发轻微震动
                                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                     impactFeedback.impactOccurred()
+                                    
+                                    // 触发旋转动画
+                                    triggerRotationAnimation()
                                     
                                     selectedMinutes = newMinutes
                                     lastSelectedMinutes = newMinutes
@@ -155,6 +160,13 @@ struct TimePickerView: View {
         }
         
         return selectedMinutes
+    }
+    
+    // 触发旋转动画
+    private func triggerRotationAnimation() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            rotationAngle += 15 // 每次旋转15度，累积旋转
+        }
     }
 }
 
