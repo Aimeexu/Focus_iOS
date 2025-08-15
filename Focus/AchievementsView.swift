@@ -9,6 +9,8 @@ import SwiftUI
 
 struct AchievementsView: View {
     @State private var selectedTab: AchievementTab = .friends
+    @State private var showShareView = false
+    @State private var selectedAchievement: Achievement?
     
     enum AchievementTab: String, CaseIterable {
         case friends = "Friends"
@@ -89,7 +91,16 @@ struct AchievementsView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 30) {
                         ForEach(AchievementCategory.allCases, id: \.self) { category in
-                            AchievementSection(category: category, achievements: achievements.filter { $0.category == category })
+                            AchievementSection(
+                                category: category, 
+                                achievements: achievements.filter { $0.category == category },
+                                onAchievementTap: { achievement in
+                                    if achievement.isUnlocked {
+                                        selectedAchievement = achievement
+                                        showShareView = true
+                                    }
+                                }
+                            )
                         }
                     }
                     .padding(.top, 30)
@@ -101,6 +112,17 @@ struct AchievementsView: View {
             }
         }
         .background(AppColors.Background.primary)
+        .overlay(
+            // 分享弹窗
+            Group {
+                if showShareView, let achievement = selectedAchievement {
+                    ShareAchievementView(
+                        achievement: achievement,
+                        isPresented: $showShareView
+                    )
+                }
+            }
+        )
     }
 }
 
@@ -155,6 +177,7 @@ enum AchievementCategory: CaseIterable {
 struct AchievementSection: View {
     let category: AchievementCategory
     let achievements: [Achievement]
+    let onAchievementTap: (Achievement) -> Void
     
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
@@ -188,7 +211,12 @@ struct AchievementSection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
                     ForEach(achievements) { achievement in
-                        AchievementCard(achievement: achievement)
+                        AchievementCard(
+                            achievement: achievement,
+                            onTap: {
+                                onAchievementTap(achievement)
+                            }
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
@@ -199,6 +227,7 @@ struct AchievementSection: View {
 
 struct AchievementCard: View {
     let achievement: Achievement
+    let onTap: () -> Void
     
     var body: some View {
         ZStack {
@@ -241,6 +270,9 @@ struct AchievementCard: View {
                     Spacer()
                 }
             }
+        }
+        .onTapGesture {
+            onTap()
         }
     }
 }
