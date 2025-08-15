@@ -7,6 +7,45 @@
 
 import SwiftUI
 import AVFoundation
+import Lottie
+
+// 可控制的Lottie动画视图包装器
+struct ControllableLottieView: UIViewRepresentable {
+    let animationName: String
+    let isPlaying: Bool
+    
+    func makeUIView(context: Context) -> UIView {
+        let containerView = UIView()
+        let animationView = LottieAnimationView(name: animationName)
+        
+        animationView.contentMode = .scaleAspectFit
+        animationView.loopMode = .loop
+        animationView.animationSpeed = 1.0
+        
+        containerView.addSubview(animationView)
+        animationView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            animationView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            animationView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            animationView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
+            animationView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
+        ])
+        
+        return containerView
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        if let animationView = uiView.subviews.first as? LottieAnimationView {
+            if isPlaying {
+                if !animationView.isAnimationPlaying {
+                    animationView.play()
+                }
+            } else {
+                animationView.pause()
+            }
+        }
+    }
+}
 
 struct MusicSelectionView: View {
     @Binding var isPresented: Bool
@@ -61,8 +100,12 @@ struct MusicSelectionView: View {
                     // 音量控制条
                     VStack(spacing: 0) {
 
-                        Image("wave")
-                            .padding(.top, 80)
+                        ControllableLottieView(
+                            animationName: "wave",
+                            isPlaying: selectedSound != .silence
+                        )
+                        .frame(width: 300, height: 180)
+                        .padding(.top, 80)
 
                         // 分隔线
                         Rectangle()
