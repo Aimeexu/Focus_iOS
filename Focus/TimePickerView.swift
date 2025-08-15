@@ -7,6 +7,47 @@
 
 import SwiftUI
 import UIKit
+import Lottie
+
+// Lottie动画视图的SwiftUI包装器
+struct DirectionalLottieView: UIViewRepresentable {
+    let animationName: String
+    @Binding var shouldAnimate: Bool
+    let onAnimationViewCreated: (LottieAnimationView) -> Void
+    
+    func makeUIView(context: Context) -> UIView {
+        let containerView = UIView()
+        let animationView = LottieAnimationView()
+        
+        animationView.contentMode = .scaleAspectFit
+        animationView.loopMode = .playOnce
+        animationView.animationSpeed = 1.5
+        
+        containerView.addSubview(animationView)
+        animationView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            animationView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            animationView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            animationView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
+            animationView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
+        ])
+        
+        // 回调动画视图
+        onAnimationViewCreated(animationView)
+        
+        return containerView
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        if shouldAnimate {
+            if let animationView = uiView.subviews.first as? LottieAnimationView {
+                // 加载新的动画文件
+                animationView.animation = LottieAnimation.named(animationName)
+                animationView.play()
+            }
+        }
+    }
+}
 
 struct TimePickerView: View {
     @Binding var selectedMinutes: Int
@@ -16,7 +57,9 @@ struct TimePickerView: View {
     @State private var lastDragValue: CGFloat = 0
     @State private var initialIndex: Int = 0
     @State private var lastSelectedMinutes: Int = 0
-    @State private var rotationAngle: Double = 0
+    @State private var animationView: LottieAnimationView?
+    @State private var shouldAnimate = false
+    @State private var currentAnimationName = "clockwise"
     
     // 时间选项（分钟）
     private let timeOptions = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
@@ -28,17 +71,30 @@ struct TimePickerView: View {
                 AppColors.Background.primary
                     .ignoresSafeArea()
                 
-                // 添加背景圆形图片 - 移动到屏幕最右边
-                Image("time")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 480, height: 480)
-                    .opacity(0.7)
-                    .rotationEffect(.degrees(rotationAngle), anchor: .center) // 以图片中心为旋转中心
-                    .position(
-                        x: geometry.size.width, // 图片中心位于屏幕右边缘
-                        y: geometry.size.height * 0.5   // 垂直居中
+                // 背景层 - 默认静态图片和Lottie动画
+                ZStack {
+                    // 默认静态图片
+                    Image("time")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 480, height: 480)
+                        .opacity(shouldAnimate ? 0 : 0.7) // 动画时隐藏静态图片
+                    
+                    // Lottie动画
+                    DirectionalLottieView(
+                        animationName: currentAnimationName,
+                        shouldAnimate: $shouldAnimate,
+                        onAnimationViewCreated: { view in
+                            animationView = view
+                        }
                     )
+                    .frame(width: 480, height: 480)
+                    .opacity(shouldAnimate ? 0.7 : 0) // 只在动画时显示
+                }
+                .position(
+                    x: geometry.size.width, // 中心位于屏幕右边缘
+                    y: geometry.size.height * 0.5   // 垂直居中
+                )
                 
                 // 时间选择器 - 与背景图片垂直居中对齐
                 VStack(spacing: 20) {
@@ -92,8 +148,9 @@ struct TimePickerView: View {
                                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                     impactFeedback.impactOccurred()
                                     
-                                    // 触发旋转动画
-                                    triggerRotationAnimation()
+                                    // 根据拖动方向选择动画
+                                    let isUpward = newMinutes > lastSelectedMinutes
+                                    triggerDirectionalAnimation(isUpward: isUpward)
                                     
                                     selectedMinutes = newMinutes
                                     lastSelectedMinutes = newMinutes
@@ -162,10 +219,22 @@ struct TimePickerView: View {
         return selectedMinutes
     }
     
-    // 触发旋转动画
-    private func triggerRotationAnimation() {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            rotationAngle += 15 // 每次旋转15度，累积旋转
+    // 触发方向性Lottie动画
+    private func triggerDirectionalAnimation(isUpward: Bool) {
+        // 根据拖动方向选择动画文件（修正方向）
+        currentAnimationName = isUpward ? "clockwise" : "anticlockwise"
+        
+        // 重置动画状态
+        shouldAnimate = false
+        
+        // 延迟一帧后触发动画
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            shouldAnimate = true
+            
+            // 动画完成后重置状态
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                shouldAnimate = false
+            }
         }
     }
 }
