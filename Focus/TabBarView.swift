@@ -2,9 +2,39 @@ import SwiftUI
 
 struct CustomTabBarView: View {
     @State private var selectedTab: Tab = .home
+    @State private var previousTab: Tab = .home
 
-    enum Tab {
-        case home, tasks, chart, settings
+    enum Tab: Int, CaseIterable {
+        case home = 1, tasks = 2, chart = 3, settings = 4
+    }
+    
+    struct Transition: Hashable {
+        let from: Int
+        let to: Int
+        
+        enum Direction { case left, right }
+        
+        var direction: Direction { 
+            to > from ? .right : .left 
+        }
+        
+        var steps: Int { 
+            abs(to - from) 
+        }
+    }
+    
+    // 根据步数自适应动画时长
+    private func animationDuration(from: Tab, to: Tab) -> Double {
+        let steps = abs(to.rawValue - from.rawValue)
+        return 0.4 + Double(steps - 1) * 0.15  // 增加基础时间，让移动更明显
+    }
+    
+    // 获取切换路径（用于分段动画）
+    private func transitionPath(from: Tab, to: Tab) -> [Tab] {
+        guard from != to else { return [from] }
+        let step = to.rawValue > from.rawValue ? 1 : -1
+        let rawPath = Array(stride(from: from.rawValue, through: to.rawValue, by: step))
+        return rawPath.compactMap { Tab(rawValue: $0) }
     }
 
     var body: some View {
@@ -25,25 +55,68 @@ struct CustomTabBarView: View {
             .ignoresSafeArea()
 
             // 自定义 TabBar
-            TabBarView(selectedTab: $selectedTab)
+            TabBarView(
+                selectedTab: $selectedTab,
+                previousTab: previousTab,
+                onTabChange: performTabTransition
+            )
         }
         .ignoresSafeArea(.container, edges: .bottom) // 让整个视图忽略底部安全区域
         .ignoresSafeArea(.keyboard) // 忽略键盘，防止TabBar被推上去
+    }
+    
+    // 执行智能Tab切换
+    private func performTabTransition(to newTab: Tab) {
+        guard newTab != selectedTab else { return }
+        
+        let transition = Transition(from: selectedTab.rawValue, to: newTab.rawValue)
+        let duration = animationDuration(from: selectedTab, to: newTab)
+        
+        // 根据步数选择动画类型
+        if transition.steps == 1 {
+            // 相邻切换：使用较慢的弹簧动画
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                previousTab = selectedTab
+                selectedTab = newTab
+            }
+        } else if transition.steps == 2 {
+            // 跨一个Tab：使用中等速度动画
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.75)) {
+                previousTab = selectedTab
+                selectedTab = newTab
+            }
+        } else {
+            // 跨多个Tab：使用较慢的平滑动画
+            withAnimation(.spring(response: 1.0, dampingFraction: 0.7)) {
+                previousTab = selectedTab
+                selectedTab = newTab
+            }
+        }
+        
+        // 打印切换信息（调试用）
+        print("Tab切换: \(selectedTab) → \(newTab), 方向: \(transition.direction), 步数: \(transition.steps), 时长: \(String(format: "%.2f", duration))s")
     }
 }
 
 struct TabBarView: View {
     @Binding var selectedTab: CustomTabBarView.Tab
+    let previousTab: CustomTabBarView.Tab
+    let onTabChange: (CustomTabBarView.Tab) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            // 原有的TabBar内容 - 保持不变
+            // 原有的TabBar内容 - 添加白色凹陷背景
             ZStack {
-                WaveTabBarBackground(selectedTab: selectedTab)
+                // 底层白色背景
+                Rectangle()
+                    .fill(AppColors.Background.primary)
+                    .frame(height: 48)
+                
+                // 波浪形TabBar背景
+                WaveTabBarBackground(selectedTab: selectedTab, previousTab: previousTab)
                     .fill(AppColors.Semantic.darkBrown)
                     .frame(height: 48)
                     .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75, blendDuration: 0.2), value: selectedTab)
 
                 // Tab 按钮
                 HStack {
@@ -68,15 +141,13 @@ struct TabBarView: View {
 
     private func tabButton(imageName: String, tab: CustomTabBarView.Tab) -> some View {
         Button {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                selectedTab = tab
-            }
+            onTabChange(tab)
         } label: {
             Image(selectedTab == tab ? imageName + "_fill" : imageName)
                 .font(.system(size: 24, weight: .medium))
                 .frame(width: 44, height: 44)
                 .offset(y: selectedTab == tab ? -6 : 0) // 选中时向下偏移到凹陷中
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedTab)
+                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: selectedTab)
         }
     }
 }
@@ -84,6 +155,14 @@ struct TabBarView: View {
 // 波浪形 Path - 向下凹陷效果
 struct WaveTabBarBackground: Shape {
     let selectedTab: CustomTabBarView.Tab
+    let previousTab: CustomTabBarView.Tab
+    
+    var animatableData: Double {
+        get { Double(selectedTab.rawValue) }
+        set { 
+            // 这里不需要设置，因为我们通过外部动画控制
+        }
+    }
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
@@ -99,8 +178,12 @@ struct WaveTabBarBackground: Shape {
         ]
         
         let selectedPosition = tabPositions[selectedTab] ?? width * 0.125
-        let dipWidth: CGFloat = 130  // 增加凹陷的宽度，让开始和结束位置更宽
-        let dipDepth: CGFloat = 44  // 凹陷的深度
+        let transition = CustomTabBarView.Transition(from: previousTab.rawValue, to: selectedTab.rawValue)
+        
+        // 根据切换方向和步数调整动画参数
+        let dipWidth: CGFloat = transition.steps > 1 ? 140 : 130  // 远距离切换时凹陷更宽
+        let dipDepth: CGFloat = transition.steps > 2 ? 48 : 44   // 超远距离切换时凹陷更深
+
         let flatBottomWidth: CGFloat = 34  // 底部平滑区域的宽度
 
         // 从左上角开始
