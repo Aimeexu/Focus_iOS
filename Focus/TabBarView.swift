@@ -217,7 +217,7 @@ struct WaveTabBarBackground: Shape {
         
         // 动态凹陷参数 - 根据动画速度调整
         let animationSpeed = abs(animatablePosition - round(animatablePosition))
-        let dipWidth: CGFloat = 130 + animationSpeed * 20  // 移动时稍微变宽
+        let dipWidth: CGFloat = 110 + animationSpeed * 15  // 减小凹陷开口，移动时稍微变宽
         let dipDepth: CGFloat = 44 + animationSpeed * 8    // 移动时稍微变深
 
         let flatBottomWidth: CGFloat = 34  // 底部平滑区域的宽度
@@ -243,11 +243,11 @@ struct WaveTabBarBackground: Shape {
             control2: CGPoint(x: flatStartX - 18, y: dipDepth)
         )
         
-        // 底部的平滑圆弧 - 稍微调整控制点让底部更圆润
+        // 底部的平滑圆弧 - 修复控制点避免突出
         path.addCurve(
             to: CGPoint(x: flatEndX, y: dipDepth),
-            control1: CGPoint(x: currentPosition - 18, y: dipDepth + 3),
-            control2: CGPoint(x: currentPosition + 18, y: dipDepth + 3)
+            control1: CGPoint(x: currentPosition - 18, y: dipDepth + 1),
+            control2: CGPoint(x: currentPosition + 18, y: dipDepth + 1)
         )
         
         // 凹陷的右侧曲线 - 从平滑底部向上回到平面
