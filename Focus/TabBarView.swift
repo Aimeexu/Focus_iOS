@@ -102,6 +102,7 @@ struct TabBarView: View {
     @Binding var selectedTab: CustomTabBarView.Tab
     let previousTab: CustomTabBarView.Tab
     let onTabChange: (CustomTabBarView.Tab) -> Void
+    @State private var animatedPosition: Double = 1.0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -113,7 +114,7 @@ struct TabBarView: View {
                     .frame(height: 48)
                 
                 // 波浪形TabBar背景
-                WaveTabBarBackground(selectedTab: selectedTab, previousTab: previousTab)
+                WaveTabBarBackground(animatablePosition: animatedPosition)
                     .fill(AppColors.Semantic.darkBrown)
                     .frame(height: 48)
                     .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
@@ -137,6 +138,19 @@ struct TabBarView: View {
                 .frame(height: 34) // 底部安全区域的典型高度
         }
         .ignoresSafeArea(.container, edges: .bottom) // 让整个TabBar从最底部开始
+        .onAppear {
+            animatedPosition = Double(selectedTab.rawValue)
+        }
+        .onChange(of: selectedTab) { oldTab, newTab in
+            // 计算动画时长
+            let steps = abs(newTab.rawValue - oldTab.rawValue)
+            let duration = 0.4 + Double(steps - 1) * 0.15
+            
+            // 执行滚动动画
+            withAnimation(.spring(response: duration, dampingFraction: 0.8)) {
+                animatedPosition = Double(newTab.rawValue)
+            }
+        }
     }
 
     private func tabButton(imageName: String, tab: CustomTabBarView.Tab) -> some View {
@@ -152,16 +166,13 @@ struct TabBarView: View {
     }
 }
 
-// 波浪形 Path - 向下凹陷效果
+// 波浪形 Path - 向下凹陷效果，支持滚动动画
 struct WaveTabBarBackground: Shape {
-    let selectedTab: CustomTabBarView.Tab
-    let previousTab: CustomTabBarView.Tab
+    var animatablePosition: Double // 动画位置，从1到4
     
     var animatableData: Double {
-        get { Double(selectedTab.rawValue) }
-        set { 
-            // 这里不需要设置，因为我们通过外部动画控制
-        }
+        get { animatablePosition }
+        set { animatablePosition = newValue }
     }
     
     func path(in rect: CGRect) -> Path {
@@ -169,20 +180,20 @@ struct WaveTabBarBackground: Shape {
         let width = rect.width
         let height = rect.height
         
-        // 根据选中的tab确定凹陷位置
-        let tabPositions: [CustomTabBarView.Tab: CGFloat] = [
-            .home: width * 0.13,
-            .tasks: width * 0.375,
-            .chart: width * 0.625,
-            .settings: width * 0.875
+        // 根据动画位置计算凹陷位置（支持中间过渡状态）
+        let tabPositions: [Double: CGFloat] = [
+            1.0: width * 0.13,   // home
+            2.0: width * 0.375,  // tasks
+            3.0: width * 0.625,  // chart
+            4.0: width * 0.875   // settings
         ]
         
-        let selectedPosition = tabPositions[selectedTab] ?? width * 0.125
-        let transition = CustomTabBarView.Transition(from: previousTab.rawValue, to: selectedTab.rawValue)
+        // 线性插值计算当前位置
+        let currentPosition = interpolatePosition(animatablePosition, positions: tabPositions, width: width)
         
-        // 根据切换方向和步数调整动画参数
-        let dipWidth: CGFloat = transition.steps > 1 ? 140 : 130  // 远距离切换时凹陷更宽
-        let dipDepth: CGFloat = transition.steps > 2 ? 48 : 44   // 超远距离切换时凹陷更深
+        // 固定的凹陷参数
+        let dipWidth: CGFloat = 130
+        let dipDepth: CGFloat = 44
 
         let flatBottomWidth: CGFloat = 34  // 底部平滑区域的宽度
 
@@ -190,15 +201,15 @@ struct WaveTabBarBackground: Shape {
         path.move(to: CGPoint(x: 0, y: 0))
 
         // 左侧到凹陷前的平线 - 开始位置提前
-        let dipStartX = selectedPosition - dipWidth / 2
+        let dipStartX = currentPosition - dipWidth / 2
         if dipStartX > 0 {
             path.addLine(to: CGPoint(x: dipStartX, y: 0))
         }
         
         // 创建向下凹陷的曲线 - 结束位置延后
-        let dipEndX = selectedPosition + dipWidth / 2
-        let flatStartX = selectedPosition - flatBottomWidth / 2
-        let flatEndX = selectedPosition + flatBottomWidth / 2
+        let dipEndX = currentPosition + dipWidth / 2
+        let flatStartX = currentPosition - flatBottomWidth / 2
+        let flatEndX = currentPosition + flatBottomWidth / 2
         
         // 凹陷的左侧曲线 - 从平面向下弯曲到平滑底部的开始
         path.addCurve(
@@ -210,8 +221,8 @@ struct WaveTabBarBackground: Shape {
         // 底部的平滑圆弧 - 稍微调整控制点让底部更圆润
         path.addCurve(
             to: CGPoint(x: flatEndX, y: dipDepth),
-            control1: CGPoint(x: selectedPosition - 18, y: dipDepth + 3),
-            control2: CGPoint(x: selectedPosition + 18, y: dipDepth + 3)
+            control1: CGPoint(x: currentPosition - 18, y: dipDepth + 3),
+            control2: CGPoint(x: currentPosition + 18, y: dipDepth + 3)
         )
         
         // 凹陷的右侧曲线 - 从平滑底部向上回到平面
@@ -232,6 +243,28 @@ struct WaveTabBarBackground: Shape {
         path.closeSubpath()
         
         return path
+    }
+    
+    // 线性插值计算位置
+    private func interpolatePosition(_ position: Double, positions: [Double: CGFloat], width: CGFloat) -> CGFloat {
+        let clampedPosition = max(1.0, min(4.0, position))
+        
+        // 如果正好是整数位置，直接返回
+        if let exactPosition = positions[clampedPosition] {
+            return exactPosition
+        }
+        
+        // 否则在两个位置之间插值
+        let lowerKey = floor(clampedPosition)
+        let upperKey = ceil(clampedPosition)
+        
+        guard let lowerValue = positions[lowerKey],
+              let upperValue = positions[upperKey] else {
+            return width * 0.13 // 默认值
+        }
+        
+        let fraction = clampedPosition - lowerKey
+        return lowerValue + (upperValue - lowerValue) * CGFloat(fraction)
     }
 }
 
