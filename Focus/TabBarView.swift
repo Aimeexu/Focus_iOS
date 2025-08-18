@@ -72,22 +72,22 @@ struct CustomTabBarView: View {
         let transition = Transition(from: selectedTab.rawValue, to: newTab.rawValue)
         let duration = animationDuration(from: selectedTab, to: newTab)
         
-        // 根据步数选择动画类型
+        // 根据步数选择动画类型 - 与TabBarView保持一致
         if transition.steps == 1 {
-            // 相邻切换：使用较慢的弹簧动画
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            // 相邻切换：轻微回弹
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.65, blendDuration: 0.1)) {
                 previousTab = selectedTab
                 selectedTab = newTab
             }
         } else if transition.steps == 2 {
-            // 跨一个Tab：使用中等速度动画
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.75)) {
+            // 跨一个Tab：中等回弹
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.6, blendDuration: 0.15)) {
                 previousTab = selectedTab
                 selectedTab = newTab
             }
         } else {
-            // 跨多个Tab：使用较慢的平滑动画
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.7)) {
+            // 跨多个Tab：明显回弹
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.55, blendDuration: 0.2)) {
                 previousTab = selectedTab
                 selectedTab = newTab
             }
@@ -142,12 +142,35 @@ struct TabBarView: View {
             animatedPosition = Double(selectedTab.rawValue)
         }
         .onChange(of: selectedTab) { oldTab, newTab in
-            // 计算动画时长
+            // 计算动画时长和回弹参数
             let steps = abs(newTab.rawValue - oldTab.rawValue)
-            let duration = 0.4 + Double(steps - 1) * 0.15
+            let duration = 0.5 + Double(steps - 1) * 0.1
             
-            // 执行滚动动画
-            withAnimation(.spring(response: duration, dampingFraction: 0.8)) {
+            // 根据距离调整回弹效果
+            let dampingFraction: Double
+            let blendDuration: Double
+            
+            switch steps {
+            case 1:
+                // 相邻切换：轻微回弹
+                dampingFraction = 0.65
+                blendDuration = 0.1
+            case 2:
+                // 跨一个Tab：中等回弹
+                dampingFraction = 0.6
+                blendDuration = 0.15
+            default:
+                // 跨多个Tab：明显回弹
+                dampingFraction = 0.55
+                blendDuration = 0.2
+            }
+            
+            // 执行带回弹效果的滚动动画
+            withAnimation(.spring(
+                response: duration,
+                dampingFraction: dampingFraction,
+                blendDuration: blendDuration
+            )) {
                 animatedPosition = Double(newTab.rawValue)
             }
         }
@@ -161,7 +184,8 @@ struct TabBarView: View {
                 .font(.system(size: 24, weight: .medium))
                 .frame(width: 44, height: 44)
                 .offset(y: selectedTab == tab ? -6 : 0) // 选中时向下偏移到凹陷中
-                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: selectedTab)
+                .scaleEffect(selectedTab == tab ? 1.1 : 1.0) // 选中时稍微放大
+                .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0.1), value: selectedTab)
         }
     }
 }
@@ -191,9 +215,10 @@ struct WaveTabBarBackground: Shape {
         // 线性插值计算当前位置
         let currentPosition = interpolatePosition(animatablePosition, positions: tabPositions, width: width)
         
-        // 固定的凹陷参数
-        let dipWidth: CGFloat = 130
-        let dipDepth: CGFloat = 44
+        // 动态凹陷参数 - 根据动画速度调整
+        let animationSpeed = abs(animatablePosition - round(animatablePosition))
+        let dipWidth: CGFloat = 130 + animationSpeed * 20  // 移动时稍微变宽
+        let dipDepth: CGFloat = 44 + animationSpeed * 8    // 移动时稍微变深
 
         let flatBottomWidth: CGFloat = 34  // 底部平滑区域的宽度
 
