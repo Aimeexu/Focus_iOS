@@ -86,8 +86,8 @@ struct CustomTabBarView: View {
                 selectedTab = newTab
             }
         } else {
-            // 跨多个Tab：明显回弹
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.55, blendDuration: 0.2)) {
+            // 跨多个Tab：平滑过渡，减少回弹
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.55, blendDuration: 0.2)) {
                 previousTab = selectedTab
                 selectedTab = newTab
             }
@@ -157,12 +157,12 @@ struct TabBarView: View {
                 blendDuration = 0.1
             case 2:
                 // 跨一个Tab：中等回弹
+                dampingFraction = 0.62
+                blendDuration = 0.12
+            default:
+                // 跨多个Tab：减少回弹，更平滑
                 dampingFraction = 0.6
                 blendDuration = 0.15
-            default:
-                // 跨多个Tab：明显回弹
-                dampingFraction = 0.55
-                blendDuration = 0.2
             }
             
             // 执行带回弹效果的滚动动画
