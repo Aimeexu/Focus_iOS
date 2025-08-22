@@ -80,12 +80,12 @@ struct LoginPageView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "applelogo")
-                                    .font(.system(size: 18, weight: .medium))
+                                    .font(.appBody(size: 18))
                                     .foregroundColor(.white)
                             }
                             
                             Text(isLoading ? "登录中..." : "Continue with Apple")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.appButton(size: 16))
                                 .foregroundColor(.white)
                         }
                         .frame(maxWidth: .infinity)
@@ -98,7 +98,7 @@ struct LoginPageView: View {
                     // 错误信息显示
                     if let errorMessage = errorMessage {
                         Text(errorMessage)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.appBody(size: 14))
                             .foregroundColor(AppColors.Semantic.error)
                             .multilineTextAlignment(.center)
                     }
@@ -110,7 +110,7 @@ struct LoginPageView: View {
                             .frame(height: 1)
                         
                         Text("or")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.appBody(size: 14))
                             .foregroundColor(AppColors.Brand.primary)
                             .padding(.horizontal, 4)
                         

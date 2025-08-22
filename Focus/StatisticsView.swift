@@ -39,7 +39,7 @@ struct StatisticsView: View {
                             selectedPeriod = period
                         }) {
                             Text(period.rawValue)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.appButton(size: 16))
                                 .foregroundColor(selectedPeriod == period ? AppColors.Text.inverse : AppColors.Text.primary)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 40)
@@ -57,7 +57,7 @@ struct StatisticsView: View {
                         showBarChart.toggle()
                     }) {
                         Image(systemName: showBarChart ? "chart.pie" : "chart.bar")
-                            .font(.system(size: 20, weight: .medium))
+                            .font(.appBody(size: 20))
                             .foregroundColor(AppColors.Text.primary)
                             .frame(width: 40, height: 40)
                             .background(AppColors.Background.secondary)
@@ -83,7 +83,7 @@ struct StatisticsView: View {
                         
                         // 中心数字
                         Text("\(totalMinutes)")
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.appNumber(size: 36))
                             .foregroundColor(AppColors.Text.primary)
                         
                         // 标签定位在饼图周围
@@ -102,11 +102,11 @@ struct StatisticsView: View {
                     HStack(spacing: 40) {
                         VStack(spacing: 8) {
                             Text("Total Focus")
-                                .font(.system(size: 18, weight: .medium))
+                                .font(.appBody(size: 18))
                                 .foregroundColor(AppColors.Text.secondary)
                             
                             Text("\(totalMinutes) m")
-                                .font(.system(size: 24, weight: .bold))
+                                .font(.appNumber(size: 24))
                                 .foregroundColor(AppColors.Text.primary)
                         }
                         
@@ -117,11 +117,11 @@ struct StatisticsView: View {
                         
                         VStack(spacing: 8) {
                             Text("Focus Sessions")
-                                .font(.system(size: 18, weight: .medium))
+                                .font(.appBody(size: 18))
                                 .foregroundColor(AppColors.Text.secondary)
                             
                             Text("60")
-                                .font(.system(size: 24, weight: .bold))
+                                .font(.appNumber(size: 24))
                                 .foregroundColor(AppColors.Text.primary)
                         }
                     }
@@ -212,10 +212,10 @@ struct PieChartLabel: View {
         
         VStack(spacing: 2) {
             Text(data.category)
-                .font(.system(size: 16, weight: .medium))
+                .font(.appCallout())
                 .foregroundColor(AppColors.Text.primary)
             Text("\(data.minutes)")
-                .font(.system(size: 14, weight: .medium))
+                .font(.appNumber(size: 14))
                 .foregroundColor(AppColors.Text.secondary)
         }
         .offset(x: x, y: y)

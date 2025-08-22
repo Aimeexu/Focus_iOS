@@ -191,7 +191,7 @@ struct TabBarView: View {
             onTabChange(tab)
         } label: {
             Image(selectedTab == tab ? imageName + "_fill" : imageName)
-                .font(.system(size: 24, weight: .medium))
+                .font(.appBody(size: 24))
                 .frame(width: 44, height: 44)
 //                .offset(y: selectedTab == tab ? -6 : 0) // 选中时向下偏移到凹陷中
 //                .scaleEffect(selectedTab == tab ? 1.1 : 1.0) // 选中时稍微放大

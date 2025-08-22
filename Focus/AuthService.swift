@@ -351,8 +351,7 @@ struct LoginView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("登录")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+                .font(.appLargeTitle())
             
             VStack(spacing: 16) {
                 TextField("邮箱", text: $email)
@@ -367,7 +366,7 @@ struct LoginView: View {
             if let errorMessage = errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
-                    .font(.caption)
+                    .font(.appCaption())
             }
             
             Button(action: login) {
@@ -376,6 +375,7 @@ struct LoginView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
                     Text("登录")
+                        .font(.appButton())
                 }
             }
             .frame(maxWidth: .infinity)
@@ -389,6 +389,7 @@ struct LoginView: View {
         .fullScreenCover(isPresented: $isLoggedIn) {
             // 登录成功后的主界面
             Text("登录成功！")
+                .font(.appBody())
         }
     }
     
@@ -433,8 +434,7 @@ struct RegisterView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("注册")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+                .font(.appLargeTitle())
             
             VStack(spacing: 16) {
                 TextField("用户名", text: $username)
@@ -455,13 +455,13 @@ struct RegisterView: View {
             if let errorMessage = errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
-                    .font(.caption)
+                    .font(.appCaption())
             }
             
             if let successMessage = successMessage {
                 Text(successMessage)
                     .foregroundColor(.green)
-                    .font(.caption)
+                    .font(.appCaption())
             }
             
             Button(action: register) {
@@ -470,6 +470,7 @@ struct RegisterView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
                     Text("注册")
+                        .font(.appButton())
                 }
             }
             .frame(maxWidth: .infinity)

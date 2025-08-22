@@ -55,7 +55,7 @@ struct BarChartView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach([100, 80, 60, 40, 20, 0], id: \.self) { value in
                             Text("\(value)")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.appNumber(size: 14))
                                 .foregroundColor(AppColors.Text.secondary)
                                 .frame(height: 30, alignment: .top)
                         }
@@ -73,7 +73,7 @@ struct BarChartView: View {
                                 
                                 // 日期标签
                                 Text(data.day)
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.appBody(size: 14))
                                     .foregroundColor(AppColors.Text.primary)
                             }
                         }
@@ -91,11 +91,11 @@ struct BarChartView: View {
             HStack(spacing: 20) {
                 VStack(spacing: 8) {
                     Text("Total Focus")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.appBody(size: 16))
                         .foregroundColor(AppColors.Text.secondary)
                     
                     Text("\(totalFocus) m")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.appNumber(size: 20))
                         .foregroundColor(AppColors.Text.primary)
                 }
                 .frame(maxWidth: .infinity)
@@ -107,11 +107,11 @@ struct BarChartView: View {
                 
                 VStack(spacing: 8) {
                     Text("Daily Focus")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.appBody(size: 16))
                         .foregroundColor(AppColors.Text.secondary)
                     
                     Text("\(dailyAverage) m")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.appNumber(size: 20))
                         .foregroundColor(AppColors.Text.primary)
                 }
                 .frame(maxWidth: .infinity)
@@ -123,11 +123,11 @@ struct BarChartView: View {
                 
                 VStack(spacing: 8) {
                     Text("Focus Sessions")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.appBody(size: 16))
                         .foregroundColor(AppColors.Text.secondary)
                     
                     Text("\(totalSessions)")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.appNumber(size: 20))
                         .foregroundColor(AppColors.Text.primary)
                 }
                 .frame(maxWidth: .infinity)

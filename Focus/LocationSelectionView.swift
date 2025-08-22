@@ -54,7 +54,7 @@ struct LocationSelectionView: View {
                         if isAddingNew {
                             HStack(spacing: 0) {
                                 TextField("输入新标签", text: $newLocationText)
-                                    .font(.system(size: 24, weight: .medium))
+                                    .font(.appBody(size: 24))
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .frame(height: 60)
                                     .padding(.horizontal, 20)
@@ -78,7 +78,7 @@ struct LocationSelectionView: View {
                                     addNewLocation()
                                 }) {
                                     Text("OK")
-                                        .font(.system(size: 24, weight: .semibold))
+                                        .font(.appButton(size: 24))
                                         .foregroundColor(AppColors.Text.inverse)
                                         .frame(width: 50, height: 60)
                                         .background(AppColors.Brand.primary)
@@ -106,7 +106,7 @@ struct LocationSelectionView: View {
                                 }
                             }) {
                                 Image(systemName: "plus")
-                                    .font(.system(size: 24, weight: .medium))
+                                    .font(.appBody(size: 24))
                                     .foregroundColor(AppColors.Brand.primary)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 60)
@@ -128,7 +128,7 @@ struct LocationSelectionView: View {
                     isPresented = false
                 }) {
                     Text("Done")
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.appButton(size: 24))
                         .foregroundColor(AppColors.Text.inverse)
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
@@ -194,7 +194,7 @@ struct LocationTagButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 24, weight: .medium))
+                .font(.appBody(size: 24))
                 .foregroundColor(isSelected ? AppColors.Text.inverse : AppColors.Text.primary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 60)

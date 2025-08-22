@@ -33,7 +33,7 @@ struct SlideToQuitButton: View {
                         .frame(width: 50, height: 50)
                     
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 20, weight: .semibold))
+                            .font(.appButton(size: 20))
                         .foregroundColor(AppColors.Semantic.darkBrown)
                 }
                 .offset(x: dragOffset)
@@ -64,7 +64,7 @@ struct SlideToQuitButton: View {
             
             // 文字
             Text("Slide to Quit")
-                .font(.system(size: 18, weight: .semibold))
+                    .font(.appButton(size: 18))
                 .foregroundColor(.white)
                 .opacity(isSliding ? 0.5 : 1.0)
         }
@@ -141,7 +141,7 @@ struct HomeView: View {
                                     .frame(width: 36, height: 36)
 
                                 Text(selectedLocation)
-                                    .font(.system(size: 20, weight: .medium))
+                                    .font(.appButton(size: 20))
                                     .foregroundColor(AppColors.Semantic.darkBrown)
 
                                 Image("home_arrow")
@@ -166,7 +166,7 @@ struct HomeView: View {
                             
                             // 运行时显示大号时间
                             Text(timeString(from: focusTime))
-                                .font(.system(size: 24, weight: .medium, design: .monospaced))
+                                .font(.appNumber(size: 24))
                                 .foregroundColor(AppColors.Semantic.darkBrown)
                         }
                     } else {
@@ -184,7 +184,7 @@ struct HomeView: View {
                                     .frame(width: 210, height: 210)
 
                                 Text(timeString(from: focusTime))
-                                    .font(.system(size: 42, weight: .medium, design: .monospaced))
+                                    .font(.appNumber(size: 42))
                                     .foregroundColor(AppColors.Semantic.darkBrown)
                             }
                         }
@@ -205,7 +205,7 @@ struct HomeView: View {
                             toggleTimer()
                         }) {
                             Text("Start to Focus")
-                                .font(.system(size: 20, weight: .semibold))
+                                .font(.appButton(size: 20))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 66)

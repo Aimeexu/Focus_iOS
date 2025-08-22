@@ -91,28 +91,28 @@ struct TimePickerView: View {
                 )
                 
                 // 时间选择器 - 与背景图片垂直居中对齐
-                VStack(spacing: 20) {
+                VStack(spacing: 4) {
                     // 上方时间显示（较小）
                     Text(formatTime(getTimeAtOffset(-1)))
-                        .font(.system(size: 24, weight: .medium, design: .rounded))
+                        .font(.appNumber(size: 24))
                         .foregroundColor(AppColors.Text.tertiary)
                         .opacity(0.6)
                     
                     // 主要时间显示（大号）- 这个会与背景图片中心对齐
                     HStack(alignment: .bottom, spacing: 0) {
                         Text(formatMainTime(selectedMinutes))
-                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .font(.appNumber(size: 72))
                             .foregroundColor(AppColors.Semantic.darkBrown)
                         
                         Text("M")
-                            .font(.system(size: 36, weight: .medium))
+                            .font(.appNumber(size: 30))
                             .foregroundColor(AppColors.Semantic.darkBrown)
                             .padding(.bottom, 8)
                     }
                     
                     // 下方时间显示（较小）
                     Text(formatTime(getTimeAtOffset(1)))
-                        .font(.system(size: 24, weight: .medium, design: .rounded))
+                        .font(.appNumber(size: 24))
                         .foregroundColor(AppColors.Text.tertiary)
                         .opacity(0.6)
                 }
@@ -181,7 +181,7 @@ struct TimePickerView: View {
                         isPresented = false
                     }) {
                         Text("OK")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.appButton(size: 18))
                             .foregroundColor(.white)
                             .frame(width: 100, height: 66)
                             .background(AppColors.Brand.primary)

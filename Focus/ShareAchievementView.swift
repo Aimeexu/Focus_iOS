@@ -32,19 +32,19 @@ struct ShareAchievementView: View {
                     
                     // 成就标题
                     Text(achievement.title)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.appLargeTitle(size: 24))
                         .foregroundColor(AppColors.Text.primary)
                     
                     // 成就描述
                     Text(achievement.description)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.appBody(size: 16))
                         .foregroundColor(AppColors.Text.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                     
                     // 分享文案
                     Text("🎉 Achievement Unlocked! 🎉")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.appButton(size: 18))
                         .foregroundColor(AppColors.Brand.primary)
                         .padding(.top, 10)
                 }
@@ -59,7 +59,7 @@ struct ShareAchievementView: View {
                         isPresented = false
                     }) {
                         Text("Quit")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.appButton(size: 18))
                             .foregroundColor(AppColors.Text.secondary)
                             .frame(maxWidth: .infinity)
                             .frame(height: 60)
@@ -72,7 +72,7 @@ struct ShareAchievementView: View {
                         isPresented = false
                     }) {
                         Text("Confirm")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.appButton(size: 18))
                             .foregroundColor(AppColors.Text.inverse)
                             .frame(maxWidth: .infinity)
                             .frame(height: 60)

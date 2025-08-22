@@ -52,11 +52,11 @@ struct AchievementsView: View {
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Jessica")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.appLargeTitle(size: 24))
                             .foregroundColor(AppColors.Text.primary)
                         
                         Text("New Bee")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.appBody(size: 16))
                             .foregroundColor(AppColors.Text.secondary)
                     }
                     
@@ -70,7 +70,7 @@ struct AchievementsView: View {
                             selectedTab = tab
                         }) {
                             Text(tab.rawValue)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.appButton(size: 16))
                                 .foregroundColor(selectedTab == tab ? AppColors.Text.inverse : AppColors.Text.primary)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 44)
@@ -184,7 +184,7 @@ struct AchievementSection: View {
             // 左侧分类标题
             VStack {
                 Text(category.sideLabel)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.appButton(size: 16))
                     .foregroundColor(AppColors.Text.inverse)
                     .rotationEffect(.degrees(90))
                     .frame(width: 46, height: 100)
@@ -261,7 +261,7 @@ struct AchievementCard: View {
                             .frame(width: 28, height: 28)
                             .overlay(
                                 Text("\(badgeNumber)")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.appButton(size: 14))
                                     .foregroundColor(AppColors.Text.inverse)
                             )
                             .offset(x: 22, y: 14)

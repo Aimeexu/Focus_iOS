@@ -78,7 +78,7 @@ struct PostSection: View {
             // 左侧分类标题
             VStack {
                 Text(category.sideLabel)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.appButton(size: 16))
                     .foregroundColor(AppColors.Text.inverse)
                     .rotationEffect(.degrees(90))
                     .frame(width: 46, height: 100)
@@ -137,7 +137,7 @@ struct PostCard: View {
                             .frame(width: 28, height: 28)
                             .overlay(
                                 Text("\(badgeNumber)")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.appNumber(size: 14))
                                     .foregroundColor(AppColors.Text.inverse)
                             )
                             .offset(x: 22, y: 14)

@@ -157,7 +157,7 @@ struct MusicSelectionView: View {
                     isPresented = false
                 }) {
                     Text("OK")
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.appButton(size: 24))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
@@ -221,7 +221,7 @@ struct SoundButton: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(isSelected ? soundType.icon + "_fill" : soundType.icon)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.appBody(size: 20))
                     .foregroundColor(.white)
                     .frame(width: 50, height: 50)
                     .background(.white)

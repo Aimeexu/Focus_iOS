@@ -23,18 +23,17 @@ struct SettingsView: View {
                             .frame(width: 60, height: 60)
                             .overlay(
                                 Text(String(username.prefix(1)).uppercased())
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
+                                    .font(.appButton(size: 22))
                                     .foregroundColor(.white)
                             )
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(username)
-                                .font(.headline)
+                                .font(.appBody(size: 18))
                                 .foregroundColor(AppColors.Text.primary)
                             
                             Text("test@example.com")
-                                .font(.subheadline)
+                                .font(.appBody(size: 16))
                                 .foregroundColor(AppColors.Text.secondary)
                         }
                         
@@ -104,12 +103,12 @@ struct SettingsView: View {
                     }) {
                         HStack {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.appBody(size: 16))
                                 .foregroundColor(AppColors.Semantic.error)
                                 .frame(width: 24)
                             
                             Text("退出登录")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.appBody(size: 16))
                                 .foregroundColor(AppColors.Semantic.error)
                             
                             Spacer()
@@ -151,18 +150,18 @@ struct SettingsRow: View {
         Button(action: action) {
             HStack {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.appBody(size: 16))
                     .foregroundColor(AppColors.Brand.primary)
                     .frame(width: 24)
                 
                 Text(title)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.appBody(size: 16))
                     .foregroundColor(AppColors.Text.primary)
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appBody(size: 12))
                     .foregroundColor(AppColors.Text.tertiary)
             }
             .padding(.vertical, 4)
