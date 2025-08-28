@@ -330,7 +330,24 @@ struct HomeView: View {
         
         Task {
             do {
-                // 调用后台接口开始专注计时（现在使用Cookie认证）
+                // 1. 先获取物品列表
+                print("📦 正在获取物品列表...")
+                let stuffResponse = try await NetworkManager.shared.getStuffList()
+                
+                if stuffResponse.status == "success", let stuffItems = stuffResponse.data {
+                    print("✅ 物品列表获取成功，共 \(stuffItems.count) 个物品")
+                    
+                    // 更新StuffManager中的数据
+                    await MainActor.run {
+                        StuffManager.shared.stuffItems = stuffItems
+                    }
+                } else {
+                    print("⚠️ 物品列表获取失败: \(stuffResponse.message)")
+                    // 继续执行，不阻断专注计时
+                }
+                
+                // 2. 调用后台接口开始专注计时（现在使用Cookie认证）
+                print("⏰ 正在开始专注计时...")
                 let response = try await NetworkManager.shared.startConcentration(
                     duration: selectedMinutes
                 )
@@ -371,7 +388,8 @@ struct HomeView: View {
                 }
             }
         }
-    }
+        }
+//    }
 
     private func stopTimer() {
         timer?.invalidate()

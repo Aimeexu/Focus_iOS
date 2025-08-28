@@ -16,6 +16,8 @@ struct AppleSignInRequest: Codable {
     let userIdentifier: String
     let email: String?
     let fullName: PersonNameComponents?
+    let deviceId: String
+    let state: String
     
     enum CodingKeys: String, CodingKey {
         case identityToken = "identity_token"
@@ -23,6 +25,8 @@ struct AppleSignInRequest: Codable {
         case userIdentifier = "user_identifier"
         case email
         case fullName = "full_name"
+        case deviceId
+        case state
     }
 }
 
@@ -51,6 +55,8 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
     
     // MARK: - 开始Apple登录流程
     func signInWithApple() async throws -> AuthResponse {
+        print("🍎 开始Apple登录流程")
+        
         // 确保在主线程上执行
         return try await withCheckedThrowingContinuation { continuation in
             // 保存continuation
@@ -58,6 +64,16 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
             
             let request = ASAuthorizationAppleIDProvider().createRequest()
             request.requestedScopes = [.fullName, .email]
+            
+            // 生成随机的nonce和state用于安全验证
+            let nonce = UUID().uuidString
+            request.nonce = nonce
+            request.state = "apple_signin_\(Date().timeIntervalSince1970)"
+            
+            print("🍎 Apple登录请求配置:")
+            print("   requestedScopes: \(request.requestedScopes ?? [])")
+            print("   nonce: \(nonce)")
+            print("   state: \(request.state ?? "nil")")
             
             let authorizationController = ASAuthorizationController(authorizationRequests: [request])
             authorizationController.delegate = self
@@ -69,19 +85,42 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
     
     // MARK: - 处理Apple登录凭证
     func handleAppleSignInCredential(_ credential: ASAuthorizationAppleIDCredential) async throws -> AuthResponse {
+        // 详细的调试信息
+        print("🍎 Apple登录凭证调试:")
+        print("   identityToken存在: \(credential.identityToken != nil)")
+        print("   authorizationCode存在: \(credential.authorizationCode != nil)")
+        print("   user: \(credential.user)")
+        print("   email: \(credential.email ?? "nil")")
+        
         guard let identityToken = credential.identityToken,
-              let identityTokenString = String(data: identityToken, encoding: .utf8),
-              let authorizationCode = credential.authorizationCode,
-              let authorizationCodeString = String(data: authorizationCode, encoding: .utf8) else {
-            throw NetworkError.networkError("无法获取Apple登录凭证")
+              let identityTokenString = String(data: identityToken, encoding: .utf8) else {
+            throw NetworkError.networkError("无法获取Apple身份令牌")
         }
+        
+        // 处理授权码，某些情况下可能为空
+        let authorizationCodeString: String
+        if let authorizationCode = credential.authorizationCode,
+           let codeString = String(data: authorizationCode, encoding: .utf8), !codeString.isEmpty {
+            authorizationCodeString = codeString
+            print("✅ 成功获取授权码")
+        } else {
+            // 如果授权码为空，这是正常情况（特别是在重复登录时）
+            print("ℹ️ 授权码为空（这在某些情况下是正常的）")
+            authorizationCodeString = ""
+        }
+        
+        print("🍎 成功获取凭证:")
+        print("   identityToken长度: \(identityTokenString.count)")
+        print("   authorizationCode长度: \(authorizationCodeString.count)")
         
         let appleSignInRequest = AppleSignInRequest(
             identityToken: identityTokenString,
             authorizationCode: authorizationCodeString,
             userIdentifier: credential.user,
             email: credential.email,
-            fullName: credential.fullName
+            fullName: credential.fullName,
+            deviceId: DeviceManager.shared.getDeviceId(),
+            state: UUID().uuidString
         )
         
         // 调用后端API验证Apple登录
@@ -94,13 +133,15 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
         
         let parameters: [String: Any] = [
             "identity_token": request.identityToken,
-            "authorization_code": request.authorizationCode,
+            "authorizationCode": request.authorizationCode,
             "user_identifier": request.userIdentifier,
             "email": request.email ?? "",
             "full_name": [
                 "given_name": request.fullName?.givenName ?? "",
                 "family_name": request.fullName?.familyName ?? ""
-            ]
+            ],
+            "state": request.state,
+            "deviceId": request.deviceId
         ]
         
         do {
@@ -113,6 +154,8 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
                 ],
                 responseType: AppleSignInResponse.self
             )
+            
+            print("🍎 服务器响应: \(appleResponse)")
             
             // 转换为AuthResponse格式
             let authResponse: AuthResponse
@@ -249,6 +292,14 @@ extension AppleSignInService {
                     errorMessage = "Apple登录未处理"
                 case .unknown:
                     errorMessage = "Apple登录未知错误"
+                case .notInteractive:
+                    errorMessage = "Apple登录不可交互"
+                case .matchedExcludedCredential:
+                    errorMessage = "Apple登录凭证被排除"
+                case .credentialImport:
+                    errorMessage = "Apple登录凭证导入失败"
+                case .credentialExport:
+                    errorMessage = "Apple登录凭证导出失败"
                 @unknown default:
                     errorMessage = "Apple登录未知错误"
                 }
@@ -263,11 +314,7 @@ extension AppleSignInService {
 // MARK: - ASAuthorizationControllerPresentationContextProviding
 extension AppleSignInService {
     nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first else {
-            return UIWindow()
-        }
-        return window
+        return ASPresentationAnchor()
     }
 }
 

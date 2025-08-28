@@ -438,6 +438,32 @@ class NetworkManager {
             }
         }
     }
+    
+    // MARK: - 认证相关方法
+    func getAuthHeaders() -> [String: String] {
+        var headers: [String: String] = [
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        ]
+        
+        // 添加Cookie认证
+        if let cookieInfo = AuthService.shared.getAuthCookie() {
+            headers["Cookie"] = "\(cookieInfo.name)=\(cookieInfo.value)"
+        }
+        
+        return headers
+    }
+    
+    // 获取物品列表
+    func getStuffList() async throws -> StuffListResponse {
+        let baseURL = "http://ds2.tapgame.cn"
+        
+        return try await get(
+            url: "\(baseURL)/app/user/stuff/base/list",
+            headers: getAuthHeaders(),
+            responseType: StuffListResponse.self
+        )
+    }
 }
 
 // MARK: - 响应模型示例
