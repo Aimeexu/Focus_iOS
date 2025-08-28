@@ -366,20 +366,20 @@ class AuthService {
     }
     
     // MARK: - 本地存储管理
-    private func saveAuthData(_ authData: AuthData) {
-        UserDefaults.standard.set(authData.token, forKey: "auth_token")
-        
-        // 保存用户信息
-        if let userData = try? JSONEncoder().encode(authData.user) {
-            UserDefaults.standard.set(userData, forKey: "user_info")
-        }
-        
-        // 保存过期时间
-        if let expiresIn = authData.expiresIn {
-            let expirationDate = Date().addingTimeInterval(TimeInterval(expiresIn))
-            UserDefaults.standard.set(expirationDate, forKey: "token_expiration")
-        }
-    }
+//    private func saveAuthData(_ authData: AuthData) {
+//        UserDefaults.standard.set(authData.token, forKey: "auth_token")
+//        
+//        // 保存用户信息
+//        if let userData = try? JSONEncoder().encode(authData.user) {
+//            UserDefaults.standard.set(userData, forKey: "user_info")
+//        }
+//        
+//        // 保存过期时间
+//        if let expiresIn = authData.expiresIn {
+//            let expirationDate = Date().addingTimeInterval(TimeInterval(expiresIn))
+//            UserDefaults.standard.set(expirationDate, forKey: "token_expiration")
+//        }
+//    }
     
     private func getAuthToken() -> String? {
         return UserDefaults.standard.string(forKey: "auth_token")

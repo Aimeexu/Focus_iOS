@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Lottie
+import AuthenticationServices
 
 // MARK: - 通知名称扩展
 extension Notification.Name {
@@ -48,6 +49,7 @@ struct LoginPageView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var isLoggedIn = false
+    @StateObject private var appleSignInService = AppleSignInService.shared
     
     var body: some View {
         ZStack {
@@ -70,30 +72,10 @@ struct LoginPageView: View {
                     // 白色卡片容器
                     VStack(spacing: 24) {
                     // Continue with Apple 按钮
-                    Button(action: {
-                        testLogin()
-                    }) {
-                        HStack(spacing: 12) {
-                            if isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "applelogo")
-                                    .font(.appBody(size: 18))
-                                    .foregroundColor(.white)
-                            }
-                            
-                            Text(isLoading ? "登录中..." : "Continue with Apple")
-                                .font(.appButton(size: 16))
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(AppColors.Semantic.darkBrown)
-                        .cornerRadius(20)
-                        .disabled(isLoading)
-                    }
+                    CustomAppleSignInButton(
+                        action: signInWithApple,
+                        isLoading: isLoading
+                    )
                     
                     // 错误信息显示
                     if let errorMessage = errorMessage {
@@ -161,7 +143,42 @@ struct LoginPageView: View {
         }
     }
     
-    // MARK: - 真实登录方法
+    // MARK: - Apple登录方法
+    private func signInWithApple() {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                let response = try await AppleSignInService.shared.signInWithApple()
+                
+                await MainActor.run {
+                    if response.success {
+                        isLoggedIn = true
+                        print("✅ Apple登录成功: \(response.message)")
+                        
+                        // 保存登录状态到本地
+                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                        if let user = response.data?.user {
+                            UserDefaults.standard.set(user.nickname, forKey: "username")
+                        }
+                    } else {
+                        errorMessage = response.message
+                        print("❌ Apple登录失败: \(response.message)")
+                    }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Apple登录错误: \(error.localizedDescription)"
+                    print("❌ Apple登录网络错误: \(error.localizedDescription)")
+                    isLoading = false
+                }
+            }
+        }
+    }
+    
+    // MARK: - 测试登录方法（保留用于调试）
     private func testLogin() {
         isLoading = true
         errorMessage = nil
