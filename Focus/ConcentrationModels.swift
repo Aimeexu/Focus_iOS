@@ -18,15 +18,17 @@ struct ConcentrationPlan: Codable {
     let uuid: String
     let userId: String
     let status: String
-    let startDate: Int64
+    let startDate: String  // 改为字符串格式："2025-08-28 11:21:22"
     let duration: Int
-    let createTime: Int64
+    let createTime: String  // 改为字符串格式："2025-08-28 11:21:23"
 }
 
 struct ConcentrationStartResponse: Codable {
-    let data: ConcentrationStartData
+    let data: ConcentrationStartData?
     let status: String
     let code: String
+    let message: String
+    let errors: String?
 }
 
 struct ConcentrationStartData: Codable {

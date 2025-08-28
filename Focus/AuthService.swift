@@ -181,8 +181,9 @@ class AuthService {
                 // 保存用户信息
                 saveAuthData(authData)
                 
-                // 额外保存 refreshToken
+                // 额外保存 refreshToken 和 accessTokenName
                 UserDefaults.standard.set(loginData.refreshToken, forKey: "refresh_token")
+                UserDefaults.standard.set(loginData.accessTokenName, forKey: "access_token_name")
                 
             } else {
                 // 登录失败
@@ -382,6 +383,15 @@ class AuthService {
     
     private func getAuthToken() -> String? {
         return UserDefaults.standard.string(forKey: "auth_token")
+    }
+    
+    // MARK: - 获取Cookie信息
+    func getAuthCookie() -> (name: String, value: String)? {
+        guard let tokenName = UserDefaults.standard.string(forKey: "access_token_name"),
+              let tokenValue = getAuthToken() else {
+            return nil
+        }
+        return (name: tokenName, value: tokenValue)
     }
     
     // MARK: - 检查登录状态

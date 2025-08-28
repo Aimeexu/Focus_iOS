@@ -62,6 +62,7 @@ class NetworkManager {
         method: HTTPMethod = .GET,
         parameters: [String: Any]? = nil,
         headers: [String: String]? = nil,
+        cookies: [String: String]? = nil,
         responseType: T.Type
     ) async throws -> T {
         
@@ -93,8 +94,14 @@ class NetworkManager {
             }
         }
         
+        // 添加Cookie到headers
+        if let cookies = cookies, !cookies.isEmpty {
+            let cookieString = cookies.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
+            httpHeaders.add(name: "Cookie", value: cookieString)
+        }
+        
         // 打印请求日志
-        printRequestLog(url: url.absoluteString, method: method.rawValue, parameters: parameters, headers: headers)
+        printRequestLog(url: url.absoluteString, method: method.rawValue, parameters: parameters, headers: headers, cookies: cookies)
         
         return try await withCheckedThrowingContinuation { continuation in
             let request = session.request(
@@ -146,6 +153,7 @@ class NetworkManager {
         url: String,
         parameters: [String: Any]? = nil,
         headers: [String: String]? = nil,
+        cookies: [String: String]? = nil,
         responseType: T.Type
     ) async throws -> T {
         return try await request(
@@ -153,6 +161,7 @@ class NetworkManager {
             method: .GET,
             parameters: parameters,
             headers: headers,
+            cookies: cookies,
             responseType: responseType
         )
     }
@@ -162,6 +171,7 @@ class NetworkManager {
         url: String,
         parameters: [String: Any]? = nil,
         headers: [String: String]? = nil,
+        cookies: [String: String]? = nil,
         responseType: T.Type
     ) async throws -> T {
         return try await request(
@@ -169,6 +179,7 @@ class NetworkManager {
             method: .POST,
             parameters: parameters,
             headers: headers,
+            cookies: cookies,
             responseType: responseType
         )
     }
@@ -210,7 +221,7 @@ class NetworkManager {
         print("🌐 NetworkManager: \(message)")
     }
     
-    private func printRequestLog(url: String, method: String, parameters: [String: Any]?, headers: [String: String]?) {
+    private func printRequestLog(url: String, method: String, parameters: [String: Any]?, headers: [String: String]?, cookies: [String: String]? = nil) {
         print("\n" + String(repeating: "=", count: 60))
         print("🚀 网络请求开始")
         print(String(repeating: "=", count: 60))
@@ -231,6 +242,23 @@ class NetworkManager {
             for (key, value) in parameters {
                 // 隐藏密码等敏感信息
                 let displayValue = key.lowercased().contains("password") ? "***" : "\(value)"
+                print("   \(key): \(displayValue)")
+            }
+        }
+        
+        if let cookies = cookies, !cookies.isEmpty {
+            print("🍪 Cookies:")
+            for (key, value) in cookies {
+                // 对于token类型的Cookie，显示前6位和后4位，中间显示长度
+                let displayValue: String
+                if key.lowercased().contains("token") && value.count > 10 {
+                    let prefix = String(value.prefix(6))
+                    let suffix = String(value.suffix(4))
+                    let middleLength = value.count - 10
+                    displayValue = "\(prefix)***(\(middleLength)字符)***\(suffix)"
+                } else {
+                    displayValue = value
+                }
                 print("   \(key): \(displayValue)")
             }
         }
@@ -439,34 +467,35 @@ extension NetworkManager {
     /// 开始专注计时
     /// - Parameters:
     ///   - duration: 专注时长（分钟）
-    ///   - token: 用户认证token
     /// - Returns: 专注计时开始响应
-    func startConcentration(duration: Int, token: String) async throws -> ConcentrationStartResponse {
+    func startConcentration(duration: Int) async throws -> ConcentrationStartResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/start"
         let url = baseURL + endpoint
         
         // 获取当前时间戳（毫秒）
         let currentTimeMillis = Int64(Date().timeIntervalSince1970 * 1000)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-        dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-        let startDateString = dateFormatter.string(from: Date())
         
         let parameters: [String: Any] = [
-            "startDate": startDateString,
+            "startDate": currentTimeMillis,
             "duration": duration
         ]
         
         let headers = [
-            "Authorization": "Bearer \(token)",
             "Content-Type": "application/json"
         ]
+        
+        // 获取Cookie信息
+        var cookies: [String: String] = [:]
+        if let authCookie = AuthService.shared.getAuthCookie() {
+            cookies[authCookie.name] = authCookie.value
+        }
         
         return try await post(
             url: url,
             parameters: parameters,
             headers: headers,
+            cookies: cookies,
             responseType: ConcentrationStartResponse.self
         )
     }
@@ -474,9 +503,8 @@ extension NetworkManager {
     /// 结束专注计时
     /// - Parameters:
     ///   - planId: 专注计划ID
-    ///   - token: 用户认证token
     /// - Returns: 专注计时结束响应
-    func endConcentration(planId: String, token: String) async throws -> BaseAPIResponse<String> {
+    func endConcentration(planId: String) async throws -> BaseAPIResponse<String> {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/end"
         let url = baseURL + endpoint
@@ -486,14 +514,20 @@ extension NetworkManager {
         ]
         
         let headers = [
-            "Authorization": "Bearer \(token)",
             "Content-Type": "application/json"
         ]
+        
+        // 获取Cookie信息
+        var cookies: [String: String] = [:]
+        if let authCookie = AuthService.shared.getAuthCookie() {
+            cookies[authCookie.name] = authCookie.value
+        }
         
         return try await post(
             url: url,
             parameters: parameters,
             headers: headers,
+            cookies: cookies,
             responseType: BaseAPIResponse<String>.self
         )
     }

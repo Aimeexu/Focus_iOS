@@ -321,8 +321,7 @@ struct HomeView: View {
 
     private func startTimer() {
         // 检查用户是否已登录
-        guard AuthService.shared.isLoggedIn(),
-              let token = UserDefaults.standard.string(forKey: "auth_token") else {
+        guard AuthService.shared.isLoggedIn() else {
             print("❌ 用户未登录，无法开始专注计时")
             return
         }
@@ -331,30 +330,38 @@ struct HomeView: View {
         
         Task {
             do {
-                // 调用后台接口开始专注计时
+                // 调用后台接口开始专注计时（现在使用Cookie认证）
                 let response = try await NetworkManager.shared.startConcentration(
-                    duration: selectedMinutes,
-                    token: token
+                    duration: selectedMinutes
                 )
                 
                 await MainActor.run {
-                    // 保存专注计划信息
-                    currentConcentrationPlan = response.data.concentrationPlan
-                    
-                    // 开始本地计时器
-                    isTimerRunning = true
-                    isStartingTimer = false
-                    
-                    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-                        if focusTime > 0 {
-                            focusTime -= 1
-                        } else {
-                            // 计时结束，调用结束接口
-                            endConcentrationSession()
+                    if response.status == "success", let data = response.data {
+                        // 保存专注计划信息
+                        currentConcentrationPlan = data.concentrationPlan
+                        
+                        // 开始本地计时器
+                        isTimerRunning = true
+                        isStartingTimer = false
+                        
+                        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                            if focusTime > 0 {
+                                focusTime -= 1
+                            } else {
+                                // 计时结束，调用结束接口
+                                endConcentrationSession()
+                            }
                         }
+                        
+                        print("✅ 专注计时开始成功")
+                        print("   计划ID: \(data.concentrationPlan.uuid)")
+                        print("   状态: \(data.concentrationPlan.status)")
+                        print("   开始时间: \(data.concentrationPlan.startDate)")
+                        print("   奖励物品: \(data.stuffId) x\(data.stuffAmount)")
+                    } else {
+                        isStartingTimer = false
+                        print("❌ 专注计时开始失败: \(response.message)")
                     }
-                    
-                    print("✅ 专注计时开始成功，计划ID: \(response.data.concentrationPlan.uuid)")
                 }
             } catch {
                 await MainActor.run {
@@ -378,16 +385,14 @@ struct HomeView: View {
     }
     
     private func endConcentrationSession() {
-        guard let plan = currentConcentrationPlan,
-              let token = UserDefaults.standard.string(forKey: "auth_token") else {
+        guard let plan = currentConcentrationPlan else {
             return
         }
         
         Task {
             do {
                 let _ = try await NetworkManager.shared.endConcentration(
-                    planId: plan.uuid,
-                    token: token
+                    planId: plan.uuid
                 )
                 
                 await MainActor.run {
