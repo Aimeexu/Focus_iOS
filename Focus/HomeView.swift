@@ -8,6 +8,7 @@
 import SwiftUI
 import AVFoundation
 import Lottie
+import Foundation
 
 // Slide to Quit 按钮组件
 struct SlideToQuitButton: View {
@@ -111,6 +112,8 @@ struct HomeView: View {
     @State private var selectedMusic: String = UserDefaults.standard.string(forKey: "selectedMusic") ?? "silent"
     @State private var showTimePicker = false
     @State private var selectedMinutes = UserDefaults.standard.object(forKey: "selectedMinutes") as? Int ?? 25
+    @State private var currentConcentrationPlan: ConcentrationPlan?
+    @State private var isStartingTimer = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -204,14 +207,23 @@ struct HomeView: View {
                         Button(action: {
                             toggleTimer()
                         }) {
-                            Text("Start to Focus")
-                                .font(.appButton(size: 20))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 66)
-                                .background(AppColors.Brand.primary)
-                                .cornerRadius(20)
+                            HStack {
+                                if isStartingTimer {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Text("Start to Focus")
+                                        .font(.appButton(size: 20))
+                                }
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 66)
+                            .background(AppColors.Brand.primary)
+                            .cornerRadius(20)
                         }
+                        .disabled(isStartingTimer)
                         .padding(.horizontal, 90)
                         .padding(.top, 72)
                     }
@@ -300,22 +312,56 @@ struct HomeView: View {
     }
 
     private func toggleTimer() {
-        isTimerRunning.toggle()
-
         if isTimerRunning {
-            startTimer()
-        } else {
             stopTimer()
+        } else {
+            startTimer()
         }
     }
 
     private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if focusTime > 0 {
-                focusTime -= 1
-            } else {
-                stopTimer()
-                // 计时结束逻辑
+        // 检查用户是否已登录
+        guard AuthService.shared.isLoggedIn(),
+              let token = UserDefaults.standard.string(forKey: "auth_token") else {
+            print("❌ 用户未登录，无法开始专注计时")
+            return
+        }
+        
+        isStartingTimer = true
+        
+        Task {
+            do {
+                // 调用后台接口开始专注计时
+                let response = try await NetworkManager.shared.startConcentration(
+                    duration: selectedMinutes,
+                    token: token
+                )
+                
+                await MainActor.run {
+                    // 保存专注计划信息
+                    currentConcentrationPlan = response.data.concentrationPlan
+                    
+                    // 开始本地计时器
+                    isTimerRunning = true
+                    isStartingTimer = false
+                    
+                    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                        if focusTime > 0 {
+                            focusTime -= 1
+                        } else {
+                            // 计时结束，调用结束接口
+                            endConcentrationSession()
+                        }
+                    }
+                    
+                    print("✅ 专注计时开始成功，计划ID: \(response.data.concentrationPlan.uuid)")
+                }
+            } catch {
+                await MainActor.run {
+                    isStartingTimer = false
+                    print("❌ 开始专注计时失败: \(error.localizedDescription)")
+                    // 这里可以显示错误提示给用户
+                }
             }
         }
     }
@@ -324,6 +370,50 @@ struct HomeView: View {
         timer?.invalidate()
         timer = nil
         isTimerRunning = false
+        
+        // 如果有正在进行的专注计划，调用结束接口
+        if let plan = currentConcentrationPlan {
+            endConcentrationSession()
+        }
+    }
+    
+    private func endConcentrationSession() {
+        guard let plan = currentConcentrationPlan,
+              let token = UserDefaults.standard.string(forKey: "auth_token") else {
+            return
+        }
+        
+        Task {
+            do {
+                let _ = try await NetworkManager.shared.endConcentration(
+                    planId: plan.uuid,
+                    token: token
+                )
+                
+                await MainActor.run {
+                    currentConcentrationPlan = nil
+                    timer?.invalidate()
+                    timer = nil
+                    isTimerRunning = false
+                    
+                    // 重置计时器时间
+                    focusTime = selectedMinutes * 60
+                    
+                    print("✅ 专注计时结束成功")
+                }
+            } catch {
+                await MainActor.run {
+                    // 即使接口调用失败，也要停止本地计时器
+                    currentConcentrationPlan = nil
+                    timer?.invalidate()
+                    timer = nil
+                    isTimerRunning = false
+                    focusTime = selectedMinutes * 60
+                    
+                    print("❌ 结束专注计时失败: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     private func timeString(from seconds: Int) -> String {

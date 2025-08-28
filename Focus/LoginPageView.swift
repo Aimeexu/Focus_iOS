@@ -161,21 +161,42 @@ struct LoginPageView: View {
         }
     }
     
-    // MARK: - 模拟登录方法
+    // MARK: - 真实登录方法
     private func testLogin() {
         isLoading = true
         errorMessage = nil
         
-        // 模拟网络请求延迟
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            // 模拟登录成功
-            isLoggedIn = true
-            isLoading = false
-            print("模拟登录成功")
-            
-            // 保存登录状态到本地
-            UserDefaults.standard.set(true, forKey: "isLoggedIn")
-            UserDefaults.standard.set("模拟用户", forKey: "username")
+        Task {
+            do {
+                // 使用测试账号和密码调用真实API
+                let response = try await AuthService.shared.login(
+                    account: "测试1",
+                    password: "111"
+                )
+                
+                await MainActor.run {
+                    if response.success {
+                        isLoggedIn = true
+                        print("✅ 登录成功: \(response.message ?? "")")
+                        
+                        // 保存登录状态到本地
+                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                        if let user = response.data?.user {
+                            UserDefaults.standard.set(user.nickname, forKey: "username")
+                        }
+                    } else {
+                        errorMessage = response.message ?? "登录失败"
+                        print("❌ 登录失败: \(response.message ?? "未知错误")")
+                    }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "网络错误: \(error.localizedDescription)"
+                    print("❌ 登录网络错误: \(error.localizedDescription)")
+                    isLoading = false
+                }
+            }
         }
     }
 }

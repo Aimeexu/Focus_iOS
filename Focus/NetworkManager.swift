@@ -104,18 +104,36 @@ class NetworkManager {
                 encoding: method == .GET ? URLEncoding.default : JSONEncoding.default,
                 headers: httpHeaders
             )
-            .validate()
             .responseDecodable(of: T.self) { response in
                 // 打印响应日志
                 self.printResponseLog(response: response)
                 
-                switch response.result {
-                case .success(let data):
-                    continuation.resume(returning: data)
-                case .failure(let error):
-                    if let statusCode = response.response?.statusCode {
-                        continuation.resume(throwing: NetworkError.serverError(statusCode))
+                // 检查HTTP状态码
+                if let statusCode = response.response?.statusCode {
+                    if statusCode == 200 {
+                        // HTTP 200 表示成功，尝试解析响应数据
+                        switch response.result {
+                        case .success(let data):
+                            continuation.resume(returning: data)
+                        case .failure(let error):
+                            // 即使解析失败，如果状态码是200，也尝试手动解析
+                            if let data = response.data,
+                               let decodedData = try? JSONDecoder().decode(T.self, from: data) {
+                                continuation.resume(returning: decodedData)
+                            } else {
+                                continuation.resume(throwing: NetworkError.decodingError)
+                            }
+                        }
                     } else {
+                        // 非200状态码，抛出服务器错误
+                        continuation.resume(throwing: NetworkError.serverError(statusCode))
+                    }
+                } else {
+                    // 没有状态码，检查结果
+                    switch response.result {
+                    case .success(let data):
+                        continuation.resume(returning: data)
+                    case .failure(let error):
                         continuation.resume(throwing: NetworkError.networkError(error.localizedDescription))
                     }
                 }
@@ -409,7 +427,74 @@ struct User: Codable {
     let email: String
 }
 
-struct LoginResponse: Codable {
+// 这个LoginResponse已经在AuthService中重新定义，这里保留作为示例
+struct NetworkLoginResponse: Codable {
     let token: String
     let user: User
+}
+
+// MARK: - 专注计时相关API
+extension NetworkManager {
+    
+    /// 开始专注计时
+    /// - Parameters:
+    ///   - duration: 专注时长（分钟）
+    ///   - token: 用户认证token
+    /// - Returns: 专注计时开始响应
+    func startConcentration(duration: Int, token: String) async throws -> ConcentrationStartResponse {
+        let baseURL = "http://ds2.tapgame.cn"
+        let endpoint = "/app/user/concentration/start"
+        let url = baseURL + endpoint
+        
+        // 获取当前时间戳（毫秒）
+        let currentTimeMillis = Int64(Date().timeIntervalSince1970 * 1000)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
+        let startDateString = dateFormatter.string(from: Date())
+        
+        let parameters: [String: Any] = [
+            "startDate": startDateString,
+            "duration": duration
+        ]
+        
+        let headers = [
+            "Authorization": "Bearer \(token)",
+            "Content-Type": "application/json"
+        ]
+        
+        return try await post(
+            url: url,
+            parameters: parameters,
+            headers: headers,
+            responseType: ConcentrationStartResponse.self
+        )
+    }
+    
+    /// 结束专注计时
+    /// - Parameters:
+    ///   - planId: 专注计划ID
+    ///   - token: 用户认证token
+    /// - Returns: 专注计时结束响应
+    func endConcentration(planId: String, token: String) async throws -> BaseAPIResponse<String> {
+        let baseURL = "http://ds2.tapgame.cn"
+        let endpoint = "/app/user/concentration/end"
+        let url = baseURL + endpoint
+        
+        let parameters: [String: Any] = [
+            "planId": planId
+        ]
+        
+        let headers = [
+            "Authorization": "Bearer \(token)",
+            "Content-Type": "application/json"
+        ]
+        
+        return try await post(
+            url: url,
+            parameters: parameters,
+            headers: headers,
+            responseType: BaseAPIResponse<String>.self
+        )
+    }
 }
