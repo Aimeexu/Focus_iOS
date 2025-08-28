@@ -458,8 +458,9 @@ class NetworkManager {
     func getStuffList() async throws -> StuffListResponse {
         let baseURL = "http://ds2.tapgame.cn"
         
-        return try await get(
+        return try await post(
             url: "\(baseURL)/app/user/stuff/base/list",
+            parameters: ["body" : "{}"],
             headers: getAuthHeaders(),
             responseType: StuffListResponse.self
         )
@@ -555,6 +556,25 @@ extension NetworkManager {
             headers: headers,
             cookies: cookies,
             responseType: BaseAPIResponse<String>.self
+        )
+    }
+}
+
+// MARK: - 物品相关API
+extension NetworkManager {
+    
+    /// 获取用户物品基础列表
+    /// - Returns: 物品列表响应
+    func getUserStuffBaseList() async throws -> StuffListResponse {
+        let baseURL = "http://ds2.tapgame.cn"
+        let endpoint = "/app/user/stuff/base/list"
+        let url = baseURL + endpoint
+        
+        return try await post(
+            url: url,
+            parameters: ["body" : "{}"],
+            headers: getAuthHeaders(),
+            responseType: StuffListResponse.self
         )
     }
 }

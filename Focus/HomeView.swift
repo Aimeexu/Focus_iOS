@@ -332,14 +332,14 @@ struct HomeView: View {
             do {
                 // 1. 先获取物品列表
                 print("📦 正在获取物品列表...")
-                let stuffResponse = try await NetworkManager.shared.getStuffList()
+                let stuffResponse = try await NetworkManager.shared.getUserStuffBaseList()
                 
                 if stuffResponse.status == "success", let stuffItems = stuffResponse.data {
-                    print("✅ 物品列表获取成功，共 \(stuffItems.count) 个物品")
+                    print("✅ 物品列表获取成功，共 \(stuffItems.userStuffBases.count) 个物品")
                     
                     // 更新StuffManager中的数据
                     await MainActor.run {
-                        StuffManager.shared.stuffItems = stuffItems
+                        StuffManager.shared.userStuffBases = stuffItems.userStuffBases
                     }
                 } else {
                     print("⚠️ 物品列表获取失败: \(stuffResponse.message)")

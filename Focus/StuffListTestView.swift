@@ -9,11 +9,21 @@ import SwiftUI
 
 struct StuffListTestView: View {
     @StateObject private var stuffManager = StuffManager.shared
-    @State private var isLoading = false
+    @State private var selectedType: UserStuffType = .poster
     
     var body: some View {
         NavigationView {
             VStack {
+                // 类型选择器
+                Picker("物品类型", selection: $selectedType) {
+                    ForEach(UserStuffType.allCases, id: \.self) { type in
+                        Label(type.displayName, systemImage: type.icon)
+                            .tag(type)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding()
+                
                 // 测试按钮
                 Button("获取物品列表") {
                     fetchStuffList()
@@ -22,9 +32,9 @@ struct StuffListTestView: View {
                 .background(Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
-                .disabled(isLoading)
+                .disabled(stuffManager.isLoading)
                 
-                if isLoading {
+                if stuffManager.isLoading {
                     ProgressView("加载中...")
                         .padding()
                 }
@@ -37,67 +47,78 @@ struct StuffListTestView: View {
                 }
                 
                 // 物品列表
-                List(stuffManager.stuffItems) { item in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.name)
-                            .font(.headline)
-                        
-                        Text(item.description)
-                            .font(.caption)
+                let filteredItems = stuffManager.getUserStuffBases(by: selectedType)
+                
+                if filteredItems.isEmpty && !stuffManager.isLoading {
+                    VStack {
+                        Image(systemName: selectedType.icon)
+                            .font(.largeTitle)
                             .foregroundColor(.secondary)
-                        
-                        HStack {
-                            if let category = item.category {
-                                Text("分类: \(category)")
+                        Text("暂无\(selectedType.displayName)")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List(filteredItems) { item in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.name)
+                                .font(.headline)
+                            
+                            Text(item.description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            HStack {
+                                Text(item.userStuffType.displayName)
                                     .font(.caption2)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(Color.blue.opacity(0.2))
                                     .cornerRadius(4)
+                                
+                                Spacer()
+                                
+                                if let firstPrice = item.stuffPrices.first {
+                                    Text("\(firstPrice.amount) 金币")
+                                        .font(.caption2)
+                                        .foregroundColor(.orange)
+                                }
                             }
                             
-                            if let rarity = item.rarity {
-                                Text("稀有度: \(rarity)")
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.orange.opacity(0.2))
-                                    .cornerRadius(4)
-                            }
-                            
-                            Spacer()
-                            
-                            if let value = item.value {
-                                Text("价值: \(value)")
-                                    .font(.caption2)
-                                    .foregroundColor(.green)
+                            // 如果是宠物且有附件，显示动画信息
+                            if item.userStuffType == .pet, let attachment = item.attachment {
+                                HStack {
+                                    Image(systemName: "play.circle.fill")
+                                        .foregroundColor(.green)
+                                    Text("包含动画: \(attachment.allAnimationURLs.count) 个")
+                                        .font(.caption2)
+                                        .foregroundColor(.green)
+                                }
                             }
                         }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
                 }
                 
                 Spacer()
             }
             .navigationTitle("物品列表测试")
+            .onAppear {
+                if stuffManager.userStuffBases.isEmpty {
+                    fetchStuffList()
+                }
+            }
         }
     }
     
     private func fetchStuffList() {
-        isLoading = true
-        
         Task {
             do {
                 let items = try await stuffManager.fetchStuffList()
-                await MainActor.run {
-                    print("✅ 获取到 \(items.count) 个物品")
-                    isLoading = false
-                }
+                print("✅ 获取到 \(items.count) 个物品")
             } catch {
-                await MainActor.run {
-                    print("❌ 获取物品列表失败: \(error.localizedDescription)")
-                    isLoading = false
-                }
+                print("❌ 获取物品列表失败: \(error.localizedDescription)")
             }
         }
     }
