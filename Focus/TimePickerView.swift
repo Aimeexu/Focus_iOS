@@ -66,7 +66,7 @@ struct TimePickerView: View {
     @State private var currentAnimationName = "clockwise"
     
     // 时间选项（分钟）
-    private let timeOptions = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+    private let timeOptions = [1, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
     
     var body: some View {
         GeometryReader { geometry in

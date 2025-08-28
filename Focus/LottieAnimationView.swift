@@ -20,6 +20,9 @@ struct NetworkLottieView: UIViewRepresentable {
         self.animationSpeed = animationSpeed
     }
     
+    // 用于跟踪当前加载的URL，避免重复加载
+    private static var currentLoadedURL: String = ""
+    
     func makeUIView(context: Context) -> UIView {
         let containerView = UIView()
         let animationView = LottieAnimationView()
@@ -48,7 +51,11 @@ struct NetworkLottieView: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         // 如果URL改变，重新加载动画
         if let animationView = uiView.subviews.first as? LottieAnimationView {
-            loadNetworkAnimation(animationView: animationView, url: animationURL)
+            // 检查URL是否真的改变了，避免重复加载
+            if NetworkLottieView.currentLoadedURL != animationURL {
+                print("🔄 动画URL改变，重新加载: \(animationURL)")
+                loadNetworkAnimation(animationView: animationView, url: animationURL)
+            }
         }
     }
     
@@ -81,7 +88,9 @@ struct NetworkLottieView: UIViewRepresentable {
                     let animation = try? LottieAnimation.from(data: data)
                     animationView.animation = animation
                     animationView.play()
-                    print("✅ 网络动画加载成功")
+                    // 更新当前加载的URL
+                    NetworkLottieView.currentLoadedURL = url.absoluteString
+                    print("✅ 网络动画加载成功: \(url.absoluteString)")
                 }
             } catch {
                 print("❌ 解析动画JSON失败: \(error.localizedDescription)")
@@ -92,16 +101,18 @@ struct NetworkLottieView: UIViewRepresentable {
 
 // MARK: - 专注计时动画视图
 struct ConcentrationAnimationView: View {
-    @StateObject private var lottieAnimationManager = LottieAnimationManager.shared
+    @StateObject private var concentrationService = ConcentrationService.shared
     let size: CGSize
+    let showStateIndicator: Bool
     
-    init(size: CGSize = CGSize(width: 200, height: 200)) {
+    init(size: CGSize = CGSize(width: 200, height: 200), showStateIndicator: Bool = false) {
         self.size = size
+        self.showStateIndicator = showStateIndicator
     }
     
     var body: some View {
         ZStack {
-            if lottieAnimationManager.isAnimationLoading {
+            if concentrationService.isLoading {
                 // 加载中状态
                 VStack {
                     ProgressView()
@@ -111,13 +122,57 @@ struct ConcentrationAnimationView: View {
                         .foregroundColor(.secondary)
                         .padding(.top, 8)
                 }
-            } else if let animationURL = lottieAnimationManager.currentAnimationURL {
+            } else if let animationURL = concentrationService.currentLottieAnimationURL {
                 // 显示网络动画
                 NetworkLottieView(
                     animationURL: animationURL,
                     loopMode: .loop,
                     animationSpeed: 1.0
                 )
+                
+                // 状态切换指示器
+                if concentrationService.isAnimationSwitching {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            VStack {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.white)
+                                Text("切换中")
+                                    .font(.caption2)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(8)
+                            .background(Color.blue.opacity(0.8))
+                            .cornerRadius(8)
+                            .padding(.trailing, 8)
+                            .padding(.bottom, 8)
+                        }
+                    }
+                }
+                
+                // 状态指示器
+                if showStateIndicator {
+                    VStack {
+                        HStack {
+                            VStack {
+                                Text(concentrationService.currentAnimationState.displayName)
+                                    .font(.caption2)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(concentrationService.currentAnimationState == .child ? Color.green : Color.orange)
+                                    .cornerRadius(12)
+                            }
+                            .padding(.leading, 8)
+                            .padding(.top, 8)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                }
             } else {
                 // 默认状态 - 显示占位符
                 VStack {

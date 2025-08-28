@@ -16,8 +16,13 @@ class ConcentrationService: ObservableObject {
     @Published var currentPlan: ConcentrationPlan?
     @Published var currentStuffId: String?
     @Published var currentLottieAnimationURL: String?
+    @Published var currentAnimationState: PetState = .child
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var isAnimationSwitching = false
+    
+    // 缓存当前物品的所有动画URL
+    var currentStuffAttachment: StuffAttachment?
     
     private init() {}
     
@@ -47,9 +52,10 @@ class ConcentrationService: ObservableObject {
             // 2. 获取物品列表并查找对应的动画
             let animationURL = try await getAnimationURL(for: stuffId)
             
-            // 3. 更新状态
+            // 3. 更新状态 - 开始时使用child动画
             currentPlan = plan
             currentStuffId = stuffId
+            currentAnimationState = .child
             currentLottieAnimationURL = animationURL
             isLoading = false
             
@@ -92,11 +98,14 @@ class ConcentrationService: ObservableObject {
             return nil
         }
         
-        // 根据物品类型选择合适的动画
-        let animationURL = selectAnimationURL(from: attachment, for: stuff)
+        // 缓存附件数据，用于后续状态切换
+        currentStuffAttachment = attachment
+        
+        // 开始时使用child动画
+        let animationURL = attachment.child ?? attachment.adult ?? attachment.sleep
         
         if let url = animationURL {
-            print("🎬 选择动画URL: \(url)")
+            print("🎬 选择开始动画URL (child): \(url)")
         } else {
             print("⚠️ 物品 \(stuff.name) 没有可用的动画")
         }
@@ -104,16 +113,69 @@ class ConcentrationService: ObservableObject {
         return animationURL
     }
     
-    // MARK: - 选择合适的动画URL
-    private func selectAnimationURL(from attachment: StuffAttachment, for stuff: UserStuffBase) -> String? {
-        // 根据物品类型和当前状态选择动画
-        switch stuff.userStuffType {
-        case .pet:
-            // 对于宠物，优先选择成体动画，其次是幼体，最后是睡眠
-            return attachment.adult ?? attachment.child ?? attachment.sleep
-        default:
-            // 对于其他类型，选择第一个可用的动画
-            return attachment.allAnimationURLs.first
+    // MARK: - 切换动画状态
+    func switchToAdultAnimation() {
+        switchToAnimation(state: .adult)
+    }
+    
+    func switchToChildAnimation() {
+        switchToAnimation(state: .child)
+    }
+    
+    func switchToSleepAnimation() {
+        switchToAnimation(state: .sleep)
+    }
+    
+    private func switchToAnimation(state: PetState) {
+        guard let attachment = currentStuffAttachment else {
+            print("⚠️ 没有缓存的附件数据")
+            return
+        }
+        
+        isAnimationSwitching = true
+        currentAnimationState = state
+        
+        let animationURL: String?
+        switch state {
+        case .child:
+            animationURL = attachment.child
+        case .adult:
+            animationURL = attachment.adult
+        case .sleep:
+            animationURL = attachment.sleep
+        }
+        
+        if let url = animationURL {
+            currentLottieAnimationURL = url
+            print("🎬 切换到\(state.displayName)动画: \(url)")
+        } else {
+            // 如果没有对应动画，尝试使用其他动画
+            let fallbackURL = attachment.child ?? attachment.adult ?? attachment.sleep
+            if let fallbackURL = fallbackURL {
+                currentLottieAnimationURL = fallbackURL
+                print("⚠️ 没有\(state.displayName)动画，使用备用动画")
+            } else {
+                print("⚠️ 没有可用的动画")
+            }
+        }
+        
+        // 延迟重置切换状态
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.isAnimationSwitching = false
+        }
+    }
+    
+    // MARK: - 根据状态获取动画URL
+    func getAnimationURL(for state: PetState) -> String? {
+        guard let attachment = currentStuffAttachment else { return nil }
+        
+        switch state {
+        case .child:
+            return attachment.child
+        case .adult:
+            return attachment.adult
+        case .sleep:
+            return attachment.sleep
         }
     }
     
@@ -135,6 +197,8 @@ class ConcentrationService: ObservableObject {
                 currentPlan = nil
                 currentStuffId = nil
                 currentLottieAnimationURL = nil
+                currentStuffAttachment = nil
+                currentAnimationState = .child
             } else {
 //                print("⚠️ 结束专注计时失败: \(response.message ?? "未知错误")")
             }
@@ -149,27 +213,15 @@ class ConcentrationService: ObservableObject {
         }
     }
     
-    // MARK: - 获取当前动画状态
-    func getCurrentAnimationState() -> PetState {
-        // 这里可以根据专注计时的进度或其他逻辑来决定动画状态
-        // 暂时返回成体状态
-        return .adult
-    }
-    
-    // MARK: - 根据状态获取动画URL
-    func getAnimationURL(for state: PetState) -> String? {
-        guard let stuffId = currentStuffId else { return nil }
-        
-        // 这里可以从缓存的物品数据中获取
-        // 暂时返回当前的动画URL
-        return currentLottieAnimationURL
-    }
+
     
     // MARK: - 清除状态
     func clearState() {
         currentPlan = nil
         currentStuffId = nil
         currentLottieAnimationURL = nil
+        currentStuffAttachment = nil
+        currentAnimationState = .child
         errorMessage = nil
     }
 }

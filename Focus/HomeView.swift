@@ -357,8 +357,12 @@ struct HomeView: View {
                         if focusTime > 0 {
                             focusTime -= 1
                         } else {
-                            // 计时结束，调用结束接口
-                            endConcentrationSession()
+                            // 计时结束，先切换到成体动画，然后调用结束接口
+                            concentrationService.switchToAdultAnimation()
+                            // 延迟3秒显示成体动画，然后结束计时
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                                endConcentrationSession()
+                            }
                         }
                     }
                     
