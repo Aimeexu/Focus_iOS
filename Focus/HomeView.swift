@@ -114,6 +114,10 @@ struct HomeView: View {
     @State private var selectedMinutes = UserDefaults.standard.object(forKey: "selectedMinutes") as? Int ?? 25
     @State private var currentConcentrationPlan: ConcentrationPlan?
     @State private var isStartingTimer = false
+    
+    // 新增的服务
+    @StateObject private var concentrationService = ConcentrationService.shared
+    @StateObject private var lottieAnimationManager = LottieAnimationManager.shared
 
     var body: some View {
         GeometryReader { geometry in
@@ -162,9 +166,8 @@ struct HomeView: View {
                     // 计时器显示区域
                     if isTimerRunning {
                         VStack(spacing: 40) {
-                            // 猫头鹰动画 - 在中间空白区域
-                            OwlAnimationView(animationName: "owl")
-                                .frame(width: 200, height: 200)
+                            // 专注计时动画 - 显示从服务器获取的Lottie动画
+                            ConcentrationAnimationView(size: CGSize(width: 200, height: 200))
                                 .padding(.top, 150)
                             
                             // 运行时显示大号时间
@@ -330,54 +333,44 @@ struct HomeView: View {
         
         Task {
             do {
-                // 1. 先获取物品列表
-                print("📦 正在获取物品列表...")
-                let stuffResponse = try await NetworkManager.shared.getUserStuffBaseList()
-                
-                if stuffResponse.status == "success", let stuffItems = stuffResponse.data {
-                    print("✅ 物品列表获取成功，共 \(stuffItems.userStuffBases.count) 个物品")
-                    
-                    // 更新StuffManager中的数据
-                    await MainActor.run {
-                        StuffManager.shared.userStuffBases = stuffItems.userStuffBases
-                    }
-                } else {
-                    print("⚠️ 物品列表获取失败: \(stuffResponse.message)")
-                    // 继续执行，不阻断专注计时
-                }
-                
-                // 2. 调用后台接口开始专注计时（现在使用Cookie认证）
-                print("⏰ 正在开始专注计时...")
-                let response = try await NetworkManager.shared.startConcentration(
+                // 使用新的专注计时服务，它会自动获取物品列表并找到对应的动画
+                let (plan, animationURL) = try await concentrationService.startConcentrationWithAnimation(
                     duration: selectedMinutes
                 )
                 
                 await MainActor.run {
-                    if response.status == "success", let data = response.data {
-                        // 保存专注计划信息
-                        currentConcentrationPlan = data.concentrationPlan
-                        
-                        // 开始本地计时器
-                        isTimerRunning = true
-                        isStartingTimer = false
-                        
-                        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-                            if focusTime > 0 {
-                                focusTime -= 1
-                            } else {
-                                // 计时结束，调用结束接口
-                                endConcentrationSession()
-                            }
+                    // 保存专注计划信息
+                    currentConcentrationPlan = plan
+                    
+                    // 如果有动画URL，加载动画
+                    if let animationURL = animationURL {
+                        Task {
+                            await lottieAnimationManager.loadAnimation(from: animationURL)
                         }
-                        
-                        print("✅ 专注计时开始成功")
-                        print("   计划ID: \(data.concentrationPlan.uuid)")
-                        print("   状态: \(data.concentrationPlan.status)")
-                        print("   开始时间: \(data.concentrationPlan.startDate)")
-                        print("   奖励物品: \(data.stuffId) x\(data.stuffAmount)")
-                    } else {
-                        isStartingTimer = false
-                        print("❌ 专注计时开始失败: \(response.message)")
+                    }
+                    
+                    // 开始本地计时器
+                    isTimerRunning = true
+                    isStartingTimer = false
+                    
+                    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                        if focusTime > 0 {
+                            focusTime -= 1
+                        } else {
+                            // 计时结束，调用结束接口
+                            endConcentrationSession()
+                        }
+                    }
+                    
+                    print("✅ 专注计时开始成功")
+                    print("   计划ID: \(plan.uuid)")
+                    print("   状态: \(plan.status)")
+                    print("   开始时间: \(plan.startDate)")
+                    if let stuffId = concentrationService.currentStuffId {
+                        print("   奖励物品ID: \(stuffId)")
+                    }
+                    if let animationURL = animationURL {
+                        print("   动画URL: \(animationURL)")
                     }
                 }
             } catch {
@@ -388,7 +381,7 @@ struct HomeView: View {
                 }
             }
         }
-        }
+    }
 //    }
 
     private func stopTimer() {
@@ -397,21 +390,20 @@ struct HomeView: View {
         isTimerRunning = false
         
         // 如果有正在进行的专注计划，调用结束接口
-        if let plan = currentConcentrationPlan {
+        if currentConcentrationPlan != nil {
             endConcentrationSession()
         }
     }
     
     private func endConcentrationSession() {
-        guard let plan = currentConcentrationPlan else {
+        guard currentConcentrationPlan != nil else {
             return
         }
         
         Task {
             do {
-                let _ = try await NetworkManager.shared.endConcentration(
-                    planId: plan.uuid
-                )
+                // 使用新的专注计时服务结束计时
+                try await concentrationService.endConcentration()
                 
                 await MainActor.run {
                     currentConcentrationPlan = nil
@@ -421,6 +413,9 @@ struct HomeView: View {
                     
                     // 重置计时器时间
                     focusTime = selectedMinutes * 60
+                    
+                    // 清除动画
+                    lottieAnimationManager.clearAnimation()
                     
                     print("✅ 专注计时结束成功")
                 }
@@ -432,6 +427,9 @@ struct HomeView: View {
                     timer = nil
                     isTimerRunning = false
                     focusTime = selectedMinutes * 60
+                    
+                    // 清除动画
+                    lottieAnimationManager.clearAnimation()
                     
                     print("❌ 结束专注计时失败: \(error.localizedDescription)")
                 }
