@@ -500,13 +500,22 @@ extension NetworkManager {
         let endpoint = "/app/user/concentration/start"
         let url = baseURL + endpoint
         
-        // 获取当前时间戳（毫秒）
-        let currentTimeMillis = Int64(Date().timeIntervalSince1970 * 1000)
+        // 获取当前日期和时区信息
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let operateDate = dateFormatter.string(from: Date())
+        let timeZone = TimeZone.current.identifier
         
         let parameters: [String: Any] = [
-            "startDate": currentTimeMillis,
+            "operateDate": operateDate,
+            "timeZone": timeZone,
             "duration": duration
         ]
+        
+        print("🎯 开始专注计时API请求:")
+        print("   operateDate: \(operateDate)")
+        print("   timeZone: \(timeZone)")
+        print("   duration: \(duration)")
         
         let headers = [
             "Content-Type": "application/json"
@@ -529,16 +538,29 @@ extension NetworkManager {
     
     /// 结束专注计时
     /// - Parameters:
-    ///   - planId: 专注计划ID
+    ///   - id: 专注计划ID
     /// - Returns: 专注计时结束响应
-    func endConcentration(planId: String) async throws -> BaseAPIResponse<String> {
+    func endConcentration(id: String) async throws -> BaseAPIResponse<String> {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/finish"
         let url = baseURL + endpoint
         
+        // 获取当前日期和时区信息
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let operateDate = dateFormatter.string(from: Date())
+        let timeZone = TimeZone.current.identifier
+        
         let parameters: [String: Any] = [
-            "planId": planId
+            "operateDate": operateDate,
+            "timeZone": timeZone,
+            "id": id
         ]
+        
+        print("🏁 结束专注计时API请求:")
+        print("   operateDate: \(operateDate)")
+        print("   timeZone: \(timeZone)")
+        print("   id: \(id)")
         
         let headers = [
             "Content-Type": "application/json"
@@ -575,6 +597,44 @@ extension NetworkManager {
             parameters: ["body" : "{}"],
             headers: getAuthHeaders(),
             responseType: StuffListResponse.self
+        )
+    }
+}
+
+// MARK: - Apple登录相关API
+extension NetworkManager {
+    
+    /// Apple登录
+    /// - Parameters:
+    ///   - operateDate: 操作日期
+    ///   - timeZone: 时区
+    ///   - identityToken: Apple身份令牌
+    /// - Returns: Apple登录响应
+    func appleLogin(operateDate: String, timeZone: String, identityToken: String) async throws -> AppleSignInResponse {
+        let baseURL = "http://ds2.tapgame.cn"
+        let endpoint = "/app/user/login/apple"
+        let url = baseURL + endpoint
+        
+        let parameters: [String: Any] = [
+            "operateDate": operateDate,
+            "timeZone": timeZone,
+            "identityToken": identityToken
+        ]
+        
+        let headers = [
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        ]
+        
+        print("🍎 Apple登录API请求:")
+        print("   URL: \(url)")
+        print("   参数: \(parameters)")
+        
+        return try await post(
+            url: url,
+            parameters: parameters,
+            headers: headers,
+            responseType: AppleSignInResponse.self
         )
     }
 }

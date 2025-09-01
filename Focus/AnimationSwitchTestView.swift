@@ -91,13 +91,21 @@ struct AnimationSwitchTestView: View {
                         .disabled(isRunning)
                     }
                     
-                    Button("清除动画") {
-                        concentrationService.clearState()
-                        lottieAnimationManager.clearAnimation()
-                        showingAdultAnimation = false
+                    HStack(spacing: 12) {
+                        Button("清除动画") {
+                            concentrationService.clearState()
+                            lottieAnimationManager.clearAnimation()
+                            showingAdultAnimation = false
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundColor(.orange)
+                        
+                        Button("检查状态") {
+                            concentrationService.printCurrentState()
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundColor(.blue)
                     }
-                    .buttonStyle(.bordered)
-                    .foregroundColor(.orange)
                 }
                 
                 // 详细状态信息
@@ -217,7 +225,7 @@ struct AnimationSwitchTestView: View {
         
         // 清理状态
         Task {
-            try? await concentrationService.endConcentration()
+            await concentrationService.safeEndConcentration()
         }
     }
     

@@ -9,8 +9,15 @@ import Foundation
 
 // MARK: - 专注计时请求模型
 struct ConcentrationStartRequest: Codable {
-    let startDate: String
+    let operateDate: String
+    let timeZone: String
     let duration: Int
+}
+
+struct ConcentrationFinishRequest: Codable {
+    let operateDate: String
+    let timeZone: String
+    let id: String
 }
 
 // MARK: - 专注计时响应模型

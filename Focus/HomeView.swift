@@ -112,7 +112,7 @@ struct HomeView: View {
     @State private var selectedMusic: String = UserDefaults.standard.string(forKey: "selectedMusic") ?? "silent"
     @State private var showTimePicker = false
     @State private var selectedMinutes = UserDefaults.standard.object(forKey: "selectedMinutes") as? Int ?? 25
-    @State private var currentConcentrationPlan: ConcentrationPlan?
+    // 移除本地状态，直接使用ConcentrationService的状态
     @State private var isStartingTimer = false
     
     // 新增的服务
@@ -339,8 +339,7 @@ struct HomeView: View {
                 )
                 
                 await MainActor.run {
-                    // 保存专注计划信息
-                    currentConcentrationPlan = plan
+                    // 专注计划信息已经在ConcentrationService中保存
                     
                     // 如果有动画URL，加载动画
                     if let animationURL = animationURL {
@@ -394,49 +393,33 @@ struct HomeView: View {
         isTimerRunning = false
         
         // 如果有正在进行的专注计划，调用结束接口
-        if currentConcentrationPlan != nil {
+        if concentrationService.currentPlan != nil {
             endConcentrationSession()
         }
     }
     
     private func endConcentrationSession() {
-        guard currentConcentrationPlan != nil else {
+        guard concentrationService.currentPlan != nil else {
             return
         }
         
         Task {
-            do {
-                // 使用新的专注计时服务结束计时
-                try await concentrationService.endConcentration()
+            // 使用安全的结束方法，不会抛出错误
+            await concentrationService.safeEndConcentration()
+            
+            await MainActor.run {
+                // 清理UI状态
+                timer?.invalidate()
+                timer = nil
+                isTimerRunning = false
                 
-                await MainActor.run {
-                    currentConcentrationPlan = nil
-                    timer?.invalidate()
-                    timer = nil
-                    isTimerRunning = false
-                    
-                    // 重置计时器时间
-                    focusTime = selectedMinutes * 60
-                    
-                    // 清除动画
-                    lottieAnimationManager.clearAnimation()
-                    
-                    print("✅ 专注计时结束成功")
-                }
-            } catch {
-                await MainActor.run {
-                    // 即使接口调用失败，也要停止本地计时器
-                    currentConcentrationPlan = nil
-                    timer?.invalidate()
-                    timer = nil
-                    isTimerRunning = false
-                    focusTime = selectedMinutes * 60
-                    
-                    // 清除动画
-                    lottieAnimationManager.clearAnimation()
-                    
-                    print("❌ 结束专注计时失败: \(error.localizedDescription)")
-                }
+                // 重置计时器时间
+                focusTime = selectedMinutes * 60
+                
+                // 清除动画
+                lottieAnimationManager.clearAnimation()
+                
+                print("✅ 专注计时会话结束")
             }
         }
     }

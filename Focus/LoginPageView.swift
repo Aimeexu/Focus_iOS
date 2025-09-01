@@ -73,7 +73,7 @@ struct LoginPageView: View {
                     VStack(spacing: 24) {
                     // Continue with Apple 按钮
                     CustomAppleSignInButton(
-                        action: testLogin,
+                        action: signInWithApple,
                         isLoading: isLoading
                     )
                     

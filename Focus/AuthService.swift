@@ -23,6 +23,8 @@ struct RegisterRequest: Codable {
 }
 
 struct LoginRequest: Codable {
+    let operateDate: String
+    let timeZone: String
     let account: String
     let password: String
 }
@@ -141,12 +143,24 @@ class AuthService {
     
     // MARK: - 用户登录
     func login(account: String, password: String) async throws -> AuthResponse {
-        let loginRequest = LoginRequest(account: account, password: password)
+        // 获取当前日期和时区信息
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let operateDate = dateFormatter.string(from: Date())
+        let timeZone = TimeZone.current.identifier
         
         let parameters: [String: Any] = [
-            "account": loginRequest.account,
-            "password": loginRequest.password
+            "operateDate": operateDate,
+            "timeZone": timeZone,
+            "account": account,
+            "password": password
         ]
+        
+        print("🔐 用户登录API请求:")
+        print("   operateDate: \(operateDate)")
+        print("   timeZone: \(timeZone)")
+        print("   account: \(account)")
+        print("   password: [隐藏]")
         
         do {
             // 调用真实的登录API

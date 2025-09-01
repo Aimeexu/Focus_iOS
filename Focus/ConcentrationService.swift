@@ -31,6 +31,10 @@ class ConcentrationService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
+        print("🎯 开始专注计时服务，当前状态:")
+        print("   - currentPlan: \(currentPlan?.uuid ?? "nil")")
+        print("   - currentStuffId: \(currentStuffId ?? "nil")")
+        
         do {
             // 1. 开始专注计时
             print("🎯 开始专注计时，时长: \(duration) 分钟")
@@ -179,37 +183,47 @@ class ConcentrationService: ObservableObject {
         }
     }
     
+    // MARK: - 安全结束专注计时（不抛出错误）
+    func safeEndConcentration() async {
+        do {
+            try await endConcentration()
+        } catch {
+            print("⚠️ 安全结束专注计时时出现错误，但已清理状态: \(error)")
+        }
+    }
+    
     // MARK: - 结束专注计时
     func endConcentration() async throws {
         guard let planId = currentPlan?.uuid else {
-            throw NetworkError.networkError("没有正在进行的专注计时")
+            // 如果没有当前计划，直接清理状态并返回
+            print("⚠️ 没有正在进行的专注计时，清理本地状态")
+            clearState()
+            return
         }
         
         isLoading = true
         
         do {
             print("🏁 结束专注计时，计划ID: \(planId)")
-            let response = try await NetworkManager.shared.endConcentration(planId: planId)
+            let response = try await NetworkManager.shared.endConcentration(id: planId)
             
             if response.status == "success" {
                 print("✅ 专注计时结束成功")
-                // 清除当前状态
-                currentPlan = nil
-                currentStuffId = nil
-                currentLottieAnimationURL = nil
-                currentStuffAttachment = nil
-                currentAnimationState = .child
             } else {
-//                print("⚠️ 结束专注计时失败: \(response.message ?? "未知错误")")
+//                print("⚠️ 结束专注计时API返回失败: \(response.message)")
             }
             
+            // 无论API调用成功与否，都清除本地状态
+            clearState()
             isLoading = false
             
         } catch {
+            // 即使API调用失败，也要清除本地状态
+            clearState()
             isLoading = false
             errorMessage = error.localizedDescription
             print("❌ 结束专注计时失败: \(error)")
-            throw error
+            // 不再抛出错误，因为本地状态已经清理
         }
     }
     
@@ -222,7 +236,21 @@ class ConcentrationService: ObservableObject {
         currentLottieAnimationURL = nil
         currentStuffAttachment = nil
         currentAnimationState = .child
+        isAnimationSwitching = false
         errorMessage = nil
+        print("🧹 专注计时状态已清除")
+    }
+    
+    // MARK: - 检查当前状态
+    func printCurrentState() {
+        print("📊 当前专注计时状态:")
+        print("   - currentPlan: \(currentPlan?.uuid ?? "nil")")
+        print("   - currentStuffId: \(currentStuffId ?? "nil")")
+        print("   - currentAnimationState: \(currentAnimationState)")
+        print("   - isLoading: \(isLoading)")
+        print("   - isAnimationSwitching: \(isAnimationSwitching)")
+        print("   - hasAnimationURL: \(currentLottieAnimationURL != nil)")
+        print("   - hasAttachment: \(currentStuffAttachment != nil)")
     }
 }
 
