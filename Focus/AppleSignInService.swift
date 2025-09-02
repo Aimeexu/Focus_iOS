@@ -92,11 +92,6 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
     
     private override init() {
         super.init()
-        
-        // 测试JSON解码
-        #if DEBUG
-        AppleSignInTest.testResponseDecoding()
-        #endif
     }
     
     // MARK: - 开始Apple登录流程

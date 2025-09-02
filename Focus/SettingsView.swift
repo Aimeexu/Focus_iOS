@@ -69,65 +69,6 @@ struct SettingsView: View {
                     )
                 }
                 
-                // 调试工具部分
-                Section("调试工具") {
-                    NavigationLink(destination: StuffListTestView()) {
-                        HStack {
-                            Image(systemName: "list.bullet")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Brand.primary)
-                                .frame(width: 24)
-                            Text("物品列表测试")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Text.primary)
-                            Spacer()
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    
-                    NavigationLink(destination: LottieAnimationTestView()) {
-                        HStack {
-                            Image(systemName: "play.circle")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Brand.primary)
-                                .frame(width: 24)
-                            Text("Lottie动画测试")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Text.primary)
-                            Spacer()
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    
-                    NavigationLink(destination: AnimationSwitchTestView()) {
-                        HStack {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Brand.primary)
-                                .frame(width: 24)
-                            Text("动画切换测试")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Text.primary)
-                            Spacer()
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    
-                    NavigationLink(destination: DeviceInfoTestView()) {
-                        HStack {
-                            Image(systemName: "iphone")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Brand.primary)
-                                .frame(width: 24)
-                            Text("设备信息测试")
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Text.primary)
-                            Spacer()
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-                
                 // 关于部分
                 Section("关于") {
                     SettingsRow(
