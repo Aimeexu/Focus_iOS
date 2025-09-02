@@ -10,6 +10,26 @@ import SwiftUI
 
 // MARK: - 物品相关数据模型
 
+// MARK: - 专注计时结束响应模型
+struct ConcentrationEndResponse: Codable {
+    let status: String
+    let data: ConcentrationEndData?
+    let code: String
+    let message: String
+    let errors: String?
+}
+
+struct ConcentrationEndData: Codable {
+    let userStuff: ConcentrationUserStuff
+}
+
+struct ConcentrationUserStuff: Codable {
+    let amount: Int
+    let userStuffBaseId: String
+    let createTime: String?
+    let updateTime: String?
+}
+
 // 物品列表请求响应
 struct StuffListResponse: Codable {
     let status: String

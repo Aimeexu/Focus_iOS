@@ -584,7 +584,7 @@ extension NetworkManager {
     /// - Parameters:
     ///   - id: 专注计划ID
     /// - Returns: 专注计时结束响应
-    func endConcentration(id: String) async throws -> BaseAPIResponse<String> {
+    func endConcentration(id: String) async throws -> ConcentrationEndResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/finish"
         let url = baseURL + endpoint
@@ -621,7 +621,7 @@ extension NetworkManager {
             parameters: parameters,
             headers: headers,
             cookies: cookies,
-            responseType: BaseAPIResponse<String>.self
+            responseType: ConcentrationEndResponse.self
         )
     }
 }
