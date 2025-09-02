@@ -38,10 +38,45 @@ struct AppleSignInRequest: Codable {
 
 struct AppleSignInResponse: Codable {
     let status: String
-    let data: LoginData?
+    let data: AppleLoginData?
     let code: String
     let message: String
     let errors: String?
+}
+
+struct AppleLoginData: Codable {
+    let user: AppleUserInfo
+    let accessTokenName: String
+    let accessToken: String
+    let refreshToken: String
+}
+
+struct AppleUserInfo: Codable {
+    let uuid: String
+    let account: String
+    let nickname: String?
+    let phone: String?
+    let channel: AppleChannel
+    let userSettings: AppleUserSettings
+    let userStuffs: [AppleUserStuff]
+    let createTime: Int64
+}
+
+struct AppleChannel: Codable {
+    let uuid: String
+    let channelType: String
+    let description: String
+}
+
+struct AppleUserSettings: Codable {
+    let backgroundMusic: String
+}
+
+struct AppleUserStuff: Codable {
+    let amount: Int
+    let userStuffBaseId: String
+    let createTime: String?
+    let updateTime: String?
 }
 
 // MARK: - Apple登录服务
@@ -57,6 +92,11 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
     
     private override init() {
         super.init()
+        
+        // 测试JSON解码
+        #if DEBUG
+        AppleSignInTest.testResponseDecoding()
+        #endif
     }
     
     // MARK: - 开始Apple登录流程
@@ -133,7 +173,7 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
             userIdentifier: credential.user,
             email: credential.email,
             fullName: credential.fullName,
-            deviceId: DeviceManager.shared.getDeviceId(),
+            deviceId: UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString,
             state: UUID().uuidString
         )
         
@@ -179,11 +219,37 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
             // 转换为AuthResponse格式
             let authResponse: AuthResponse
             
-            if appleResponse.status == "success", let loginData = appleResponse.data {
+            if appleResponse.status == "success", let appleLoginData = appleResponse.data {
                 print("✅ 苹果登录成功判断通过")
+                
+                // 将 AppleUserInfo 转换为 UserInfo
+                let userInfo = UserInfo(
+                    account: appleLoginData.user.account,
+                    phone: appleLoginData.user.phone,
+                    channel: Channel(
+                        channelType: appleLoginData.user.channel.channelType,
+                        description: appleLoginData.user.channel.description,
+                        uuid: appleLoginData.user.channel.uuid
+                    ),
+                    nickname: appleLoginData.user.nickname ?? appleLoginData.user.account,
+                    userSettings: UserSettings(
+                        backgroundMusic: appleLoginData.user.userSettings.backgroundMusic
+                    ),
+                    uuid: appleLoginData.user.uuid,
+                    userStuffs: appleLoginData.user.userStuffs.map { appleStuff in
+                        UserStuff(
+                            amount: appleStuff.amount,
+                            createTime: appleStuff.createTime ?? "",
+                            userStuffBaseId: appleStuff.userStuffBaseId,
+                            updateTime: appleStuff.updateTime ?? ""
+                        )
+                    },
+                    createTime: appleLoginData.user.createTime
+                )
+                
                 let authData = AuthData(
-                    token: loginData.accessToken,
-                    user: loginData.user,
+                    token: appleLoginData.accessToken,
+                    user: userInfo,
                     expiresIn: 3600
                 )
                 
@@ -196,8 +262,8 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
                 
                 // 保存认证信息
                 AuthService.shared.saveAuthData(authData)
-                UserDefaults.standard.set(loginData.refreshToken, forKey: "refresh_token")
-                UserDefaults.standard.set(loginData.accessTokenName, forKey: "access_token_name")
+                UserDefaults.standard.set(appleLoginData.refreshToken, forKey: "refresh_token")
+                UserDefaults.standard.set(appleLoginData.accessTokenName, forKey: "access_token_name")
                 
             } else {
                 print("❌ 苹果登录成功判断失败:")
@@ -213,78 +279,6 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
             }
             
             return authResponse
-            
-        } catch NetworkError.decodingError {
-            // 如果解码失败，尝试使用String类型接收响应
-            print("⚠️ AppleSignInResponse解码失败，尝试接收原始响应")
-            
-            do {
-                let rawResponse: String = try await NetworkManager.shared.post(
-                    url: "\(baseURL)/app/user/login/apple",
-                    parameters: parameters,
-                    headers: [
-                        "Content-Type": "application/json",
-                        "Accept": "text/plain, application/json"
-                    ],
-                    responseType: String.self
-                )
-                
-                print("🍎 收到原始响应: \(rawResponse)")
-                
-                // 尝试手动解析响应
-                if rawResponse.lowercased().contains("success") || rawResponse.contains("200") {
-                    // 创建一个成功的测试响应
-                    let testChannel = Channel(
-                        channelType: "apple",
-                        description: "Apple登录频道",
-                        uuid: "apple_channel_\(Date().timeIntervalSince1970)"
-                    )
-                    
-                    let testUserSettings = UserSettings(
-                        backgroundMusic: "default"
-                    )
-                    
-                    let testUser = UserInfo(
-                        account: request.email ?? "apple_user",
-                        phone: nil,
-                        channel: testChannel,
-                        nickname: request.fullName?.givenName ?? "Apple用户",
-                        userSettings: testUserSettings,
-                        uuid: request.userIdentifier ?? "apple_user_\(Date().timeIntervalSince1970)",
-                        userStuffs: [],
-                        createTime: Int64(Date().timeIntervalSince1970 * 1000)
-                    )
-                    
-                    let authData = AuthData(
-                        token: "apple_token_\(Date().timeIntervalSince1970)",
-                        user: testUser,
-                        expiresIn: 3600
-                    )
-                    
-                    let authResponse = AuthResponse(
-                        success: true,
-                        message: "Apple登录成功",
-                        data: authData,
-                        code: 200
-                    )
-                    
-                    // 保存认证信息
-                    AuthService.shared.saveAuthData(authData)
-                    
-                    return authResponse
-                } else {
-                    return AuthResponse(
-                        success: false,
-                        message: "Apple登录失败: \(rawResponse)",
-                        data: nil,
-                        code: 400
-                    )
-                }
-                
-            } catch {
-                print("❌ 原始响应获取也失败: \(error)")
-                throw NetworkError.networkError("Apple登录响应解析失败: \(error.localizedDescription)")
-            }
             
         } catch NetworkError.serverError(let statusCode) {
             throw NetworkError.serverError(statusCode)
