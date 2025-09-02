@@ -155,13 +155,7 @@ class AuthService {
             "account": account,
             "password": password
         ]
-        
-        print("🔐 用户登录API请求:")
-        print("   operateDate: \(operateDate)")
-        print("   timeZone: \(timeZone)")
-        print("   account: \(account)")
-        print("   password: [隐藏]")
-        
+
         do {
             // 调用真实的登录API
             let loginResponse: LoginResponse = try await NetworkManager.shared.post(

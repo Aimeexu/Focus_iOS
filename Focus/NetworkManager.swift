@@ -104,14 +104,14 @@ class NetworkManager {
         printRequestLog(url: url.absoluteString, method: method.rawValue, parameters: parameters, headers: headers, cookies: cookies)
         
         return try await withCheckedThrowingContinuation { continuation in
-            let request = session.request(
+            _ = session.request(
                 url,
                 method: alamofireMethod,
                 parameters: parameters,
                 encoding: method == .GET ? URLEncoding.default : JSONEncoding.default,
                 headers: httpHeaders
             )
-            .responseDecodable(of: T.self) { response in
+            .response { response in
                 // 打印响应日志
                 self.printResponseLog(response: response)
                 
@@ -119,29 +119,64 @@ class NetworkManager {
                 if let statusCode = response.response?.statusCode {
                     if statusCode == 200 {
                         // HTTP 200 表示成功，尝试解析响应数据
-                        switch response.result {
-                        case .success(let data):
-                            continuation.resume(returning: data)
-                        case .failure(let error):
-                            // 即使解析失败，如果状态码是200，也尝试手动解析
-                            if let data = response.data,
-                               let decodedData = try? JSONDecoder().decode(T.self, from: data) {
+                        guard let data = response.data else {
+                            continuation.resume(throwing: NetworkError.noData)
+                            return
+                        }
+                        
+                        // 首先尝试直接解码
+                        if let decodedData = try? JSONDecoder().decode(T.self, from: data) {
+                            continuation.resume(returning: decodedData)
+                            return
+                        }
+                        
+                        // 如果直接解码失败，检查是否是文本响应
+                        if let responseString = String(data: data, encoding: .utf8) {
+                            print("🔍 原始响应内容: \(responseString)")
+                            
+                            // 尝试处理可能的文本响应
+                            if T.self == String.self {
+                                continuation.resume(returning: responseString as! T)
+                                return
+                            }
+                            
+                            // 检查是否是包装在引号中的JSON字符串
+                            if responseString.hasPrefix("\"") && responseString.hasSuffix("\"") {
+                                let unquotedString = String(responseString.dropFirst().dropLast())
+                                if let unquotedData = unquotedString.data(using: .utf8),
+                                   let decodedData = try? JSONDecoder().decode(T.self, from: unquotedData) {
+                                    continuation.resume(returning: decodedData)
+                                    return
+                                }
+                            }
+                            
+                            // 尝试修复常见的JSON格式问题
+                            let cleanedString = responseString
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                                .replacingOccurrences(of: "\n", with: "")
+                                .replacingOccurrences(of: "\r", with: "")
+                            
+                            if let cleanedData = cleanedString.data(using: .utf8),
+                               let decodedData = try? JSONDecoder().decode(T.self, from: cleanedData) {
                                 continuation.resume(returning: decodedData)
-                            } else {
-                                continuation.resume(throwing: NetworkError.decodingError)
+                                return
                             }
                         }
+                        
+                        // 所有解码尝试都失败
+                        print("❌ 响应解码失败，原始数据长度: \(data.count)")
+                        continuation.resume(throwing: NetworkError.decodingError)
+                        
                     } else {
                         // 非200状态码，抛出服务器错误
                         continuation.resume(throwing: NetworkError.serverError(statusCode))
                     }
                 } else {
-                    // 没有状态码，检查结果
-                    switch response.result {
-                    case .success(let data):
-                        continuation.resume(returning: data)
-                    case .failure(let error):
+                    // 没有状态码，网络错误
+                    if let error = response.error {
                         continuation.resume(throwing: NetworkError.networkError(error.localizedDescription))
+                    } else {
+                        continuation.resume(throwing: NetworkError.networkError("未知网络错误"))
                     }
                 }
             }
@@ -294,7 +329,7 @@ class NetworkManager {
         print(String(repeating: "=", count: 60))
     }
     
-    private func printResponseLog<T>(response: DataResponse<T, AFError>) {
+    private func printResponseLog(response: DataResponse<Data?, AFError>) {
         print("\n" + String(repeating: "-", count: 60))
         print("📥 网络响应")
         print(String(repeating: "-", count: 60))
@@ -304,6 +339,11 @@ class NetworkManager {
             let statusEmoji = getStatusEmoji(statusCode)
             print("\(statusEmoji) 状态码: \(statusCode)")
             print("🌐 URL: \(httpResponse.url?.absoluteString ?? "Unknown")")
+            
+            // 打印Content-Type
+            if let contentType = httpResponse.allHeaderFields["Content-Type"] as? String {
+                print("📋 Content-Type: \(contentType)")
+            }
         }
         
         if let headers = response.response?.allHeaderFields {
@@ -317,17 +357,22 @@ class NetworkManager {
         if let data = response.data {
             print("📊 响应数据大小: \(formatFileSize(data.count))")
             
-            // 尝试打印JSON格式的响应
-            if let jsonString = String(data: data, encoding: .utf8) {
+            // 尝试打印响应内容
+            if let responseString = String(data: data, encoding: .utf8) {
                 print("📄 响应内容:")
-                if let jsonData = jsonString.data(using: .utf8),
+                
+                // 尝试格式化JSON
+                if let jsonData = responseString.data(using: .utf8),
                    let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
                    let prettyJsonData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
                    let prettyJsonString = String(data: prettyJsonData, encoding: .utf8) {
                     print(prettyJsonString)
                 } else {
-                    print(jsonString)
+                    // 如果不是有效JSON，直接打印原始内容
+                    print("原始响应: \(responseString)")
                 }
+            } else {
+                print("📄 响应内容: [二进制数据，无法显示为文本]")
             }
         }
         
@@ -423,7 +468,6 @@ class NetworkManager {
             .validate()
             .responseDecodable(of: T.self) { response in
                 // 打印响应日志
-                self.printResponseLog(response: response)
                 
                 switch response.result {
                 case .success(let data):
