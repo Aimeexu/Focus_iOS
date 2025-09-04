@@ -545,7 +545,7 @@ extension NetworkManager {
     /// - Parameters:
     ///   - duration: 专注时长（分钟）
     /// - Returns: 专注计时开始响应
-    func startConcentration(duration: Int) async throws -> ConcentrationStartResponse {
+    func startConcentration(duration: Int, concentrationPlanTag: String) async throws -> ConcentrationStartResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/start"
         let url = baseURL + endpoint
@@ -559,7 +559,8 @@ extension NetworkManager {
         let parameters: [String: Any] = [
             "operateDate": operateDate,
             "timeZone": timeZone,
-            "duration": duration
+            "duration": duration,
+            "concentrationPlanTag": concentrationPlanTag
         ]
         
         print("🎯 开始专注计时API请求:")

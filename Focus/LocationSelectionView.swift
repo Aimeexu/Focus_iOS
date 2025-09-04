@@ -23,7 +23,7 @@ struct LocationSelectionView: View {
     @FocusState private var isTextFieldFocused: Bool
     @State private var contentHeight: CGFloat = 0
     
-    @State private var locations = ["Gym", "Read"]
+    @State private var locations = ["Read", "Study", "Work"]
     @State private var keyboardHeight: CGFloat = 0
     
     var body: some View {
@@ -209,7 +209,7 @@ struct LocationTagButton: View {
     ZStack {
         AppColors.Semantic.beige.edgesIgnoringSafeArea(.all)
         LocationSelectionView(
-            selectedLocation: .constant("Gym"),
+            selectedLocation: .constant("Read"),
             isPresented: .constant(true)
         )
     }

@@ -10,6 +10,82 @@ import SwiftUI
 
 // MARK: - 物品相关数据模型
 
+// MARK: - 专注计划启动响应模型
+struct ConcentrationStartResponse: Codable {
+    let status: String
+    let data: ConcentrationStartData?
+    let code: String
+    let message: String
+    let errors: String?
+}
+
+struct ConcentrationStartData: Codable {
+    let concentrationPlan: ConcentrationPlan
+    let currentDropStuff: CurrentDropStuff
+    let stuffDropAmount: Int
+
+//    let concentrationPlan: ConcentrationPlan
+    let stuffId: String
+    let stuffAmount: Int
+}
+
+struct ConcentrationPlan: Codable {
+    let uuid: String
+    let userId: String
+    let status: String
+    let startDate: String
+    let duration: Int
+    let createTime: String
+    
+    // 计算属性：获取开始时间
+    var startDateTime: Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.date(from: startDate)
+    }
+    
+    // 计算属性：获取创建时间
+    var createDateTime: Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.date(from: createTime)
+    }
+    
+    // 计算属性：获取结束时间
+    var endDateTime: Date? {
+        guard let start = startDateTime else { return nil }
+        return Calendar.current.date(byAdding: .minute, value: duration, to: start)
+    }
+    
+    // 计算属性：剩余时间（秒）
+    var remainingSeconds: Int {
+        guard let end = endDateTime else { return 0 }
+        let remaining = end.timeIntervalSinceNow
+        return max(0, Int(remaining))
+    }
+    
+    // 计算属性：是否已完成
+    var isCompleted: Bool {
+        return remainingSeconds <= 0
+    }
+}
+
+struct CurrentDropStuff: Codable {
+    let uuid: String
+    let userStuffType: String
+    let userStuffScene: String
+    let icon: String
+    let name: String
+    let description: String
+    let attachment: StuffAttachment?
+    let stuffPrices: [StuffPrice]
+    
+    // 计算属性：获取物品类型枚举
+    var stuffType: UserStuffType? {
+        return UserStuffType(rawValue: userStuffType)
+    }
+}
+
 // MARK: - 专注计时结束响应模型
 struct ConcentrationEndResponse: Codable {
     let status: String
@@ -225,6 +301,27 @@ class StuffManager: ObservableObject {
         userStuffBases = []
         errorMessage = nil
     }
+    
+    // 解析专注计划启动响应
+    func parseConcentrationStartResponse(_ jsonString: String) -> ConcentrationStartResponse? {
+        guard let data = jsonString.data(using: .utf8) else {
+            print("❌ 无法将字符串转换为Data")
+            return nil
+        }
+        
+        do {
+            let response = try JSONDecoder().decode(ConcentrationStartResponse.self, from: data)
+            print("✅ 成功解析专注计划启动响应")
+            print("📋 专注计划ID: \(response.data?.concentrationPlan.uuid ?? "未知")")
+            print("⏰ 专注时长: \(response.data?.concentrationPlan.duration ?? 0) 分钟")
+            print("🎁 掉落物品: \(response.data?.currentDropStuff.name ?? "未知")")
+            print("📦 掉落数量: \(response.data?.stuffDropAmount ?? 0)")
+            return response
+        } catch {
+            print("❌ 解析专注计划启动响应失败: \(error)")
+            return nil
+        }
+    }
 }
 
 // MARK: - 物品列表测试视图
@@ -357,6 +454,3 @@ struct StuffItemRow: View {
     }
 }
 
-#Preview {
-    StuffListView()
-}

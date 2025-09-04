@@ -105,7 +105,7 @@ struct OwlAnimationView: UIViewRepresentable {
 struct HomeView: View {
     @State private var focusTime = 25 * 60 // 25分钟
     @State private var isTimerRunning = false
-    @State private var selectedLocation = UserDefaults.standard.string(forKey: "selectedLocation") ?? "Gym"
+    @State private var selectedLocation = UserDefaults.standard.string(forKey: "selectedLocation") ?? "Read"
     @State private var timer: Timer?
     @State private var showLocationSelection = false
     @State private var showMusicSelection = false
@@ -335,7 +335,8 @@ struct HomeView: View {
             do {
                 // 使用新的专注计时服务，它会自动获取物品列表并找到对应的动画
                 let (plan, animationURL) = try await concentrationService.startConcentrationWithAnimation(
-                    duration: selectedMinutes
+                    duration: selectedMinutes,
+                    concentrationPlanTag: selectedLocation
                 )
                 
                 await MainActor.run {

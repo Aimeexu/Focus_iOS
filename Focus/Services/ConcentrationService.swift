@@ -27,7 +27,7 @@ class ConcentrationService: ObservableObject {
     private init() {}
     
     // MARK: - 开始专注计时并获取动画
-    func startConcentrationWithAnimation(duration: Int) async throws -> (ConcentrationPlan, String?) {
+    func startConcentrationWithAnimation(duration: Int, concentrationPlanTag: String) async throws -> (ConcentrationPlan, String?) {
         isLoading = true
         errorMessage = nil
         
@@ -38,8 +38,8 @@ class ConcentrationService: ObservableObject {
         do {
             // 1. 开始专注计时
             print("🎯 开始专注计时，时长: \(duration) 分钟")
-            let startResponse = try await NetworkManager.shared.startConcentration(duration: duration)
-            
+            let startResponse = try await NetworkManager.shared.startConcentration(duration: duration, concentrationPlanTag: concentrationPlanTag)
+
             guard startResponse.status == "success",
                   let data = startResponse.data else {
                 throw NetworkError.networkError(startResponse.message.isEmpty ? "开始专注计时失败" : startResponse.message)
