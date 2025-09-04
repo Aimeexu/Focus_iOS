@@ -23,10 +23,6 @@ struct ConcentrationStartData: Codable {
     let concentrationPlan: ConcentrationPlan
     let currentDropStuff: CurrentDropStuff
     let stuffDropAmount: Int
-
-//    let concentrationPlan: ConcentrationPlan
-    let stuffId: String
-    let stuffAmount: Int
 }
 
 struct ConcentrationPlan: Codable {
@@ -310,7 +306,8 @@ class StuffManager: ObservableObject {
         }
         
         do {
-            let response = try JSONDecoder().decode(ConcentrationStartResponse.self, from: data)
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(ConcentrationStartResponse.self, from: data)
             print("✅ 成功解析专注计划启动响应")
             print("📋 专注计划ID: \(response.data?.concentrationPlan.uuid ?? "未知")")
             print("⏰ 专注时长: \(response.data?.concentrationPlan.duration ?? 0) 分钟")
@@ -319,7 +316,59 @@ class StuffManager: ObservableObject {
             return response
         } catch {
             print("❌ 解析专注计划启动响应失败: \(error)")
+            
+            // 详细错误信息
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    print("❌ 缺少键: \(key.stringValue), 路径: \(context.codingPath)")
+                case .typeMismatch(let type, let context):
+                    print("❌ 类型不匹配: 期望 \(type), 路径: \(context.codingPath)")
+                case .valueNotFound(let type, let context):
+                    print("❌ 值未找到: \(type), 路径: \(context.codingPath)")
+                case .dataCorrupted(let context):
+                    print("❌ 数据损坏: \(context.debugDescription), 路径: \(context.codingPath)")
+                @unknown default:
+                    print("❌ 未知解码错误: \(error)")
+                }
+            }
             return nil
+        }
+    }
+    
+    // 测试解析方法
+    func testParseStartResponse() {
+        let testJson = """
+        {"data":{"concentrationPlan":{"uuid":"d52023b0-2fef-49c6-bf9e-6421ef483f23","userId":"11da0533-0cdf-415f-8f12-5ca0b9a2664b","status":"STARTED","startDate":"2025-09-04 15:49:12","duration":25,"createTime":"2025-09-04 07:49:14"},"currentDropStuff":{"uuid":"639a15cb-c828-4ea7-bacc-ff6e6ace41d7","userStuffType":"PET","userStuffScene":"CalmFields","icon":"pet2","name":"宠物2","description":"宠物2的描述","attachment":{"child":"http://www.cdbolv.com/assets/file/fp/owl_child.json","adult":"http://www.cdbolv.com/assets/file/fp/owl_adult.json","sleep":"http://www.cdbolv.com/assets/file/fp/owl_sleep.json"},"stuffPrices":[{"stuffId":"94164b90-7e14-4541-b9b4-599345abf8a0","amount":1}]},"stuffDropAmount":1},"status":"success","code":"","message":"","errors":null}
+        """
+        
+        print("🧪 开始测试解析...")
+        if let response = parseConcentrationStartResponse(testJson) {
+            print("🎉 测试成功！")
+            if let data = response.data {
+                print("📊 详细信息:")
+                print("   - 计划状态: \(data.concentrationPlan.status)")
+                print("   - 开始时间: \(data.concentrationPlan.startDate)")
+                print("   - 持续时间: \(data.concentrationPlan.duration) 分钟")
+                print("   - 掉落物品: \(data.currentDropStuff.name)")
+                print("   - 物品类型: \(data.currentDropStuff.userStuffType)")
+                print("   - 掉落数量: \(data.stuffDropAmount)")
+                
+                if let attachment = data.currentDropStuff.attachment {
+                    print("   - 动画文件:")
+                    if let child = attachment.child {
+                        print("     * 幼体: \(child)")
+                    }
+                    if let adult = attachment.adult {
+                        print("     * 成体: \(adult)")
+                    }
+                    if let sleep = attachment.sleep {
+                        print("     * 睡眠: \(sleep)")
+                    }
+                }
+            }
+        } else {
+            print("❌ 测试失败")
         }
     }
 }

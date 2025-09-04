@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		F2DF94482E60538500AC8E67 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF94472E60538500AC8E67 /* Lottie */; };
 		F2DF944B2E6053E300AC8E67 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF944A2E6053E300AC8E67 /* Alamofire */; };
+		F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF95252E69805D00AC8E67 /* SwiftyJSON */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */,
 				F2DF94482E60538500AC8E67 /* Lottie in Frameworks */,
 				F2DF944B2E6053E300AC8E67 /* Alamofire in Frameworks */,
 			);
@@ -106,6 +108,7 @@
 			packageProductDependencies = (
 				F2DF94472E60538500AC8E67 /* Lottie */,
 				F2DF944A2E6053E300AC8E67 /* Alamofire */,
+				F2DF95252E69805D00AC8E67 /* SwiftyJSON */,
 			);
 			productName = Focus;
 			productReference = F2B61A6B2E447C5000CC4F17 /* Focus.app */;
@@ -138,6 +141,7 @@
 			packageReferences = (
 				F2DF94462E60538500AC8E67 /* XCRemoteSwiftPackageReference "lottie-spm" */,
 				F2DF94492E6053E300AC8E67 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				F2DF95242E69805D00AC8E67 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2B61A6C2E447C5000CC4F17 /* Products */;
@@ -391,6 +395,14 @@
 				minimumVersion = 5.10.2;
 			};
 		};
+		F2DF95242E69805D00AC8E67 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftyJSON/SwiftyJSON";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -403,6 +415,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F2DF94492E6053E300AC8E67 /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
+		};
+		F2DF95252E69805D00AC8E67 /* SwiftyJSON */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2DF95242E69805D00AC8E67 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
+			productName = SwiftyJSON;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
