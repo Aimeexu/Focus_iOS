@@ -58,7 +58,7 @@ struct AppleUserInfo: Codable {
     let phone: String?
     let channel: AppleChannel
     let userSettings: AppleUserSettings
-    let userStuffs: [AppleUserStuff]
+    let userStuffs: UserStuffsContainer
     let createTime: Int64
 }
 
@@ -75,8 +75,46 @@ struct AppleUserSettings: Codable {
 struct AppleUserStuff: Codable {
     let amount: Int
     let userStuffBaseId: String
+    let userStuffBase: AppleUserStuffBase?
     let createTime: String?
     let updateTime: String?
+}
+
+// Apple登录响应中的UserStuffBase结构
+struct AppleUserStuffBase: Codable {
+    let uuid: String
+    let userStuffType: String
+    let userStuffScene: String
+    let icon: String
+    let name: String
+    let description: String
+    let attachment: StuffAttachment?
+    let stuffPrices: [AppleStuffPrice]
+}
+
+// Apple登录响应中的StuffPrice结构
+struct AppleStuffPrice: Codable {
+    let stuffId: String
+    let amount: Int
+}
+
+// 用户物品容器，按场景分组
+struct UserStuffsContainer: Codable {
+    let iceSands: [AppleUserStuff?]?
+    let calmFields: [AppleUserStuff?]?
+    let tropicalWilds: [AppleUserStuff?]?
+    
+    enum CodingKeys: String, CodingKey {
+        case iceSands = "IceSands"
+        case calmFields = "CalmFields"
+        case tropicalWilds = "TropicalWilds"
+    }
+    
+    // 获取所有非空的用户物品
+    var allUserStuffs: [AppleUserStuff] {
+        let allStuffs = (iceSands ?? []) + (calmFields ?? []) + (tropicalWilds ?? [])
+        return allStuffs.compactMap { $0 }
+    }
 }
 
 // MARK: - Apple登录服务
@@ -194,6 +232,10 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
         ]
         
         do {
+            print("🍎 发送Apple登录请求到服务器...")
+            print("   URL: \(baseURL)/app/user/login/apple")
+            print("   参数: \(parameters)")
+            
             // 首先尝试标准的AppleSignInResponse解析
             let appleResponse: AppleSignInResponse = try await NetworkManager.shared.post(
                 url: "\(baseURL)/app/user/login/apple",
@@ -231,7 +273,7 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
                         backgroundMusic: appleLoginData.user.userSettings.backgroundMusic
                     ),
                     uuid: appleLoginData.user.uuid,
-                    userStuffs: appleLoginData.user.userStuffs.map { appleStuff in
+                    userStuffs: appleLoginData.user.userStuffs.allUserStuffs.map { appleStuff in
                         UserStuff(
                             amount: appleStuff.amount,
                             createTime: appleStuff.createTime ?? "",

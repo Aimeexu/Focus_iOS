@@ -165,7 +165,13 @@ class NetworkManager {
                         
                         // 所有解码尝试都失败
                         print("❌ 响应解码失败，原始数据长度: \(data.count)")
-                        continuation.resume(throwing: NetworkError.decodingError)
+                        
+                        // 尝试解析为通用JSON来查看结构
+                        if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []) {
+                            print("🔍 JSON结构预览: \(jsonObject)")
+                        }
+                        
+                        continuation.resume(throwing: NetworkError.networkError("数据解析失败"))
                         
                     } else {
                         // 非200状态码，抛出服务器错误
