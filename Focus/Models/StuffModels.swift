@@ -10,6 +10,114 @@ import SwiftUI
 
 // MARK: - 物品相关数据模型
 
+// MARK: - 登录响应数据模型（用于成就系统）
+struct AchievementLoginResponse: Codable {
+    let status: String
+    let data: AchievementLoginData?
+    let code: String
+    let message: String
+    let errors: String?
+}
+
+struct AchievementLoginData: Codable {
+    let accessTokenName: String
+    let refreshToken: String
+    let accessToken: String
+    let user: AchievementUser
+}
+
+struct AchievementUser: Codable {
+    let account: String
+    let phone: String?
+    let channel: AchievementChannel
+    let nickname: String?
+    let userSettings: AchievementUserSettings
+    let uuid: String
+    let userStuffs: AchievementUserStuffs
+    let createTime: Int64
+}
+
+struct AchievementChannel: Codable {
+    let channelType: String
+    let description: String
+    let uuid: String
+}
+
+struct AchievementUserSettings: Codable {
+    let backgroundMusic: String
+}
+
+// 用户物品数据结构，按类型和场景分组
+struct AchievementUserStuffs: Codable {
+    let pet: AchievementPetStuffs?
+    let poster: AchievementPosterStuffs?
+    
+    enum CodingKeys: String, CodingKey {
+        case pet = "PET"
+        case poster = "POSTER"
+    }
+}
+
+struct AchievementPetStuffs: Codable {
+    let tropicalWilds: [AchievementUserStuff?]?
+    let calmFields: [AchievementUserStuff?]?
+    let iceSands: [AchievementUserStuff?]?
+    
+    enum CodingKeys: String, CodingKey {
+        case tropicalWilds = "TropicalWilds"
+        case calmFields = "CalmFields"
+        case iceSands = "IceSands"
+    }
+    
+    // 获取所有宠物
+    var allPets: [AchievementUserStuff] {
+        let allPets = (tropicalWilds ?? []) + (calmFields ?? []) + (iceSands ?? [])
+        return allPets.compactMap { $0 }
+    }
+}
+
+struct AchievementPosterStuffs: Codable {
+    let tropicalWilds: [AchievementUserStuff?]?
+    let calmFields: [AchievementUserStuff?]?
+    let iceSands: [AchievementUserStuff?]?
+    
+    enum CodingKeys: String, CodingKey {
+        case tropicalWilds = "TropicalWilds"
+        case calmFields = "CalmFields"
+        case iceSands = "IceSands"
+    }
+    
+    // 获取所有海报
+    var allPosters: [AchievementUserStuff] {
+        let allPosters = (tropicalWilds ?? []) + (calmFields ?? []) + (iceSands ?? [])
+        return allPosters.compactMap { $0 }
+    }
+}
+
+struct AchievementUserStuff: Codable {
+    let amount: Int
+    let userStuffBase: AchievementUserStuffBase
+    let createTime: String
+    let updateTime: String
+    let uuid: String
+}
+
+struct AchievementUserStuffBase: Codable {
+    let attachment: StuffAttachment?
+    let stuffPrices: [StuffPrice]
+    let userStuffType: String
+    let userStuffScene: String
+    let uuid: String
+    let description: String
+    let icon: String
+    let name: String
+    
+    // 计算属性：获取物品类型枚举
+    var stuffType: UserStuffType? {
+        return UserStuffType(rawValue: userStuffType)
+    }
+}
+
 // MARK: - 专注计划启动响应模型
 struct ConcentrationStartResponse: Codable {
     let status: String

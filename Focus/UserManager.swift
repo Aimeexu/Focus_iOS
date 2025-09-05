@@ -480,6 +480,103 @@ class UserManager: ObservableObject {
         return (name: tokenName, value: tokenValue)
     }
     
+    // MARK: - 处理成就系统的登录数据
+    func saveAchievementLoginData(_ loginJsonString: String) {
+        guard let data = loginJsonString.data(using: .utf8) else {
+            print("❌ 无法将登录数据转换为Data")
+            return
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            let loginResponse = try decoder.decode(AchievementLoginResponse.self, from: data)
+            
+            if loginResponse.status == "success", let loginData = loginResponse.data {
+                print("✅ 成功解析成就登录数据")
+                
+                // 转换为标准的 UserInfo 格式
+                let standardUserInfo = convertAchievementUserToUserInfo(loginData.user)
+                
+                // 创建 AuthData
+                let authData = AuthData(
+                    token: loginData.accessToken,
+                    user: standardUserInfo,
+                    expiresIn: 3600
+                )
+                
+                // 保存登录信息
+                saveLoginData(authData, loginMethod: "achievement")
+                
+                // 同时通知成就管理器更新成就
+                AchievementManager.shared.parseLoginDataAndGenerateAchievements(loginJsonString)
+                
+                print("✅ 成就登录数据保存完成")
+            } else {
+                print("❌ 成就登录状态不成功: \(loginResponse.status)")
+            }
+        } catch {
+            print("❌ 解析成就登录数据失败: \(error)")
+        }
+    }
+    
+    /// 将 AchievementUser 转换为 UserInfo
+    private func convertAchievementUserToUserInfo(_ achievementUser: AchievementUser) -> UserInfo {
+        // 转换用户物品
+        var userStuffs: [UserStuff] = []
+        
+        // 处理宠物
+        if let petStuffs = achievementUser.userStuffs.pet {
+            let allPets = (petStuffs.calmFields ?? []) + (petStuffs.iceSands ?? []) + (petStuffs.tropicalWilds ?? [])
+            for pet in allPets.compactMap({ $0 }) {
+                let userStuff = UserStuff(
+                    amount: pet.amount,
+                    createTime: pet.createTime,
+                    userStuffBaseId: pet.userStuffBase.uuid,
+                    updateTime: pet.updateTime
+                )
+                userStuffs.append(userStuff)
+            }
+        }
+        
+        // 处理海报
+        if let posterStuffs = achievementUser.userStuffs.poster {
+            let allPosters = (posterStuffs.calmFields ?? []) + (posterStuffs.iceSands ?? []) + (posterStuffs.tropicalWilds ?? [])
+            for poster in allPosters.compactMap({ $0 }) {
+                let userStuff = UserStuff(
+                    amount: poster.amount,
+                    createTime: poster.createTime,
+                    userStuffBaseId: poster.userStuffBase.uuid,
+                    updateTime: poster.updateTime
+                )
+                userStuffs.append(userStuff)
+            }
+        }
+        
+        // 转换频道信息
+        let channel = Channel(
+            channelType: achievementUser.channel.channelType,
+            description: achievementUser.channel.description,
+            uuid: achievementUser.channel.uuid
+        )
+        
+        // 转换用户设置
+        let userSettings = UserSettings(
+            backgroundMusic: achievementUser.userSettings.backgroundMusic
+        )
+        
+        // 创建 UserInfo
+        return UserInfo(
+            account: achievementUser.account,
+            phone: achievementUser.phone,
+            channel: channel,
+            nickname: achievementUser.nickname ?? achievementUser.account,
+            userSettings: userSettings,
+            uuid: achievementUser.uuid,
+            userStuffs: userStuffs,
+            createTime: achievementUser.createTime
+        )
+    }
+    
     // MARK: - 调试方法
     private func printSavedUserInfo() {
         print("📊 已保存的用户信息:")

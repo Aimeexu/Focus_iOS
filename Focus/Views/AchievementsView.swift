@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct AchievementsView: View {
+    @StateObject private var userManager = UserManager.shared
+    @StateObject private var achievementManager = AchievementManager.shared
     @State private var selectedTab: AchievementTab = .friends
     @State private var showShareView = false
     @State private var selectedAchievement: Achievement?
@@ -17,112 +19,178 @@ struct AchievementsView: View {
         case posting = "Posting"
     }
     
-    // 成就数据
-    let achievements = [
-        Achievement(id: 1, title: "Calm Fields", description: "Complete 10 focus sessions", image: "hedgehog", isUnlocked: true, category: .calmFields, badgeNumber: 6),
-        Achievement(id: 2, title: "Owl Master", description: "Focus for 100 hours", image: "owl", isUnlocked: true, category: .calmFields, badgeNumber: 1),
-        Achievement(id: 3, title: "Ice Spirits", description: "Focus in winter", image: "question", isUnlocked: false, category: .iceSpirits, badgeNumber: nil),
-        Achievement(id: 4, title: "Ice Spirits", description: "Focus in winter", image: "question", isUnlocked: false, category: .iceSpirits, badgeNumber: nil),
-        Achievement(id: 5, title: "Ice Spirits", description: "Focus in winter", image: "question", isUnlocked: false, category: .iceSpirits, badgeNumber: nil),
-        Achievement(id: 6, title: "Ice Master", description: "Complete ice challenge", image: "question", isUnlocked: false, category: .iceSpirits, badgeNumber: nil),
-        Achievement(id: 7, title: "Vibes", description: "Focus in summer", image: "question", isUnlocked: false, category: .tropicalVibes, badgeNumber: nil),
-        Achievement(id: 8, title: "Master", description: "Complete tropical challenge", image: "question", isUnlocked: false, category: .tropicalVibes, badgeNumber: nil),
-        Achievement(id: 9, title: "Master", description: "Complete tropical challenge", image: "question", isUnlocked: false, category: .Vibes, badgeNumber: nil),
-        Achievement(id: 10, title: "Master", description: "Complete tropical challenge", image: "question", isUnlocked: false, category: .Vibes, badgeNumber: nil),
-        Achievement(id: 11, title: "Master", description: "Complete tropical challenge", image: "question", isUnlocked: false, category: .Vibes, badgeNumber: nil),
-        Achievement(id: 12, title: "Master", description: "Complete tropical challenge", image: "question", isUnlocked: false, category: .bees, badgeNumber: nil),
-        Achievement(id: 13, title: "Master", description: "Complete tropical challenge", image: "question", isUnlocked: false, category: .bees, badgeNumber: nil)
-    ]
-    
     var body: some View {
         VStack(spacing: 0) {
-            // 顶部用户信息
-            VStack(spacing: 16) {
-                HStack(spacing: 16) {
-                    // 用户头像
-                    Circle()
-                        .fill(AppColors.Background.secondary)
-                        .frame(width: 60, height: 60)
-                        .overlay(
-                            Image("penguin") // 企鹅头像
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 50, height: 50)
-                        )
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Jessica")
-                            .font(.appLargeTitle(size: 24))
-                            .foregroundColor(AppColors.Text.primary)
-                        
-                        Text("New Bee")
-                            .font(.appBody(size: 16))
-                            .foregroundColor(AppColors.Text.secondary)
-                    }
-                    
-                    Spacer()
-                }
-                
-                // Tab切换按钮
-                HStack(spacing: 0) {
-                    ForEach(AchievementTab.allCases, id: \.self) { tab in
-                        Button(action: {
-                            selectedTab = tab
-                        }) {
-                            Text(tab.rawValue)
-                                .font(.appButton(size: 16))
-                                .foregroundColor(selectedTab == tab ? AppColors.Text.inverse : AppColors.Text.primary)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .background(selectedTab == tab ? AppColors.Brand.primary : AppColors.Background.secondary)
-                                .cornerRadius(selectedTab == tab ? 22 : 0)
-                        }
-                    }
-                }
-                .background(AppColors.Background.secondary)
-                .cornerRadius(22)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 60)
+            userInfoHeader
+            contentView
+        }
+        .background(AppColors.Background.primary)
+        .overlay(shareOverlay)
+        .onAppear {
+            loadAchievementsFromUserData()
+        }
+        .onChange(of: userManager.currentUser) { _ in
+            loadAchievementsFromUserData()
+        }
+    }
+    
+    // MARK: - 子视图
+    
+    private var userInfoHeader: some View {
+        VStack(spacing: 16) {
+            userProfileSection
+            tabSwitcher
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 60)
+    }
+    
+    private var userProfileSection: some View {
+        HStack(spacing: 16) {
+            Circle()
+                .fill(AppColors.Background.secondary)
+                .frame(width: 60, height: 60)
+                .overlay(
+                    Image("penguin")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 50, height: 50)
+                )
             
-            // 根据选中的标签显示不同内容
-            if selectedTab == .friends {
-                // Friends标签页 - 显示成就
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 30) {
-                        ForEach(AchievementCategory.allCases, id: \.self) { category in
-                            AchievementSection(
-                                category: category, 
-                                achievements: achievements.filter { $0.category == category },
-                                onAchievementTap: { achievement in
-                                    if achievement.isUnlocked {
-                                        selectedAchievement = achievement
-                                        showShareView = true
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    .padding(.top, 30)
-                    .padding(.bottom, 120) // 为TabBar留出空间
+            VStack(alignment: .leading, spacing: 4) {
+                Text(getUserDisplayName())
+                    .font(.appLargeTitle(size: 24))
+                    .foregroundColor(AppColors.Text.primary)
+                
+                Text(getUserLevel())
+                    .font(.appBody(size: 16))
+                    .foregroundColor(AppColors.Text.secondary)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private var tabSwitcher: some View {
+        HStack(spacing: 0) {
+            ForEach(AchievementTab.allCases, id: \.self) { tab in
+                Button(action: {
+                    selectedTab = tab
+                }) {
+                    Text(tab.rawValue)
+                        .font(.appButton(size: 16))
+                        .foregroundColor(selectedTab == tab ? AppColors.Text.inverse : AppColors.Text.primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(selectedTab == tab ? AppColors.Brand.primary : AppColors.Background.secondary)
+                        .cornerRadius(selectedTab == tab ? 22 : 0)
                 }
+            }
+        }
+        .background(AppColors.Background.secondary)
+        .cornerRadius(22)
+    }
+    
+    private var contentView: some View {
+        Group {
+            if selectedTab == .friends {
+                achievementsContent
             } else {
-                // Posting标签页 - 显示发布内容
                 PostingView()
             }
         }
-        .background(AppColors.Background.primary)
-        .overlay(
-            // 分享弹窗
-            Group {
-                if showShareView, let achievement = selectedAchievement {
-                    ShareAchievementView(
-                        achievement: achievement,
-                        isPresented: $showShareView
+    }
+    
+    private var achievementsContent: some View {
+        Group {
+            if achievementManager.isLoading {
+                loadingView
+            } else {
+                achievementsList
+            }
+        }
+    }
+    
+    private var loadingView: some View {
+        VStack {
+            ProgressView("加载成就数据...")
+                .font(.appBody())
+                .foregroundColor(AppColors.Text.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var achievementsList: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 30) {
+                ForEach(AchievementCategory.allCases, id: \.self) { category in
+                    AchievementSection(
+                        category: category,
+                        achievements: achievementManager.achievements.filter { $0.category == category },
+                        onAchievementTap: handleAchievementTap
                     )
                 }
             }
-        )
+            .padding(.top, 30)
+            .padding(.bottom, 120)
+        }
+    }
+    
+    private var shareOverlay: some View {
+        Group {
+            if showShareView, let achievement = selectedAchievement {
+                ShareAchievementView(
+                    achievement: achievement,
+                    isPresented: $showShareView
+                )
+            }
+        }
+    }
+    
+    private func handleAchievementTap(_ achievement: Achievement) {
+        if achievement.isUnlocked {
+            selectedAchievement = achievement
+            showShareView = true
+        }
+    }
+    
+    // MARK: - 辅助方法
+    
+    /// 获取用户显示名称
+    private func getUserDisplayName() -> String {
+        if let user = userManager.currentUser {
+            return user.nickname.isEmpty ? user.account : user.nickname
+        }
+        return "Guest"
+    }
+    
+    /// 获取用户等级
+    private func getUserLevel() -> String {
+        guard let user = userManager.currentUser else {
+            return "New Bee"
+        }
+        
+        // 根据用户拥有的物品数量计算等级
+        let totalStuffs = user.userStuffs.count
+        
+        switch totalStuffs {
+        case 0...2:
+            return "New Bee"
+        case 3...5:
+            return "Focus Starter"
+        case 6...10:
+            return "Concentration Master"
+        case 11...20:
+            return "Zen Master"
+        default:
+            return "Focus Legend"
+        }
+    }
+    
+    /// 从用户数据加载成就
+    private func loadAchievementsFromUserData() {
+        // 使用 AchievementManager 来处理成就生成
+        achievementManager.generateAchievementsFromCurrentUser()
     }
 }
 
@@ -136,40 +204,23 @@ struct Achievement: Identifiable {
     let badgeNumber: Int?
 }
 
-enum AchievementCategory: CaseIterable {
-    case calmFields
-    case iceSpirits  
-    case tropicalVibes
-    case Vibes
-    case bees
+enum AchievementCategory: String, CaseIterable {
+    case calmFields = "CalmFields"
+    case iceSands = "IceSands"
+    case tropicalWilds = "TropicalWilds"
 
     var sideLabel: String {
-        switch self {
-        case .calmFields:
-            return "Calm Fields"
-        case .iceSpirits:
-            return "Ice Spirits"
-        case .tropicalVibes:
-            return "Tropical Vibes"
-        case .Vibes:
-            return "Tropical Vibes"
-        case .bees:
-            return "Tropical Vibes"
-        }
+        return self.rawValue
     }
     
     var sideLabelColor: Color {
         switch self {
         case .calmFields:
             return AppColors.Brand.primary
-        case .iceSpirits:
+        case .iceSands:
             return AppColors.Semantic.oliveGreen
-        case .tropicalVibes:
-            return AppColors.Semantic.oliveGreen
-        case .Vibes:
-            return AppColors.Semantic.oliveGreen
-        case .bees:
-            return AppColors.Semantic.oliveGreen
+        case .tropicalWilds:
+            return Color.orange
         }
     }
 }

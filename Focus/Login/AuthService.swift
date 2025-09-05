@@ -45,7 +45,7 @@ struct LoginData: Codable {
     let user: UserInfo
 }
 
-struct UserInfo: Codable {
+struct UserInfo: Codable, Equatable {
     let account: String
     let phone: String?
     let channel: Channel
@@ -56,17 +56,17 @@ struct UserInfo: Codable {
     let createTime: Int64
 }
 
-struct Channel: Codable {
+struct Channel: Codable, Equatable {
     let channelType: String?
     let description: String
     let uuid: String
 }
 
-struct UserSettings: Codable {
+struct UserSettings: Codable, Equatable {
     let backgroundMusic: String
 }
 
-struct UserStuff: Codable {
+struct UserStuff: Codable, Equatable {
     let amount: Int
     let createTime: String
     let userStuffBaseId: String
