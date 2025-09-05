@@ -9,9 +9,16 @@ import SwiftUI
 
 @main
 struct FocusApp: App {
+    @StateObject private var userManager = UserManager.shared
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(userManager)
+                .onAppear {
+                    // 应用启动时加载用户数据
+                    userManager.loadUserData()
+                }
         }
     }
 }

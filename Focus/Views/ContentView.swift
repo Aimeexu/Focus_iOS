@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var isLoggedIn = false // 测试
+    @EnvironmentObject var userManager: UserManager
 
     var body: some View {
         Group {
-            if isLoggedIn {
+            if userManager.isLoggedIn {
                 // 已登录，显示主界面
                 CustomTabBarView()
             } else {
@@ -20,21 +20,14 @@ struct ContentView: View {
                 LoginPageView()
             }
         }
-        .onAppear {
-            checkLoginStatus()
-        }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogin)) { _ in
-            isLoggedIn = true
+            // 通知登录成功，重新加载用户数据
+            userManager.loadUserData()
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
-            isLoggedIn = false
+            // 通知登出，清除用户数据
+            userManager.clearUserData()
         }
-    }
-    
-    private func checkLoginStatus() {
-        // 检查用户是否已经登录（使用UserDefaults模拟）
-        isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
-        print("检查登录状态: \(isLoggedIn)")
     }
 }
 

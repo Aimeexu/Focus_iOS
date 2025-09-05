@@ -9,13 +9,14 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var showLogoutAlert = false
+    @EnvironmentObject var userManager: UserManager
     
     var body: some View {
         NavigationView {
             List {
                 // 用户信息部分
                 Section {
-                    let username = UserDefaults.standard.string(forKey: "username") ?? "模拟用户"
+                    let username = userManager.currentUser?.nickname ?? "未登录用户"
                     HStack {
                         // 头像
                         Circle()
@@ -32,7 +33,7 @@ struct SettingsView: View {
                                 .font(.appBody(size: 18))
                                 .foregroundColor(AppColors.Text.primary)
                             
-                            Text("test@example.com")
+                            Text(userManager.currentUser?.account ?? "未登录")
                                 .font(.appBody(size: 16))
                                 .foregroundColor(AppColors.Text.secondary)
                         }
@@ -130,11 +131,10 @@ struct SettingsView: View {
     }
     
     private func logout() {
-        // 清除模拟的登录状态
-        UserDefaults.standard.set(false, forKey: "isLoggedIn")
-        UserDefaults.standard.removeObject(forKey: "username")
+        // 使用 UserManager 清除用户数据
+        userManager.clearUserData()
         
-        print("模拟退出登录")
+        print("用户已退出登录")
         
         // 发送退出登录通知
         NotificationCenter.default.post(name: .userDidLogout, object: nil)

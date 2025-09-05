@@ -135,7 +135,7 @@ class AuthService {
         
         // 如果注册成功，保存用户信息
         if response.success, let authData = response.data {
-            saveAuthData(authData)
+            UserManager.shared.saveLoginData(authData, loginMethod: "email")
         }
         
         return response
@@ -187,11 +187,9 @@ class AuthService {
                 )
                 
                 // 保存用户信息
-                saveAuthData(authData)
+                UserManager.shared.saveLoginData(authData, loginMethod: "email")
                 
-                // 额外保存 refreshToken 和 accessTokenName
-                UserDefaults.standard.set(loginData.refreshToken, forKey: "refresh_token")
-                UserDefaults.standard.set(loginData.accessTokenName, forKey: "access_token_name")
+                // refreshToken 和 accessTokenName 已由 UserManager 自动保存
                 
             } else {
                 // 登录失败
@@ -244,7 +242,7 @@ class AuthService {
                 )
                 
                 // 保存用户信息
-                saveAuthData(authData)
+                UserManager.shared.saveLoginData(authData, loginMethod: "email")
                 
                 return authResponse
             } else {
@@ -293,7 +291,7 @@ class AuthService {
         )
         
         // 清除本地存储的认证信息
-        clearAuthData()
+        UserManager.shared.clearUserData()
         
         return response
     }
@@ -316,7 +314,7 @@ class AuthService {
         
         // 如果刷新成功，更新token
         if response.success, let authData = response.data {
-            saveAuthData(authData)
+            UserManager.shared.saveLoginData(authData, loginMethod: "email")
         }
         
         return response
@@ -373,59 +371,8 @@ class AuthService {
         return response
     }
     
-    // MARK: - 本地存储管理
-//    private func saveAuthData(_ authData: AuthData) {
-//        UserDefaults.standard.set(authData.token, forKey: "auth_token")
-//        
-//        // 保存用户信息
-//        if let userData = try? JSONEncoder().encode(authData.user) {
-//            UserDefaults.standard.set(userData, forKey: "user_info")
-//        }
-//        
-//        // 保存过期时间
-//        if let expiresIn = authData.expiresIn {
-//            let expirationDate = Date().addingTimeInterval(TimeInterval(expiresIn))
-//            UserDefaults.standard.set(expirationDate, forKey: "token_expiration")
-//        }
-//    }
-    
-    private func getAuthToken() -> String? {
-        return UserDefaults.standard.string(forKey: "auth_token")
-    }
-    
-    // MARK: - 获取Cookie信息
-    func getAuthCookie() -> (name: String, value: String)? {
-        guard let tokenName = UserDefaults.standard.string(forKey: "access_token_name"),
-              let tokenValue = getAuthToken() else {
-            return nil
-        }
-        return (name: tokenName, value: tokenValue)
-    }
-    
-    // MARK: - 检查登录状态
-    func isLoggedIn() -> Bool {
-        guard let token = getAuthToken() else { return false }
-        
-        // 检查token是否过期
-        if let expirationDate = UserDefaults.standard.object(forKey: "token_expiration") as? Date {
-            return Date() < expirationDate
-        }
-        
-        return !token.isEmpty
-    }
-    
-    // MARK: - 获取当前用户信息
-    func getCurrentUser() -> UserInfo? {
-        guard let userData = UserDefaults.standard.data(forKey: "user_info") else { return nil }
-        return try? JSONDecoder().decode(UserInfo.self, from: userData)
-    }
-    
-    // MARK: - 清除认证数据（公开方法）
-    func clearAuthData() {
-        UserDefaults.standard.removeObject(forKey: "auth_token")
-        UserDefaults.standard.removeObject(forKey: "user_info")
-        UserDefaults.standard.removeObject(forKey: "token_expiration")
-    }
+    // MARK: - 本地存储管理 (已迁移到 UserManager)
+    // 这些方法现在通过 UserManager 处理，保留扩展方法用于兼容性
 }
 
 // MARK: - SwiftUI中的使用示例

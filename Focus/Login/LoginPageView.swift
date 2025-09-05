@@ -157,11 +157,9 @@ struct LoginPageView: View {
                         isLoggedIn = true
                         print("✅ Apple登录成功: \(response.message)")
                         
-                        // 保存登录状态到本地
-                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                        if let user = response.data?.user {
-                            UserDefaults.standard.set(user.nickname, forKey: "username")
-                        }
+                        // 登录状态已由 UserManager 自动处理
+                        // 发送登录成功通知
+                        NotificationCenter.default.post(name: .userDidLogin, object: nil)
                     } else {
                         errorMessage = response.message
                         print("❌ Apple登录失败: \(response.message)")
@@ -196,11 +194,9 @@ struct LoginPageView: View {
                         isLoggedIn = true
                         print("✅ 登录成功: \(response.message ?? "")")
                         
-                        // 保存登录状态到本地
-                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                        if let user = response.data?.user {
-                            UserDefaults.standard.set(user.nickname, forKey: "username")
-                        }
+                        // 登录状态已由 UserManager 自动处理
+                        // 发送登录成功通知
+                        NotificationCenter.default.post(name: .userDidLogin, object: nil)
                     } else {
                         errorMessage = response.message ?? "登录失败"
                         print("❌ 登录失败: \(response.message ?? "未知错误")")

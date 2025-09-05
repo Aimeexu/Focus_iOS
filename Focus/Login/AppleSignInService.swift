@@ -298,9 +298,7 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
                 )
                 
                 // 保存认证信息
-                AuthService.shared.saveAuthData(authData)
-                UserDefaults.standard.set(appleLoginData.refreshToken, forKey: "refresh_token")
-                UserDefaults.standard.set(appleLoginData.accessTokenName, forKey: "access_token_name")
+                UserManager.shared.saveAppleLoginData(appleLoginData, loginMethod: "apple")
                 
             } else {
                 print("❌ 苹果登录成功判断失败:")
@@ -395,20 +393,4 @@ extension AppleSignInService {
 
 
 
-// MARK: - AuthService扩展，添加公开的saveAuthData方法
-extension AuthService {
-    func saveAuthData(_ authData: AuthData) {
-        UserDefaults.standard.set(authData.token, forKey: "auth_token")
-        
-        // 保存用户信息
-        if let userData = try? JSONEncoder().encode(authData.user) {
-            UserDefaults.standard.set(userData, forKey: "user_info")
-        }
-        
-        // 保存过期时间
-        if let expiresIn = authData.expiresIn {
-            let expirationDate = Date().addingTimeInterval(TimeInterval(expiresIn))
-            UserDefaults.standard.set(expirationDate, forKey: "token_expiration")
-        }
-    }
-}
+// MARK: - AuthService扩展已移至 UserManager.swift

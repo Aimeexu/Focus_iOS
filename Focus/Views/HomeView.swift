@@ -103,15 +103,16 @@ struct OwlAnimationView: UIViewRepresentable {
 }
 
 struct HomeView: View {
+    @EnvironmentObject var userManager: UserManager
     @State private var focusTime = 25 * 60 // 25分钟
     @State private var isTimerRunning = false
-    @State private var selectedLocation = UserDefaults.standard.string(forKey: "selectedLocation") ?? "Read"
+    @State private var selectedLocation = ""
     @State private var timer: Timer?
     @State private var showLocationSelection = false
     @State private var showMusicSelection = false
-    @State private var selectedMusic: String = UserDefaults.standard.string(forKey: "selectedMusic") ?? "silent"
+    @State private var selectedMusic = ""
     @State private var showTimePicker = false
-    @State private var selectedMinutes = UserDefaults.standard.object(forKey: "selectedMinutes") as? Int ?? 25
+    @State private var selectedMinutes = 25
     // 移除本地状态，直接使用ConcentrationService的状态
     @State private var isStartingTimer = false
     
@@ -294,8 +295,8 @@ struct HomeView: View {
             }
         }
         .onChange(of: selectedMusic) { _, newMusic in
-            // 保存选中的音乐到UserDefaults
-            UserDefaults.standard.set(newMusic, forKey: "selectedMusic")
+            // 使用 UserManager 保存选中的音乐
+            userManager.updateSelectedMusic(newMusic)
             // 立即播放新选择的音乐
             let audioManager = AudioManager.shared
             if let fileName = getAudioFileName(for: newMusic) {
@@ -305,12 +306,19 @@ struct HomeView: View {
             }
         }
         .onChange(of: selectedLocation) { _, newLocation in
-            // 保存选中的位置到UserDefaults
-            UserDefaults.standard.set(newLocation, forKey: "selectedLocation")
+            // 使用 UserManager 保存选中的位置
+            userManager.updateSelectedLocation(newLocation)
         }
         .onChange(of: selectedMinutes) { _, newMinutes in
-            // 保存选中的时间到UserDefaults
-            UserDefaults.standard.set(newMinutes, forKey: "selectedMinutes")
+            // 使用 UserManager 保存选中的时间
+            userManager.updateSelectedMinutes(newMinutes)
+        }
+        .onAppear {
+            // 从 UserManager 加载用户偏好设置
+            selectedLocation = userManager.getSelectedLocation()
+            selectedMusic = userManager.getSelectedMusic()
+            selectedMinutes = userManager.getSelectedMinutes()
+            focusTime = selectedMinutes * 60
         }
     }
 
