@@ -23,6 +23,14 @@ struct PosterTestView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 
+                Button("使用成就系统数据") {
+                    // 先生成成就系统的测试数据
+                    AchievementManager.shared.testParseLoginData()
+                    // 然后生成海报
+                    posterManager.generatePostersFromCurrentUser()
+                }
+                .buttonStyle(.bordered)
+                
                 Button("从当前用户生成海报") {
                     posterManager.generatePostersFromCurrentUser()
                 }

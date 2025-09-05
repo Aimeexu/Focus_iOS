@@ -106,14 +106,32 @@ struct PosterCard: View {
                 .overlay(
                     VStack {
                         if poster.isUnlocked {
-                            // 解锁的海报显示图片
-                            Image(poster.image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
+                            // 解锁的海报显示远程图片
+                            if poster.image.hasPrefix("http") {
+                                AsyncImage(url: URL(string: poster.image)) { image in
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                } placeholder: {
+                                    ProgressView()
+                                        .frame(width: 40, height: 40)
+                                }
                                 .frame(width: 96, height: 100)
                                 .offset(x: 16, y: 24)
+                            } else {
+                                // 本地图片
+                                Image(poster.image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 96, height: 100)
+                                    .offset(x: 16, y: 24)
+                            }
                         } else {
                             // 未解锁的海报显示问号
+                            Image(systemName: "questionmark.circle.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.gray)
+                                .offset(x: 16, y: 24)
                         }
                     }
                 )

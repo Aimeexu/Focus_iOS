@@ -11,26 +11,54 @@ import SwiftUI
 // MARK: - 成就管理器
 class AchievementManager: ObservableObject {
     static let shared = AchievementManager()
-    
+
     @Published var achievements: [Achievement] = []
     @Published var isLoading = false
     
+    // 保存当前用户数据的引用
+    var currentUserData: AchievementUser?
+
     private init() {}
-    
+
+    /// 获取所有宠物（从登录数据中提取）
+    var allPets: [AchievementUserStuff] {
+        guard let userData = currentUserData,
+              let petStuffs = userData.userStuffs.pet else {
+            return []
+        }
+        
+        var allPets: [AchievementUserStuff] = []
+        
+        // 收集所有场景的宠物
+        if let calmFieldsPets = petStuffs.calmFields {
+            allPets.append(contentsOf: calmFieldsPets.compactMap { $0 })
+        }
+        
+        if let iceSandsPets = petStuffs.iceSands {
+            allPets.append(contentsOf: iceSandsPets.compactMap { $0 })
+        }
+        
+        if let tropicalPets = petStuffs.tropicalWilds {
+            allPets.append(contentsOf: tropicalPets.compactMap { $0 })
+        }
+        
+        return allPets
+    }
+
     /// 解析登录响应数据并生成成就
     func parseLoginDataAndGenerateAchievements(_ loginJsonString: String) {
         isLoading = true
-        
+
         guard let data = loginJsonString.data(using: .utf8) else {
             print("❌ 无法将登录数据转换为Data")
             generateDefaultAchievements()
             return
         }
-        
+
         do {
             let decoder = JSONDecoder()
             let loginResponse = try decoder.decode(AchievementLoginResponse.self, from: data)
-            
+
             if loginResponse.status == "success", let loginData = loginResponse.data {
                 print("✅ 成功解析登录数据")
                 generateAchievementsFromLoginData(loginData.user)
@@ -42,28 +70,55 @@ class AchievementManager: ObservableObject {
             print("❌ 解析登录数据失败: \(error)")
             generateDefaultAchievements()
         }
-        
+
         isLoading = false
     }
-    
+
     /// 从用户管理器的当前用户生成成就
     func generateAchievementsFromCurrentUser() {
         isLoading = true
-        
-        guard let user = UserManager.shared.currentUser else {
+
+        // 优先使用已保存的完整登录数据
+        if let userData = currentUserData {
+            print("🎯 使用已保存的完整用户数据生成成就...")
+            generateAchievementsFromLoginData(userData)
+        } else if let user = UserManager.shared.currentUser {
+            print("⚠️ 使用简化的用户信息生成成就...")
+            generateAchievementsFromUserInfo(user)
+        } else {
+            print("❌ 没有用户数据，生成默认成就...")
             generateDefaultAchievements()
-            return
         }
-        
-        generateAchievementsFromUserInfo(user)
+
         isLoading = false
     }
     
+    /// 检查是否有完整的用户数据
+    var hasCompleteUserData: Bool {
+        return currentUserData != nil
+    }
+    
+    /// 强制重新从登录数据生成成就（用于调试）
+    func forceRegenerateFromLoginData() {
+        guard let userData = currentUserData else {
+            print("❌ 没有完整的登录数据可用于重新生成")
+            return
+        }
+        
+        print("🔄 强制重新从登录数据生成成就...")
+        generateAchievementsFromLoginData(userData)
+    }
+
     /// 从登录数据的用户信息生成成就
     private func generateAchievementsFromLoginData(_ user: AchievementUser) {
+        print("🎯 开始从登录数据生成成就...")
+        
+        // 保存用户数据的引用
+        self.currentUserData = user
+        
         var generatedAchievements: [Achievement] = []
         var achievementId = 1
-        
+
         // 处理宠物成就
         if let petStuffs = user.userStuffs.pet {
             // Calm Fields 宠物成就
@@ -77,13 +132,14 @@ class AchievementManager: ObservableObject {
                         image: getImageForStuff(pet.userStuffBase),
                         isUnlocked: true,
                         category: .calmFields,
-                        badgeNumber: pet.amount
+                        badgeNumber: pet.amount,
+                        isRemoteImage: true
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
                 }
             }
-            
+
             // Ice Sands 宠物成就
             if let iceSandsPets = petStuffs.iceSands {
                 let validPets = iceSandsPets.compactMap { $0 }
@@ -95,13 +151,14 @@ class AchievementManager: ObservableObject {
                         image: getImageForStuff(pet.userStuffBase),
                         isUnlocked: true,
                         category: .iceSands,
-                        badgeNumber: pet.amount
+                        badgeNumber: pet.amount,
+                        isRemoteImage: true
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
                 }
             }
-            
+
             // Tropical Wilds 宠物成就
             if let tropicalPets = petStuffs.tropicalWilds {
                 let validPets = tropicalPets.compactMap { $0 }
@@ -113,14 +170,15 @@ class AchievementManager: ObservableObject {
                         image: getImageForStuff(pet.userStuffBase),
                         isUnlocked: true,
                         category: .tropicalWilds,
-                        badgeNumber: pet.amount
+                        badgeNumber: pet.amount,
+                        isRemoteImage: true
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
                 }
             }
         }
-        
+
         // 处理海报成就
         if let posterStuffs = user.userStuffs.poster {
             // Calm Fields 海报成就
@@ -134,13 +192,14 @@ class AchievementManager: ObservableObject {
                         image: getImageForStuff(poster.userStuffBase),
                         isUnlocked: true,
                         category: .calmFields,
-                        badgeNumber: poster.amount
+                        badgeNumber: poster.amount,
+                        isRemoteImage: true
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
                 }
             }
-            
+
             // Ice Sands 海报成就
             if let iceSandsPosters = posterStuffs.iceSands {
                 let validPosters = iceSandsPosters.compactMap { $0 }
@@ -152,13 +211,14 @@ class AchievementManager: ObservableObject {
                         image: getImageForStuff(poster.userStuffBase),
                         isUnlocked: true,
                         category: .iceSands,
-                        badgeNumber: poster.amount
+                        badgeNumber: poster.amount,
+                        isRemoteImage: true
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
                 }
             }
-            
+
             // Tropical Wilds 海报成就
             if let tropicalPosters = posterStuffs.tropicalWilds {
                 let validPosters = tropicalPosters.compactMap { $0 }
@@ -170,29 +230,30 @@ class AchievementManager: ObservableObject {
                         image: getImageForStuff(poster.userStuffBase),
                         isUnlocked: true,
                         category: .tropicalWilds,
-                        badgeNumber: poster.amount
+                        badgeNumber: poster.amount,
+                        isRemoteImage: true
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
                 }
             }
         }
-        
+
         // 添加未解锁的成就占位符
         generatedAchievements.append(contentsOf: generatePlaceholderAchievements(startingId: achievementId))
-        
+
         DispatchQueue.main.async {
             self.achievements = generatedAchievements
         }
-        
+
         print("✅ 从登录数据生成了 \(generatedAchievements.count) 个成就")
     }
-    
+
     /// 从 UserInfo 生成成就（兼容现有的用户管理器）
     private func generateAchievementsFromUserInfo(_ user: UserInfo) {
         var generatedAchievements: [Achievement] = []
         var achievementId = 1
-        
+
         // 根据用户物品生成成就
         for userStuff in user.userStuffs {
             let achievement = Achievement(
@@ -202,52 +263,53 @@ class AchievementManager: ObservableObject {
                 image: "hedgehog", // 默认图标
                 isUnlocked: true,
                 category: .calmFields, // 默认分类
-                badgeNumber: userStuff.amount
+                badgeNumber: userStuff.amount,
+                isRemoteImage: false
             )
             generatedAchievements.append(achievement)
             achievementId += 1
         }
-        
+
         // 添加未解锁的成就占位符
         generatedAchievements.append(contentsOf: generatePlaceholderAchievements(startingId: achievementId))
-        
+
         DispatchQueue.main.async {
             self.achievements = generatedAchievements
         }
-        
+
         print("✅ 从用户信息生成了 \(generatedAchievements.count) 个成就")
     }
-    
+
     /// 生成默认成就
     private func generateDefaultAchievements() {
         let defaultAchievements = [
-            Achievement(id: 1, title: "开始专注", description: "完成第一次专注", image: "hedgehog", isUnlocked: false, category: .calmFields, badgeNumber: nil),
-            Achievement(id: 2, title: "专注新手", description: "完成10次专注", image: "owl", isUnlocked: false, category: .calmFields, badgeNumber: nil),
-            Achievement(id: 3, title: "冰雪精灵", description: "在冰雪场景中专注", image: "question", isUnlocked: false, category: .iceSands, badgeNumber: nil),
-            Achievement(id: 4, title: "冰雪大师", description: "完成冰雪挑战", image: "question", isUnlocked: false, category: .iceSands, badgeNumber: nil),
-            Achievement(id: 5, title: "热带探险者", description: "在热带场景中专注", image: "question", isUnlocked: false, category: .tropicalWilds, badgeNumber: nil),
-            Achievement(id: 6, title: "热带大师", description: "完成热带挑战", image: "question", isUnlocked: false, category: .tropicalWilds, badgeNumber: nil)
+            Achievement(id: 1, title: "开始专注", description: "完成第一次专注", image: "hedgehog", isUnlocked: false, category: .calmFields, badgeNumber: nil, isRemoteImage: false),
+            Achievement(id: 2, title: "专注新手", description: "完成10次专注", image: "owl", isUnlocked: false, category: .calmFields, badgeNumber: nil, isRemoteImage: false),
+            Achievement(id: 3, title: "冰雪精灵", description: "在冰雪场景中专注", image: "question", isUnlocked: false, category: .iceSands, badgeNumber: nil, isRemoteImage: false),
+            Achievement(id: 4, title: "冰雪大师", description: "完成冰雪挑战", image: "question", isUnlocked: false, category: .iceSands, badgeNumber: nil, isRemoteImage: false),
+            Achievement(id: 5, title: "热带探险者", description: "在热带场景中专注", image: "question", isUnlocked: false, category: .tropicalWilds, badgeNumber: nil, isRemoteImage: false),
+            Achievement(id: 6, title: "热带大师", description: "完成热带挑战", image: "question", isUnlocked: false, category: .tropicalWilds, badgeNumber: nil, isRemoteImage: false)
         ]
-        
+
         DispatchQueue.main.async {
             self.achievements = defaultAchievements
         }
-        
+
         print("✅ 生成了默认成就")
     }
-    
+
     /// 生成占位符成就
     private func generatePlaceholderAchievements(startingId: Int) -> [Achievement] {
         var placeholders: [Achievement] = []
         var id = startingId
-        
+
         // 为每个分类添加一些未解锁的成就
         let categories: [(AchievementCategory, String)] = [
             (.calmFields, "CalmFields"),
             (.iceSands, "IceSands"),
             (.tropicalWilds, "TropicalWilds")
         ]
-        
+
         for (category, name) in categories {
             // 只为没有成就的分类添加占位符
             let existingAchievements = achievements.filter { $0.category == category && $0.isUnlocked }
@@ -260,94 +322,263 @@ class AchievementManager: ObservableObject {
                         image: "question",
                         isUnlocked: false,
                         category: category,
-                        badgeNumber: nil
+                        badgeNumber: nil,
+                        isRemoteImage: false
                     )
                     placeholders.append(achievement)
                     id += 1
                 }
             }
         }
-        
+
         return placeholders
     }
-    
-    /// 根据物品信息获取对应的图片名称
+
+    /// 根据物品信息获取对应的图片URL
     private func getImageForStuff(_ stuffBase: AchievementUserStuffBase) -> String {
-        // 根据物品图标或名称映射到本地图片资源
-        switch stuffBase.icon.lowercased() {
-        case "pet1":
-            return "hedgehog"
-        case "pet2":
-            return "owl"
-        case "poster1", "poster2":
-            return "poster"
+        // 直接返回后台提供的完整图片URL
+        let baseURL = "http://www.cdbolv.com/assets/file/fp/"
+
+        // 如果icon已经是完整URL，直接返回
+        if stuffBase.icon.hasPrefix("http") {
+            return stuffBase.icon
+        }
+
+        // 否则拼接基础URL
+        return baseURL + stuffBase.icon + ".png"
+    }
+    
+    /// 获取所有海报（从登录数据中提取）
+    var allPosters: [AchievementUserStuff] {
+        guard let userData = currentUserData,
+              let posterStuffs = userData.userStuffs.poster else {
+            return []
+        }
+        
+        var allPosters: [AchievementUserStuff] = []
+        
+        // 收集所有场景的海报
+        if let calmFieldsPosters = posterStuffs.calmFields {
+            allPosters.append(contentsOf: calmFieldsPosters.compactMap { $0 })
+        }
+        
+        if let iceSandsPosters = posterStuffs.iceSands {
+            allPosters.append(contentsOf: iceSandsPosters.compactMap { $0 })
+        }
+        
+        if let tropicalPosters = posterStuffs.tropicalWilds {
+            allPosters.append(contentsOf: tropicalPosters.compactMap { $0 })
+        }
+        
+        return allPosters
+    }
+    
+    /// 根据场景获取宠物
+    func getPets(for scene: String) -> [AchievementUserStuff] {
+        guard let userData = currentUserData,
+              let petStuffs = userData.userStuffs.pet else {
+            return []
+        }
+        
+        switch scene {
+        case "CalmFields":
+            return petStuffs.calmFields?.compactMap { $0 } ?? []
+        case "IceSands":
+            return petStuffs.iceSands?.compactMap { $0 } ?? []
+        case "TropicalWilds":
+            return petStuffs.tropicalWilds?.compactMap { $0 } ?? []
         default:
-            // 根据物品类型返回默认图标
-            switch stuffBase.userStuffType {
-            case "PET":
-                return "hedgehog"
-            case "POSTER":
-                return "poster"
-            default:
-                return "question"
-            }
+            return []
         }
     }
     
-    /// 测试解析登录数据的方法
+    /// 根据场景获取海报
+    func getPosters(for scene: String) -> [AchievementUserStuff] {
+        guard let userData = currentUserData,
+              let posterStuffs = userData.userStuffs.poster else {
+            return []
+        }
+        
+        switch scene {
+        case "CalmFields":
+            return posterStuffs.calmFields?.compactMap { $0 } ?? []
+        case "IceSands":
+            return posterStuffs.iceSands?.compactMap { $0 } ?? []
+        case "TropicalWilds":
+            return posterStuffs.tropicalWilds?.compactMap { $0 } ?? []
+        default:
+            return []
+        }
+    }
+    
+    /// 获取用户数据统计信息
+    var userStatsInfo: (totalPets: Int, totalPosters: Int, totalScenes: Int) {
+        let pets = allPets
+        let posters = allPosters
+        
+        // 计算涉及的场景数量
+        var scenes = Set<String>()
+        pets.forEach { scenes.insert($0.userStuffBase.userStuffScene) }
+        posters.forEach { scenes.insert($0.userStuffBase.userStuffScene) }
+        
+        return (totalPets: pets.count, totalPosters: posters.count, totalScenes: scenes.count)
+    }
+    
+    /// 生成海报数据（供 PosterManager 使用）
+    func generatePostersForPosterManager() -> [Poster] {
+        guard let userData = currentUserData else { return [] }
+        
+        var generatedPosters: [Poster] = []
+        var posterId = 1
+        
+        // 处理海报数据
+        if let posterStuffs = userData.userStuffs.poster {
+            // Calm Fields 海报
+            if let calmFieldsPosters = posterStuffs.calmFields {
+                let validPosters = calmFieldsPosters.compactMap { $0 }
+                for posterStuff in validPosters {
+                    let poster = Poster(
+                        id: posterId,
+                        title: posterStuff.userStuffBase.name,
+                        description: posterStuff.userStuffBase.description,
+                        image: getImageForStuff(posterStuff.userStuffBase),
+                        isUnlocked: true,
+                        category: .calmFields,
+                        badgeNumber: posterStuff.amount > 1 ? posterStuff.amount : nil
+                    )
+                    generatedPosters.append(poster)
+                    posterId += 1
+                }
+            }
+            
+            // Ice Sands 海报
+            if let iceSandsPosters = posterStuffs.iceSands {
+                let validPosters = iceSandsPosters.compactMap { $0 }
+                for posterStuff in validPosters {
+                    let poster = Poster(
+                        id: posterId,
+                        title: posterStuff.userStuffBase.name,
+                        description: posterStuff.userStuffBase.description,
+                        image: getImageForStuff(posterStuff.userStuffBase),
+                        isUnlocked: true,
+                        category: .iceSands,
+                        badgeNumber: posterStuff.amount > 1 ? posterStuff.amount : nil
+                    )
+                    generatedPosters.append(poster)
+                    posterId += 1
+                }
+            }
+            
+            // Tropical Wilds 海报
+            if let tropicalPosters = posterStuffs.tropicalWilds {
+                let validPosters = tropicalPosters.compactMap { $0 }
+                for posterStuff in validPosters {
+                    let poster = Poster(
+                        id: posterId,
+                        title: posterStuff.userStuffBase.name,
+                        description: posterStuff.userStuffBase.description,
+                        image: getImageForStuff(posterStuff.userStuffBase),
+                        isUnlocked: true,
+                        category: .tropicalWilds,
+                        badgeNumber: posterStuff.amount > 1 ? posterStuff.amount : nil
+                    )
+                    generatedPosters.append(poster)
+                    posterId += 1
+                }
+            }
+        }
+        
+        return generatedPosters
+    }
+    
+    /// 测试用的解析登录数据方法
     func testParseLoginData() {
-        print("🧪 开始测试解析登录数据，使用真实的场景分类...")
+        print("🧪 开始测试解析登录数据...")
+        
+        // 测试完成后打印统计信息
+        defer {
+            let stats = userStatsInfo
+            print("📊 数据统计:")
+            print("   - 总宠物数: \(stats.totalPets)")
+            print("   - 总海报数: \(stats.totalPosters)")
+            print("   - 涉及场景数: \(stats.totalScenes)")
+            
+            print("🐾 所有宠物:")
+            for (index, pet) in allPets.enumerated() {
+                print("   \(index + 1). \(pet.userStuffBase.name) (\(pet.userStuffBase.userStuffScene)) - 数量: \(pet.amount)")
+                print("      图标: \(pet.userStuffBase.icon)")
+            }
+        }
+        
         let testLoginJson = """
         {
             "status": "success",
             "data": {
                 "accessTokenName": "focus-pals-token",
-                "refreshToken": "eyJhbGciOiJSUzI1NiJ9...",
-                "accessToken": "bfd6f9d0-b650-4207-9a64-73cebf0c2cea",
+                "refreshToken": "test-refresh-token",
+                "accessToken": "test-access-token",
                 "user": {
-                    "account": "APPLE-BIPPlPDG",
+                    "account": "TEST-USER",
                     "phone": null,
                     "channel": {
-                        "channelType": "APPLE",
-                        "description": "11111",
-                        "uuid": "1385d076-333f-4bb1-ab40-dcc9f0d2cdf0"
+                        "channelType": "TEST",
+                        "description": "测试频道",
+                        "uuid": "test-channel-uuid"
                     },
-                    "nickname": null,
+                    "nickname": "测试用户",
                     "userSettings": {
                         "backgroundMusic": "default"
                     },
-                    "uuid": "bc499c83-9487-4fc8-b820-94f3186c305e",
+                    "uuid": "test-user-uuid",
                     "userStuffs": {
                         "PET": {
-                            "TropicalWilds": [null, null],
-                            "CalmFields": [
+                            "TropicalWilds": [
                                 {
-                                    "amount": 4,
+                                    "amount": 1,
                                     "userStuffBase": {
-                                        "attachment": {
-                                            "child": "http://www.cdbolv.com/assets/file/fp/owl_child.json",
-                                            "adult": "http://www.cdbolv.com/assets/file/fp/owl_adult.json",
-                                            "sleep": "http://www.cdbolv.com/assets/file/fp/owl_sleep.json"
-                                        },
+                                        "attachment": null,
                                         "stuffPrices": [
                                             {
-                                                "stuffId": "94164b90-7e14-4541-b9b4-599345abf8a0",
-                                                "amount": 1
+                                                "stuffId": "test-stuff-id",
+                                                "amount": 4
+                                            }
+                                        ],
+                                        "userStuffType": "PET",
+                                        "userStuffScene": "TropicalWilds",
+                                        "uuid": "test-pet-uuid",
+                                        "description": "可爱的热带小鸟",
+                                        "icon": "bird",
+                                        "name": "热带小鸟"
+                                    },
+                                    "createTime": "2025-09-02 11:17:57",
+                                    "updateTime": "2025-09-02 11:17:57",
+                                    "uuid": "test-pet-instance-uuid"
+                                }
+                            ],
+                            "CalmFields": [
+                                {
+                                    "amount": 2,
+                                    "userStuffBase": {
+                                        "attachment": null,
+                                        "stuffPrices": [
+                                            {
+                                                "stuffId": "test-stuff-id-2",
+                                                "amount": 4
                                             }
                                         ],
                                         "userStuffType": "PET",
                                         "userStuffScene": "CalmFields",
-                                        "uuid": "639a15cb-c828-4ea7-bacc-ff6e6ace41d7",
-                                        "description": "宠物2的描述",
-                                        "icon": "pet2",
-                                        "name": "宠物2"
+                                        "uuid": "test-hedgehog-uuid",
+                                        "description": "温顺的小刺猬",
+                                        "icon": "hedgehog",
+                                        "name": "田野刺猬"
                                     },
                                     "createTime": "2025-09-02 11:17:57",
-                                    "updateTime": "2025-09-05 12:01:26",
-                                    "uuid": "07ad8e4b-829b-46d2-95ba-6b64ec7a3766"
+                                    "updateTime": "2025-09-02 11:17:57",
+                                    "uuid": "test-hedgehog-instance-uuid"
                                 }
                             ],
-                            "IceSands": [null, null]
+                            "IceSands": [null]
                         },
                         "POSTER": {
                             "TropicalWilds": [null],
@@ -358,43 +589,43 @@ class AchievementManager: ObservableObject {
                                         "attachment": null,
                                         "stuffPrices": [
                                             {
-                                                "stuffId": "94164b90-7e14-4541-b9b4-599345abf8a0",
+                                                "stuffId": "test-stuff-id",
                                                 "amount": 4
                                             }
                                         ],
                                         "userStuffType": "POSTER",
                                         "userStuffScene": "CalmFields",
-                                        "uuid": "390d71dc-ed7c-45b2-a4ae-81beea557884",
-                                        "description": "海报1的描述",
+                                        "uuid": "test-poster-uuid",
+                                        "description": "宁静田野的美丽海报",
                                         "icon": "poster1",
-                                        "name": "海报1"
+                                        "name": "田野风光"
                                     },
                                     "createTime": "2025-09-02 11:17:57",
                                     "updateTime": "2025-09-02 11:17:57",
-                                    "uuid": "8c782053-86c7-4887-bf20-e880b73c17f5"
+                                    "uuid": "test-poster-instance-uuid"
                                 }
                             ],
                             "IceSands": [
                                 {
-                                    "amount": 1,
+                                    "amount": 2,
                                     "userStuffBase": {
                                         "attachment": null,
                                         "stuffPrices": [
                                             {
-                                                "stuffId": "3f010ce1-77e6-403d-a1e3-32bf1117eba3",
+                                                "stuffId": "test-ice-stuff-id",
                                                 "amount": 4
                                             }
                                         ],
                                         "userStuffType": "POSTER",
                                         "userStuffScene": "IceSands",
-                                        "uuid": "3e5b0426-4c91-4471-bfdf-33a67006f908",
-                                        "description": "海报2的描述",
+                                        "uuid": "test-ice-poster-uuid",
+                                        "description": "冰雪世界的壮丽景色",
                                         "icon": "poster2",
-                                        "name": "海报2"
+                                        "name": "冰雪奇景"
                                     },
                                     "createTime": "2025-09-02 11:17:57",
                                     "updateTime": "2025-09-02 11:17:57",
-                                    "uuid": "e3e2d466-bbae-47cc-b09c-9d4e93ab8593"
+                                    "uuid": "test-ice-poster-instance-uuid"
                                 }
                             ]
                         }
@@ -408,7 +639,7 @@ class AchievementManager: ObservableObject {
         }
         """
         
-        print("🧪 开始测试解析登录数据...")
         parseLoginDataAndGenerateAchievements(testLoginJson)
     }
+
 }

@@ -50,85 +50,32 @@ class PosterManager: ObservableObject {
     func generatePostersFromCurrentUser() {
         isLoading = true
         
-        guard let user = UserManager.shared.currentUser else {
+        // 优先使用 AchievementManager 中的数据
+        if let userData = AchievementManager.shared.currentUserData {
+            generatePostersFromLoginData(userData)
+        } else if let user = UserManager.shared.currentUser {
+            generatePostersFromUserInfo(user)
+        } else {
             generateDefaultPosters()
-            return
         }
         
-        generatePostersFromUserInfo(user)
         isLoading = false
     }
     
     /// 从登录数据的用户信息生成海报
     private func generatePostersFromLoginData(_ user: AchievementUser) {
-        var generatedPosters: [Poster] = []
-        var posterId = 1
-        
-        // 处理海报数据
-        if let posterStuffs = user.userStuffs.poster {
-            // Calm Fields 海报
-            if let calmFieldsPosters = posterStuffs.calmFields {
-                let validPosters = calmFieldsPosters.compactMap { $0 }
-                for posterStuff in validPosters {
-                    let poster = Poster(
-                        id: posterId,
-                        title: posterStuff.userStuffBase.name,
-                        description: posterStuff.userStuffBase.description,
-                        image: getImageForPoster(posterStuff.userStuffBase),
-                        isUnlocked: true,
-                        category: .calmFields,
-                        badgeNumber: posterStuff.amount
-                    )
-                    generatedPosters.append(poster)
-                    posterId += 1
-                }
-            }
-            
-            // Ice Sands 海报
-            if let iceSandsPosters = posterStuffs.iceSands {
-                let validPosters = iceSandsPosters.compactMap { $0 }
-                for posterStuff in validPosters {
-                    let poster = Poster(
-                        id: posterId,
-                        title: posterStuff.userStuffBase.name,
-                        description: posterStuff.userStuffBase.description,
-                        image: getImageForPoster(posterStuff.userStuffBase),
-                        isUnlocked: true,
-                        category: .iceSands,
-                        badgeNumber: posterStuff.amount
-                    )
-                    generatedPosters.append(poster)
-                    posterId += 1
-                }
-            }
-            
-            // Tropical Wilds 海报
-            if let tropicalPosters = posterStuffs.tropicalWilds {
-                let validPosters = tropicalPosters.compactMap { $0 }
-                for posterStuff in validPosters {
-                    let poster = Poster(
-                        id: posterId,
-                        title: posterStuff.userStuffBase.name,
-                        description: posterStuff.userStuffBase.description,
-                        image: getImageForPoster(posterStuff.userStuffBase),
-                        isUnlocked: true,
-                        category: .tropicalWilds,
-                        badgeNumber: posterStuff.amount
-                    )
-                    generatedPosters.append(poster)
-                    posterId += 1
-                }
-            }
-        }
+        // 直接使用 AchievementManager 的方法生成海报
+        let generatedPosters = AchievementManager.shared.generatePostersForPosterManager()
         
         // 添加未解锁的海报占位符
-        generatedPosters.append(contentsOf: generatePlaceholderPosters(startingId: posterId))
+        var allPosters = generatedPosters
+        allPosters.append(contentsOf: generatePlaceholderPosters(startingId: generatedPosters.count + 1))
         
         DispatchQueue.main.async {
-            self.posters = generatedPosters
+            self.posters = allPosters
         }
         
-        print("✅ 从登录数据生成了 \(generatedPosters.count) 个海报")
+        print("✅ 从登录数据生成了 \(allPosters.count) 个海报")
     }
     
     /// 从 UserInfo 生成海报（兼容现有的用户管理器）
@@ -214,18 +161,7 @@ class PosterManager: ObservableObject {
         return placeholders
     }
     
-    /// 根据海报信息获取对应的图片名称
-    private func getImageForPoster(_ posterBase: AchievementUserStuffBase) -> String {
-        // 根据海报图标或名称映射到本地图片资源
-        switch posterBase.icon.lowercased() {
-        case "poster1":
-            return "poster"
-        case "poster2":
-            return "poster"
-        default:
-            return "poster"
-        }
-    }
+
     
     /// 测试解析登录数据的方法
     func testParsePosterData() {

@@ -192,6 +192,8 @@ struct AchievementsView: View {
         // 使用 AchievementManager 来处理成就生成
         achievementManager.generateAchievementsFromCurrentUser()
     }
+    
+
 }
 
 struct Achievement: Identifiable {
@@ -202,6 +204,18 @@ struct Achievement: Identifiable {
     let isUnlocked: Bool
     let category: AchievementCategory
     let badgeNumber: Int?
+    let isRemoteImage: Bool // 新增字段，标识是否为远程图片
+    
+    init(id: Int, title: String, description: String, image: String, isUnlocked: Bool, category: AchievementCategory, badgeNumber: Int?, isRemoteImage: Bool = false) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.image = image
+        self.isUnlocked = isUnlocked
+        self.category = category
+        self.badgeNumber = badgeNumber
+        self.isRemoteImage = isRemoteImage
+    }
 }
 
 enum AchievementCategory: String, CaseIterable {
@@ -293,11 +307,26 @@ struct AchievementCard: View {
                     VStack {
                         if achievement.isUnlocked {
                             // 解锁的成就显示图片
-                            Image(achievement.image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
+                            if achievement.isRemoteImage {
+                                // 显示远程图片
+                                AsyncImage(url: URL(string: achievement.image)) { image in
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                } placeholder: {
+                                    ProgressView()
+                                        .frame(width: 96, height: 100)
+                                }
                                 .frame(width: 96, height: 100)
                                 .offset(x: 16, y: 24)
+                            } else {
+                                // 显示本地图片
+                                Image(achievement.image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 96, height: 100)
+                                    .offset(x: 16, y: 24)
+                            }
                         } else {
                         }
                     }
