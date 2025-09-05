@@ -190,6 +190,12 @@ class ConcentrationService: ObservableObject {
         print("🧹 专注计时状态已清除")
     }
     
+    // MARK: - 手动停止（不调用API）
+    func manualStop() {
+        print("🛑 手动停止专注计时，不调用结束接口")
+        clearState()
+    }
+    
     // MARK: - 检查当前状态
     func printCurrentState() {
         print("📊 当前专注计时状态:")

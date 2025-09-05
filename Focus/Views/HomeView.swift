@@ -365,11 +365,11 @@ struct HomeView: View {
                         if focusTime > 0 {
                             focusTime -= 1
                         } else {
-                            // 计时结束，先切换到成体动画，然后调用结束接口
+                            // 计时自然结束，先切换到成体动画，然后调用结束接口
                             concentrationService.switchToAdultAnimation()
                             // 延迟3秒显示成体动画，然后结束计时
                             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                                endConcentrationSession()
+                                naturalEndConcentrationSession()
                             }
                         }
                     }
@@ -401,13 +401,35 @@ struct HomeView: View {
         timer = nil
         isTimerRunning = false
         
-        // 如果有正在进行的专注计划，调用结束接口
-        if concentrationService.currentPlan != nil {
-            endConcentrationSession()
+        // 手动停止时，只清理本地状态，不调用结束接口
+        manualStopConcentration()
+    }
+    
+    private func manualStopConcentration() {
+        // 手动停止专注计时，只清理本地状态，不调用服务器结束接口
+        Task {
+            await MainActor.run {
+                // 清理UI状态
+                timer?.invalidate()
+                timer = nil
+                isTimerRunning = false
+                
+                // 重置计时器时间
+                focusTime = selectedMinutes * 60
+                
+                // 清除动画
+                lottieAnimationManager.clearAnimation()
+                
+                // 只清理本地状态，不调用API
+                concentrationService.manualStop()
+                
+                print("🛑 手动停止专注计时（未调用结束接口）")
+            }
         }
     }
     
-    private func endConcentrationSession() {
+    private func naturalEndConcentrationSession() {
+        // 计时器自然结束，调用结束接口获取奖励
         guard concentrationService.currentPlan != nil else {
             return
         }
@@ -428,9 +450,14 @@ struct HomeView: View {
                 // 清除动画
                 lottieAnimationManager.clearAnimation()
                 
-                print("✅ 专注计时会话结束")
+                print("✅ 专注计时自然结束，已获取奖励")
             }
         }
+    }
+    
+    private func endConcentrationSession() {
+        // 保留原方法以防其他地方调用
+        naturalEndConcentrationSession()
     }
 
     private func timeString(from seconds: Int) -> String {
