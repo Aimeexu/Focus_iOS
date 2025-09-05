@@ -96,8 +96,9 @@ struct ConcentrationEndData: Codable {
 }
 
 struct ConcentrationUserStuff: Codable {
+    let uuid: String
     let amount: Int
-    let userStuffBaseId: String
+    let userStuffBase: UserStuffBase
     let createTime: String?
     let updateTime: String?
 }
@@ -123,6 +124,7 @@ struct UserStuffBase: Codable, Identifiable {
     let description: String
     let icon: String
     let userStuffType: UserStuffType
+    let userStuffScene: String?
     let stuffPrices: [StuffPrice]
     let attachment: StuffAttachment?
     
@@ -298,6 +300,42 @@ class StuffManager: ObservableObject {
         errorMessage = nil
     }
     
+    // 解析专注计时结束响应
+    func parseConcentrationEndResponse(_ jsonString: String) -> ConcentrationEndResponse? {
+        guard let data = jsonString.data(using: .utf8) else {
+            print("❌ 无法将字符串转换为Data")
+            return nil
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(ConcentrationEndResponse.self, from: data)
+            print("✅ 成功解析专注计时结束响应")
+            print("📋 获得物品: \(response.data?.userStuff.userStuffBase.name ?? "未知")")
+            print("📦 获得数量: \(response.data?.userStuff.amount ?? 0)")
+            return response
+        } catch {
+            print("❌ 解析专注计时结束响应失败: \(error)")
+            
+            // 详细错误信息
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    print("❌ 缺少键: \(key.stringValue), 路径: \(context.codingPath)")
+                case .typeMismatch(let type, let context):
+                    print("❌ 类型不匹配: 期望 \(type), 路径: \(context.codingPath)")
+                case .valueNotFound(let type, let context):
+                    print("❌ 值未找到: \(type), 路径: \(context.codingPath)")
+                case .dataCorrupted(let context):
+                    print("❌ 数据损坏: \(context.debugDescription), 路径: \(context.codingPath)")
+                @unknown default:
+                    print("❌ 未知解码错误: \(error)")
+                }
+            }
+            return nil
+        }
+    }
+    
     // 解析专注计划启动响应
     func parseConcentrationStartResponse(_ jsonString: String) -> ConcentrationStartResponse? {
         guard let data = jsonString.data(using: .utf8) else {
@@ -333,6 +371,44 @@ class StuffManager: ObservableObject {
                 }
             }
             return nil
+        }
+    }
+    
+    // 测试解析结束响应方法
+    func testParseEndResponse() {
+        let testJson = """
+        {"data":{"userStuff":{"amount":3,"uuid":"07ad8e4b-829b-46d2-95ba-6b64ec7a3766","userStuffBase":{"uuid":"639a15cb-c828-4ea7-bacc-ff6e6ace41d7","userStuffType":"PET","userStuffScene":"CalmFields","icon":"pet2","name":"宠物2","description":"宠物2的描述","attachment":{"child":"http://www.cdbolv.com/assets/file/fp/owl_child.json","adult":"http://www.cdbolv.com/assets/file/fp/owl_adult.json","sleep":"http://www.cdbolv.com/assets/file/fp/owl_sleep.json"},"stuffPrices":[{"stuffId":"94164b90-7e14-4541-b9b4-599345abf8a0","amount":1}]},"createTime":"2025-09-02 11:17:57","updateTime":"2025-09-05 11:56:39"}},"status":"success","code":"","message":"","errors":null}
+        """
+        
+        print("🧪 开始测试结束响应解析...")
+        if let response = parseConcentrationEndResponse(testJson) {
+            print("🎉 测试成功！")
+            if let data = response.data {
+                let userStuff = data.userStuff
+                print("📊 详细信息:")
+                print("   - 物品UUID: \(userStuff.uuid)")
+                print("   - 获得数量: \(userStuff.amount)")
+                print("   - 物品名称: \(userStuff.userStuffBase.name)")
+                print("   - 物品类型: \(userStuff.userStuffBase.userStuffType)")
+                print("   - 物品场景: \(userStuff.userStuffBase.userStuffScene ?? "无")")
+                print("   - 创建时间: \(userStuff.createTime ?? "无")")
+                print("   - 更新时间: \(userStuff.updateTime ?? "无")")
+                
+                if let attachment = userStuff.userStuffBase.attachment {
+                    print("   - 动画文件:")
+                    if let child = attachment.child {
+                        print("     * 幼体: \(child)")
+                    }
+                    if let adult = attachment.adult {
+                        print("     * 成体: \(adult)")
+                    }
+                    if let sleep = attachment.sleep {
+                        print("     * 睡眠: \(sleep)")
+                    }
+                }
+            }
+        } else {
+            print("❌ 测试失败")
         }
     }
     
