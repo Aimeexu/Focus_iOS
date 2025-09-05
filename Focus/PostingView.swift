@@ -8,70 +8,60 @@
 import SwiftUI
 
 struct PostingView: View {
-    // 发布数据
-    let posts = [
-        Post(id: 1, title: "Morning Focus", description: "Completed 2 hours of deep work", image: "owl", category: .morningFocus, badgeNumber: 3),
-        Post(id: 2, title: "Study Session", description: "Finished reading chapter 5", image: "hedgehog", category: .morningFocus, badgeNumber: 8),
-        Post(id: 3, title: "Evening Meditation", description: "30 minutes of mindfulness", image: "question", category: .eveningCalm, badgeNumber: nil),
-        Post(id: 4, title: "Night Reading", description: "Read before sleep", image: "question", category: .eveningCalm, badgeNumber: nil),
-        Post(id: 5, title: "Weekend Project", description: "Worked on personal project", image: "question", category: .weekendVibes, badgeNumber: nil),
-        Post(id: 6, title: "Creative Time", description: "Drawing and sketching", image: "question", category: .weekendVibes, badgeNumber: nil)
-    ]
+    @StateObject private var posterManager = PosterManager.shared
+    @StateObject private var userManager = UserManager.shared
     
     var body: some View {
-        // 发布分类列表
+        Group {
+            if posterManager.isLoading {
+                loadingView
+            } else {
+                postersList
+            }
+        }
+        .onAppear {
+            loadPostersFromUserData()
+        }
+        .onChange(of: userManager.currentUser) { _ in
+            loadPostersFromUserData()
+        }
+    }
+    
+    // MARK: - 子视图
+    
+    private var loadingView: some View {
+        VStack {
+            ProgressView("加载海报数据...")
+                .font(.appBody())
+                .foregroundColor(AppColors.Text.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var postersList: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 30) {
-                ForEach(PostCategory.allCases, id: \.self) { category in
-                    PostSection(category: category, posts: posts.filter { $0.category == category })
+                ForEach(PosterCategory.allCases, id: \.self) { category in
+                    PosterSection(
+                        category: category,
+                        posters: posterManager.posters.filter { $0.category == category }
+                    )
                 }
             }
             .padding(.top, 30)
             .padding(.bottom, 120) // 为TabBar留出空间
         }
     }
-}
-
-struct Post: Identifiable {
-    let id: Int
-    let title: String
-    let description: String
-    let image: String
-    let category: PostCategory
-    let badgeNumber: Int?
-}
-
-enum PostCategory: CaseIterable {
-    case morningFocus
-    case eveningCalm
-    case weekendVibes
     
-    var sideLabel: String {
-        switch self {
-        case .morningFocus:
-            return "Morning Focus"
-        case .eveningCalm:
-            return "Evening Calm"
-        case .weekendVibes:
-            return "Weekend Vibes"
-        }
-    }
-    
-    var sideLabelColor: Color {
-        switch self {
-        case .morningFocus:
-            return AppColors.Brand.primary
-        case .eveningCalm:
-            return AppColors.Semantic.oliveGreen
-        case .weekendVibes:
-            return AppColors.Semantic.beige
-        }
+    /// 从用户数据加载海报
+    private func loadPostersFromUserData() {
+        posterManager.generatePostersFromCurrentUser()
     }
 }
 
-struct PostSection: View {
-    let category: PostCategory
-    let posts: [Post]
+struct PosterSection: View {
+    let category: PosterCategory
+    let posters: [Poster]
     
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
@@ -88,11 +78,11 @@ struct PostSection: View {
             }
             .frame(width: 30)
             
-            // 右侧可滚动的发布卡片
+            // 右侧可滚动的海报卡片
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
-                    ForEach(posts) { post in
-                        PostCard(post: post)
+                    ForEach(posters) { poster in
+                        PosterCard(poster: poster)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -101,8 +91,8 @@ struct PostSection: View {
     }
 }
 
-struct PostCard: View {
-    let post: Post
+struct PosterCard: View {
+    let poster: Poster
     
     var body: some View {
         ZStack {
@@ -115,21 +105,21 @@ struct PostCard: View {
                 .cornerRadius(16)
                 .overlay(
                     VStack {
-                        if post.image != "question" {
-                            // 有内容的发布显示图片
-                            Image(post.image)
+                        if poster.isUnlocked {
+                            // 解锁的海报显示图片
+                            Image(poster.image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 96, height: 100)
                                 .offset(x: 16, y: 24)
                         } else {
-                        
+                            // 未解锁的海报显示问号
                         }
                     }
                 )
             
             // 徽章数字（左上角）
-            if let badgeNumber = post.badgeNumber {
+            if let badgeNumber = poster.badgeNumber {
                 VStack {
                     HStack {
                         Circle()
@@ -137,7 +127,7 @@ struct PostCard: View {
                             .frame(width: 28, height: 28)
                             .overlay(
                                 Text("\(badgeNumber)")
-                                    .font(.appNumber(size: 14))
+                                    .font(.appButton(size: 14))
                                     .foregroundColor(AppColors.Text.inverse)
                             )
                             .offset(x: 22, y: 14)

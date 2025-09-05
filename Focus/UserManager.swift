@@ -507,8 +507,9 @@ class UserManager: ObservableObject {
                 // 保存登录信息
                 saveLoginData(authData, loginMethod: "achievement")
                 
-                // 同时通知成就管理器更新成就
+                // 同时通知成就管理器和海报管理器更新数据
                 AchievementManager.shared.parseLoginDataAndGenerateAchievements(loginJsonString)
+                PosterManager.shared.parseLoginDataAndGeneratePosters(loginJsonString)
                 
                 print("✅ 成就登录数据保存完成")
             } else {

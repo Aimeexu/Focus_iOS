@@ -11,6 +11,7 @@ import SwiftUI
 struct AchievementUsageExample: View {
     @StateObject private var userManager = UserManager.shared
     @StateObject private var achievementManager = AchievementManager.shared
+    @StateObject private var posterManager = PosterManager.shared
     
     var body: some View {
         VStack(spacing: 20) {
@@ -51,6 +52,19 @@ struct AchievementUsageExample: View {
             }
             .padding()
             .background(Color.green.opacity(0.1))
+            .cornerRadius(12)
+            
+            // 显示海报信息
+            VStack(alignment: .leading, spacing: 8) {
+                Text("海报信息:")
+                    .font(.appHeadline())
+                
+                Text("总海报数: \(posterManager.posters.count)")
+                Text("已解锁: \(posterManager.posters.filter { $0.isUnlocked }.count)")
+                Text("未解锁: \(posterManager.posters.filter { !$0.isUnlocked }.count)")
+            }
+            .padding()
+            .background(Color.orange.opacity(0.1))
             .cornerRadius(12)
             
             // 跳转到成就页面
