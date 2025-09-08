@@ -56,6 +56,23 @@ struct AchievementUserStuffs: Codable {
         case pet = "PET"
         case poster = "POSTER"
     }
+    
+    // 获取所有用户物品
+    var allUserStuffs: [AchievementUserStuff] {
+        var allStuffs: [AchievementUserStuff] = []
+        
+        // 添加所有宠物
+        if let petStuffs = pet?.allPets {
+            allStuffs.append(contentsOf: petStuffs)
+        }
+        
+        // 添加所有海报
+        if let posterStuffs = poster?.allPosters {
+            allStuffs.append(contentsOf: posterStuffs)
+        }
+        
+        return allStuffs
+    }
 }
 
 struct AchievementPetStuffs: Codable {

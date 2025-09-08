@@ -30,28 +30,7 @@ struct UserProfileView: View {
                                         .fontWeight(.bold)
                                         .foregroundColor(.blue)
                                 )
-                            
-                            // 昵称编辑
-                            if isEditingNickname {
-                                HStack {
-                                    TextField("昵称", text: $newNickname)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    
-                                    Button("保存") {
-                                        if !newNickname.isEmpty {
-                                            userManager.updateUserNickname(newNickname)
-                                            isEditingNickname = false
-                                        }
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    
-                                    Button("取消") {
-                                        newNickname = user.nickname
-                                        isEditingNickname = false
-                                    }
-                                    .buttonStyle(.bordered)
-                                }
-                            } else {
+
                                 HStack {
                                     Text(user.nickname)
                                         .font(.title2)
@@ -65,8 +44,7 @@ struct UserProfileView: View {
                                             .foregroundColor(.blue)
                                     }
                                 }
-                            }
-                            
+
                             Text(user.account)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -93,112 +71,6 @@ struct UserProfileView: View {
                             .cornerRadius(12)
                             .shadow(radius: 1)
                         }
-                        
-                        // 频道信息
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("频道信息")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 12) {
-                                InfoRow(title: "频道ID", value: user.channel.uuid)
-                                InfoRow(title: "频道类型", value: user.channel.channelType ?? "未知")
-                                InfoRow(title: "频道描述", value: user.channel.description)
-                            }
-                            .padding()
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
-                            .shadow(radius: 1)
-                        }
-                        
-                        // 用户设置
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("设置")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 12) {
-                                HStack {
-                                    Text("背景音乐")
-                                        .font(.body)
-                                    
-                                    Spacer()
-                                    
-                                    Picker("背景音乐", selection: Binding(
-                                        get: { userManager.getBackgroundMusic() },
-                                        set: { userManager.updateBackgroundMusic($0) }
-                                    )) {
-                                        Text("默认").tag("default")
-                                        Text("雨声").tag("rain")
-                                        Text("海浪").tag("wave")
-                                        Text("森林").tag("forest")
-                                        Text("静音").tag("silent")
-                                    }
-                                    .pickerStyle(MenuPickerStyle())
-                                }
-                            }
-                            .padding()
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
-                            .shadow(radius: 1)
-                        }
-                        
-                        // 用户物品
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("我的物品")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            let userStuffs = userManager.getUserStuffs()
-                            
-                            if userStuffs.isEmpty {
-                                Text("暂无物品")
-                                    .foregroundColor(.secondary)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(.systemBackground))
-                                    .cornerRadius(12)
-                                    .shadow(radius: 1)
-                            } else {
-                                LazyVStack(spacing: 8) {
-                                    ForEach(userStuffs, id: \.userStuffBaseId) { stuff in
-                                        HStack {
-                                            VStack(alignment: .leading) {
-                                                Text("物品ID: \(stuff.userStuffBaseId)")
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
-                                                
-                                                if !stuff.createTime.isEmpty {
-                                                    Text("获得时间: \(stuff.createTime)")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                            Text("x\(stuff.amount)")
-                                                .font(.headline)
-                                                .foregroundColor(.blue)
-                                        }
-                                        .padding(.horizontal)
-                                        .padding(.vertical, 8)
-                                        .background(Color(.systemGray6))
-                                        .cornerRadius(8)
-                                    }
-                                }
-                                .padding()
-                                .background(Color(.systemBackground))
-                                .cornerRadius(12)
-                                .shadow(radius: 1)
-                            }
-                        }
-                        
-                        // 调试信息按钮
-                        Button("查看调试信息") {
-                            userManager.printAllUserDefaults()
-                        }
-                        .buttonStyle(.bordered)
                         
                         // 登出按钮
                         Button("登出") {

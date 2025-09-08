@@ -1078,7 +1078,7 @@ extension NetworkManager {
     ///   - timeZone: 时区
     ///   - identityToken: Apple身份令牌
     /// - Returns: Apple登录响应
-    func appleLogin(operateDate: String, timeZone: String, identityToken: String) async throws -> AppleSignInResponse {
+    func appleLogin(operateDate: String, timeZone: String, identityToken: String) async throws -> AchievementLoginResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/login/apple"
         let url = baseURL + endpoint
@@ -1102,7 +1102,7 @@ extension NetworkManager {
             url: url,
             parameters: parameters,
             headers: headers,
-            responseType: AppleSignInResponse.self
+            responseType: AchievementLoginResponse.self
         )
     }
     

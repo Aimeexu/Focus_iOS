@@ -69,7 +69,6 @@ struct UserSettings: Codable, Equatable {
 struct UserStuff: Codable, Equatable {
     let amount: Int
     let createTime: String
-    let userStuffBaseId: String
     let updateTime: String
 }
 

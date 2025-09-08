@@ -278,7 +278,6 @@ struct UserManagerTestView: View {
         let newStuff = UserStuff(
             amount: Int.random(in: 1...10),
             createTime: DateFormatter().string(from: Date()),
-            userStuffBaseId: "test_stuff_\(UUID().uuidString)",
             updateTime: DateFormatter().string(from: Date())
         )
         

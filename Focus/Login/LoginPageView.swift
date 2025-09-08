@@ -192,14 +192,14 @@ struct LoginPageView: View {
                 await MainActor.run {
                     if response.success {
                         isLoggedIn = true
-                        print("✅ 登录成功: \(response.message ?? "")")
+                        print("✅ 登录成功: \(response.message)")
                         
                         // 登录状态已由 UserManager 自动处理
                         // 发送登录成功通知
                         NotificationCenter.default.post(name: .userDidLogin, object: nil)
                     } else {
-                        errorMessage = response.message ?? "登录失败"
-                        print("❌ 登录失败: \(response.message ?? "未知错误")")
+                        errorMessage = response.message
+                        print("❌ 登录失败: \(response.message)")
                     }
                     isLoading = false
                 }

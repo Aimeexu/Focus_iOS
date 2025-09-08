@@ -109,7 +109,8 @@ class UserManager: ObservableObject {
     }
     
     // MARK: - 保存Apple登录信息
-    func saveAppleLoginData(_ appleLoginData: AppleLoginData, loginMethod: String = "apple") {
+    func saveAppleLoginData(_ appleLoginData: AchievementLoginData, loginMethod: String = "apple") {
+        // 方法内容保持不变，但使用AchievementLoginData类型
         let userDefaults = UserDefaults.standard
         
         // 保存认证信息
@@ -142,7 +143,6 @@ class UserManager: ObservableObject {
             UserStuff(
                 amount: appleStuff.amount,
                 createTime: appleStuff.createTime ?? "",
-                userStuffBaseId: appleStuff.userStuffBaseId,
                 updateTime: appleStuff.updateTime ?? ""
             )
         }
@@ -532,7 +532,6 @@ class UserManager: ObservableObject {
                 let userStuff = UserStuff(
                     amount: pet.amount,
                     createTime: pet.createTime,
-                    userStuffBaseId: pet.userStuffBase.uuid,
                     updateTime: pet.updateTime
                 )
                 userStuffs.append(userStuff)
@@ -546,7 +545,6 @@ class UserManager: ObservableObject {
                 let userStuff = UserStuff(
                     amount: poster.amount,
                     createTime: poster.createTime,
-                    userStuffBaseId: poster.userStuffBase.uuid,
                     updateTime: poster.updateTime
                 )
                 userStuffs.append(userStuff)
@@ -647,7 +645,7 @@ extension AuthService {
 
 // MARK: - AppleSignInService 扩展，集成 UserManager
 extension AppleSignInService {
-    func saveAppleAuthData(_ appleLoginData: AppleLoginData) {
+    func saveAppleAuthData(_ appleLoginData: AchievementLoginData) {
         UserManager.shared.saveAppleLoginData(appleLoginData, loginMethod: "apple")
     }
 }

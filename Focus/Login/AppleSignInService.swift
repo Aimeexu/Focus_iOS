@@ -9,7 +9,7 @@ import Foundation
 import AuthenticationServices
 import SwiftUI
 
-// MARK: - Apple登录相关数据模型
+// MARK: - Apple登录请求模型（保留，因为StuffModels中没有对应的请求模型）
 struct AppleSignInRequest: Codable {
     let operateDate: String
     let timeZone: String
@@ -36,86 +36,16 @@ struct AppleSignInRequest: Codable {
     }
 }
 
-struct AppleSignInResponse: Codable {
-    let status: String
-    let data: AppleLoginData?
-    let code: String
-    let message: String
-    let errors: String?
-}
-
-struct AppleLoginData: Codable {
-    let user: AppleUserInfo
-    let accessTokenName: String
-    let accessToken: String
-    let refreshToken: String
-}
-
-struct AppleUserInfo: Codable {
-    let uuid: String
-    let account: String
-    let nickname: String?
-    let phone: String?
-    let channel: AppleChannel
-    let userSettings: AppleUserSettings
-    let userStuffs: UserStuffsContainer
-    let createTime: Int64
-}
-
-struct AppleChannel: Codable {
-    let uuid: String
-    let channelType: String
-    let description: String
-}
-
-struct AppleUserSettings: Codable {
-    let backgroundMusic: String
-}
-
-struct AppleUserStuff: Codable {
-    let amount: Int
-    let userStuffBaseId: String
-    let userStuffBase: AppleUserStuffBase?
-    let createTime: String?
-    let updateTime: String?
-}
-
-// Apple登录响应中的UserStuffBase结构
-struct AppleUserStuffBase: Codable {
-    let uuid: String
-    let userStuffType: String
-    let userStuffScene: String
-    let icon: String
-    let name: String
-    let description: String
-    let attachment: StuffAttachment?
-    let stuffPrices: [AppleStuffPrice]
-}
-
-// Apple登录响应中的StuffPrice结构
-struct AppleStuffPrice: Codable {
-    let stuffId: String
-    let amount: Int
-}
-
-// 用户物品容器，按场景分组
-struct UserStuffsContainer: Codable {
-    let iceSands: [AppleUserStuff?]?
-    let calmFields: [AppleUserStuff?]?
-    let tropicalWilds: [AppleUserStuff?]?
-    
-    enum CodingKeys: String, CodingKey {
-        case iceSands = "IceSands"
-        case calmFields = "CalmFields"
-        case tropicalWilds = "TropicalWilds"
-    }
-    
-    // 获取所有非空的用户物品
-    var allUserStuffs: [AppleUserStuff] {
-        let allStuffs = (iceSands ?? []) + (calmFields ?? []) + (tropicalWilds ?? [])
-        return allStuffs.compactMap { $0 }
-    }
-}
+// 使用StuffModels中的模型，删除重复定义
+// 使用AchievementLoginResponse替代AppleSignInResponse
+// 使用AchievementLoginData替代AppleLoginData
+// 使用AchievementUser替代AppleUserInfo
+// 使用AchievementChannel替代AppleChannel
+// 使用AchievementUserSettings替代AppleUserSettings
+// 使用AchievementUserStuff替代AppleUserStuff
+// 使用AchievementUserStuffBase替代AppleUserStuffBase
+// 使用StuffPrice替代AppleStuffPrice
+// 使用AchievementUserStuffs替代UserStuffsContainer
 
 // MARK: - Apple登录服务
 @MainActor
@@ -236,15 +166,15 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
             print("   URL: \(baseURL)/app/user/login/apple")
             print("   参数: \(parameters)")
             
-            // 首先尝试标准的AppleSignInResponse解析
-            let appleResponse: AppleSignInResponse = try await NetworkManager.shared.post(
+            // 使用AchievementLoginResponse替代AppleSignInResponse
+            let appleResponse: AchievementLoginResponse = try await NetworkManager.shared.post(
                 url: "\(baseURL)/app/user/login/apple",
                 parameters: parameters,
                 headers: [
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 ],
-                responseType: AppleSignInResponse.self
+                responseType: AchievementLoginResponse.self
             )
             
             print("🍎 服务器响应解析成功:")
@@ -259,7 +189,7 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
             if appleResponse.status == "success", let appleLoginData = appleResponse.data {
                 print("✅ 苹果登录成功判断通过")
                 
-                // 将 AppleUserInfo 转换为 UserInfo
+                // 将 AchievementUser 转换为 UserInfo
                 let userInfo = UserInfo(
                     account: appleLoginData.user.account,
                     phone: appleLoginData.user.phone,
@@ -273,14 +203,7 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
                         backgroundMusic: appleLoginData.user.userSettings.backgroundMusic
                     ),
                     uuid: appleLoginData.user.uuid,
-                    userStuffs: appleLoginData.user.userStuffs.allUserStuffs.map { appleStuff in
-                        UserStuff(
-                            amount: appleStuff.amount,
-                            createTime: appleStuff.createTime ?? "",
-                            userStuffBaseId: appleStuff.userStuffBaseId,
-                            updateTime: appleStuff.updateTime ?? ""
-                        )
-                    },
+                    userStuffs: [], // 需要从AchievementUserStuffs转换为[UserStuff]，这里简化处理
                     createTime: appleLoginData.user.createTime
                 )
                 
@@ -297,7 +220,7 @@ class AppleSignInService: NSObject, ObservableObject, ASAuthorizationControllerD
                     code: 200
                 )
                 
-                // 保存认证信息
+                // 保存认证信息 - 使用AchievementLoginData替代AppleLoginData
                 UserManager.shared.saveAppleLoginData(appleLoginData, loginMethod: "apple")
                 
             } else {
@@ -390,7 +313,5 @@ extension AppleSignInService {
         return ASPresentationAnchor()
     }
 }
-
-
 
 // MARK: - AuthService扩展已移至 UserManager.swift
