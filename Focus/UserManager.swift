@@ -29,6 +29,7 @@ class UserManager: ObservableObject {
         
         // 用户基本信息
         static let userInfo = "user_info"
+        static let userAchievement = "user_chievement"
         static let userUUID = "user_uuid"
         static let userAccount = "user_account"
         static let userNickname = "user_nickname"
@@ -142,8 +143,8 @@ class UserManager: ObservableObject {
         let standardUserStuffs = user.userStuffs.allUserStuffs.map { appleStuff in
             UserStuff(
                 amount: appleStuff.amount,
-                createTime: appleStuff.createTime ?? "",
-                updateTime: appleStuff.updateTime ?? ""
+                createTime: appleStuff.createTime,
+                updateTime: appleStuff.updateTime
             )
         }
         
@@ -172,7 +173,11 @@ class UserManager: ObservableObject {
         if let userData = try? JSONEncoder().encode(standardUserInfo) {
             userDefaults.set(userData, forKey: Keys.userInfo)
         }
-        
+
+        if let userAchievement = try? JSONEncoder().encode(user.userStuffs) {
+            userDefaults.set(userAchievement, forKey: Keys.userAchievement)
+        }
+
         // 保存登录状态和方式
         userDefaults.set(true, forKey: Keys.isLoggedIn)
         userDefaults.set(Date(), forKey: Keys.lastLoginDate)
@@ -333,7 +338,16 @@ class UserManager: ObservableObject {
         }
         return stuffs
     }
-    
+
+
+    func getUserAchievement() -> AchievementUserStuffs? {
+        guard let userStuffsData = UserDefaults.standard.data(forKey: Keys.userAchievement),
+              let stuffs = try? JSONDecoder().decode(AchievementUserStuffs.self, from: userStuffsData) else {
+            return nil
+        }
+        return stuffs
+    }
+
     // MARK: - 更新用户信息
     func updateUserNickname(_ nickname: String) {
         UserDefaults.standard.set(nickname, forKey: Keys.userNickname)

@@ -78,10 +78,13 @@ class AchievementManager: ObservableObject {
     func generateAchievementsFromCurrentUser() {
         isLoading = true
 
+        let userAchievement = UserManager.shared.getUserAchievement
+        generateAchievementsFromLoginData(userAchievement)
+
         // 优先使用已保存的完整登录数据
         if let userData = currentUserData {
             print("🎯 使用已保存的完整用户数据生成成就...")
-            generateAchievementsFromLoginData(userData)
+//            generateAchievementsFromLoginData(userData)
         } else if let user = UserManager.shared.currentUser {
             print("⚠️ 使用简化的用户信息生成成就...")
             generateAchievementsFromUserInfo(user)
@@ -98,29 +101,29 @@ class AchievementManager: ObservableObject {
         return currentUserData != nil
     }
     
-    /// 强制重新从登录数据生成成就（用于调试）
-    func forceRegenerateFromLoginData() {
-        guard let userData = currentUserData else {
-            print("❌ 没有完整的登录数据可用于重新生成")
-            return
-        }
-        
-        print("🔄 强制重新从登录数据生成成就...")
-        generateAchievementsFromLoginData(userData)
-    }
+//    /// 强制重新从登录数据生成成就（用于调试）
+//    func forceRegenerateFromLoginData() {
+//        guard let userData = currentUserData else {
+//            print("❌ 没有完整的登录数据可用于重新生成")
+//            return
+//        }
+//        
+//        print("🔄 强制重新从登录数据生成成就...")
+//        generateAchievementsFromLoginData(userData)
+//    }
 
     /// 从登录数据的用户信息生成成就
-    private func generateAchievementsFromLoginData(_ user: AchievementUser) {
+    func generateAchievementsFromLoginData(_ userStuffs: AchievementUserStuffs) {
         print("🎯 开始从登录数据生成成就...")
         
         // 保存用户数据的引用
-        self.currentUserData = user
+//        self.currentUserData = user
         
         var generatedAchievements: [Achievement] = []
         var achievementId = 1
 
         // 处理宠物成就
-        if let petStuffs = user.userStuffs.pet {
+        if let petStuffs = userStuffs.pet {
             // Calm Fields 宠物成就
             if let calmFieldsPets = petStuffs.calmFields {
                 let validPets = calmFieldsPets.compactMap { $0 }
@@ -180,7 +183,7 @@ class AchievementManager: ObservableObject {
         }
 
         // 处理海报成就
-        if let posterStuffs = user.userStuffs.poster {
+        if let posterStuffs = userStuffs.poster {
             // Calm Fields 海报成就
             if let calmFieldsPosters = posterStuffs.calmFields {
                 let validPosters = calmFieldsPosters.compactMap { $0 }
