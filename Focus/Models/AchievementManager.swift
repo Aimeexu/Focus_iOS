@@ -76,7 +76,8 @@ class AchievementManager: ObservableObject {
         isLoading = true
 
         if let userAchievement = UserManager.shared.getUserAchievement() {
-            generateAchievementsFromLoginData(userAchievement)
+//            generateAchievementsFromLoginData(userAchievement)
+            self.achievements = generateAchievements(from: userAchievement, startingId: 1000)
         }
 
         // 优先使用已保存的完整登录数据
@@ -258,6 +259,101 @@ class AchievementManager: ObservableObject {
         }
 
         print("✅ 从登录数据生成了 \(generatedAchievements.count) 个成就")
+    }
+
+    func generateAchievements(from userStuffs: AchievementUserStuffs, startingId: Int) -> [Achievement] {
+        var results: [Achievement] = []
+        var id = startingId
+
+        // 处理 PET
+        if let pet = userStuffs.pet {
+            let categories: [(AchievementCategory, [AchievementUserStuff?]?)] = [
+                (.tropicalWilds, pet.tropicalWilds),
+                (.calmFields, pet.calmFields),
+                (.iceSands, pet.iceSands)
+            ]
+
+            for (category, stuffs) in categories {
+                let array = stuffs ?? []
+                for (index, stuff) in array.enumerated() {
+                    if let s = stuff {
+                        // 真实成就
+                        let achievement = Achievement(
+                            id: id,
+                            title: s.userStuffBase.name,
+                            description: s.userStuffBase.description,
+                            image: s.userStuffBase.icon,
+                            isUnlocked: true,
+                            category: category,
+                            badgeNumber: s.amount,
+                            isRemoteImage: true,
+                            tab: .friends
+                        )
+                        results.append(achievement)
+                    } else {
+                        // 占位成就
+                        let achievement = Achievement(
+                            id: id,
+                            title: "未解锁成就 \(index + 1)",
+                            description: "在 \(category) 场景中获得更多物品来解锁",
+                            image: "question",
+                            isUnlocked: false,
+                            category: category,
+                            badgeNumber: nil,
+                            isRemoteImage: false,
+                            tab: .friends
+                        )
+                        results.append(achievement)
+                    }
+                    id += 1
+                }
+            }
+        }
+
+        // 处理 POSTER
+        if let poster = userStuffs.poster {
+            let categories: [(AchievementCategory, [AchievementUserStuff?]?)] = [
+                (.tropicalWilds, poster.tropicalWilds),
+                (.calmFields, poster.calmFields),
+                (.iceSands, poster.iceSands)
+            ]
+
+            for (category, stuffs) in categories {
+                let array = stuffs ?? []
+                for (index, stuff) in array.enumerated() {
+                    if let s = stuff {
+                        let achievement = Achievement(
+                            id: id,
+                            title: s.userStuffBase.name,
+                            description: s.userStuffBase.description,
+                            image: s.userStuffBase.icon,
+                            isUnlocked: true,
+                            category: category,
+                            badgeNumber: s.amount,
+                            isRemoteImage: true,
+                            tab: .posting
+                        )
+                        results.append(achievement)
+                    } else {
+                        let achievement = Achievement(
+                            id: id,
+                            title: "未解锁成就 \(index + 1)",
+                            description: "在 \(category) 场景中获得更多物品来解锁",
+                            image: "question",
+                            isUnlocked: false,
+                            category: category,
+                            badgeNumber: nil,
+                            isRemoteImage: false,
+                            tab: .posting
+                        )
+                        results.append(achievement)
+                    }
+                    id += 1
+                }
+            }
+        }
+
+        return results
     }
 
 

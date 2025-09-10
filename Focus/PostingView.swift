@@ -8,9 +8,12 @@
 import SwiftUI
 
 struct PostingView: View {
-    @StateObject private var posterManager = PosterManager.shared
+    @StateObject private var posterManager = AchievementManager.shared
     @StateObject private var userManager = UserManager.shared
-    
+
+    @State private var showShareView = false
+    @State private var selectedAchievement: Achievement?
+
     var body: some View {
         Group {
             if posterManager.isLoading {
@@ -41,10 +44,11 @@ struct PostingView: View {
     private var postersList: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 30) {
-                ForEach(PosterCategory.allCases, id: \.self) { category in
+                ForEach(AchievementCategory.allCases, id: \.self) { category in
                     PosterSection(
                         category: category,
-                        posters: posterManager.posters.filter { $0.category == category }
+                        achievements: posterManager.achievements.filter { $0.category == category && $0.tab == .posting },
+                        onAchievementTap: handleAchievementTap
                     )
                 }
             }
@@ -55,14 +59,22 @@ struct PostingView: View {
     
     /// 从用户数据加载海报
     private func loadPostersFromUserData() {
-        posterManager.generatePostersFromCurrentUser()
+        posterManager.generateAchievementsFromCurrentUser()
+    }
+
+    private func handleAchievementTap(_ achievement: Achievement) {
+        if achievement.isUnlocked {
+            selectedAchievement = achievement
+            showShareView = true
+        }
     }
 }
 
 struct PosterSection: View {
-    let category: PosterCategory
-    let posters: [Poster]
-    
+    let category: AchievementCategory
+    let achievements: [Achievement]
+    let onAchievementTap: (Achievement) -> Void
+
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
             // 左侧分类标题
@@ -75,14 +87,20 @@ struct PosterSection: View {
                     .background(category.sideLabelColor)
                     .cornerRadius(12)
                     .padding(4)
+
             }
             .frame(width: 30)
-            
-            // 右侧可滚动的海报卡片
+
+            // 右侧可滚动的成就卡片
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
-                    ForEach(posters) { poster in
-                        PosterCard(poster: poster)
+                    ForEach(achievements) { achievement in
+                        AchievementCard(
+                            achievement: achievement,
+                            onTap: {
+                                onAchievementTap(achievement)
+                            }
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
@@ -92,8 +110,9 @@ struct PosterSection: View {
 }
 
 struct PosterCard: View {
-    let poster: Poster
-    
+    let achievement: Achievement
+    let onTap: () -> Void
+
     var body: some View {
         ZStack {
             // 主卡片 - 使用背景图片
@@ -105,43 +124,39 @@ struct PosterCard: View {
                 .cornerRadius(16)
                 .overlay(
                     VStack {
-                        if poster.isUnlocked {
-                            // 解锁的海报显示远程图片
-                            if poster.image.hasPrefix("http") {
-                                AsyncImage(url: URL(string: poster.image)) { image in
+                        if achievement.isUnlocked {
+                            // 解锁的成就显示图片
+                            if achievement.isRemoteImage {
+                                // 显示远程图片
+                                AsyncImage(url: URL(string: achievement.image)) { image in
                                     image
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
                                 } placeholder: {
                                     ProgressView()
-                                        .frame(width: 40, height: 40)
+                                        .frame(width: 96, height: 100)
                                 }
                                 .frame(width: 96, height: 100)
                                 .offset(x: 16, y: 24)
                             } else {
-                                // 本地图片
-                                Image(poster.image)
+                                // 显示本地图片
+                                Image(achievement.image)
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: 96, height: 100)
                                     .offset(x: 16, y: 24)
                             }
                         } else {
-                            // 未解锁的海报显示问号
-                            Image(systemName: "questionmark.circle.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(.gray)
-                                .offset(x: 16, y: 24)
                         }
                     }
                 )
-            
+
             // 徽章数字（左上角）
-            if let badgeNumber = poster.badgeNumber {
+            if let badgeNumber = achievement.badgeNumber {
                 VStack {
                     HStack {
                         Circle()
-                            .fill(AppColors.Semantic.error)
+                            .fill(AppColors.Brand.primary)
                             .frame(width: 28, height: 28)
                             .overlay(
                                 Text("\(badgeNumber)")
@@ -154,6 +169,9 @@ struct PosterCard: View {
                     Spacer()
                 }
             }
+        }
+        .onTapGesture {
+            onTap()
         }
     }
 }
