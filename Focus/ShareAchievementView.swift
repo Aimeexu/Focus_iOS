@@ -103,7 +103,8 @@ struct ShareAchievementView: View {
             image: "hedgehog",
             isUnlocked: true,
             category: .calmFields,
-            badgeNumber: 6
+            badgeNumber: 6,
+            tab: .friends
         ),
         isPresented: .constant(true)
     )

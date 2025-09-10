@@ -51,7 +51,6 @@ class AchievementManager: ObservableObject {
 
         guard let data = loginJsonString.data(using: .utf8) else {
             print("❌ 无法将登录数据转换为Data")
-            generateDefaultAchievements()
             return
         }
 
@@ -64,11 +63,9 @@ class AchievementManager: ObservableObject {
                 generateAchievementsFromLoginData(loginData.user)
             } else {
                 print("❌ 登录状态不成功: \(loginResponse.status)")
-                generateDefaultAchievements()
             }
         } catch {
             print("❌ 解析登录数据失败: \(error)")
-            generateDefaultAchievements()
         }
 
         isLoading = false
@@ -82,12 +79,6 @@ class AchievementManager: ObservableObject {
         if let userData = currentUserData {
             print("🎯 使用已保存的完整用户数据生成成就...")
             generateAchievementsFromLoginData(userData)
-        } else if let user = UserManager.shared.currentUser {
-            print("⚠️ 使用简化的用户信息生成成就...")
-            generateAchievementsFromUserInfo(user)
-        } else {
-            print("❌ 没有用户数据，生成默认成就...")
-            generateDefaultAchievements()
         }
 
         isLoading = false
@@ -133,7 +124,8 @@ class AchievementManager: ObservableObject {
                         isUnlocked: true,
                         category: .calmFields,
                         badgeNumber: pet.amount,
-                        isRemoteImage: true
+                        isRemoteImage: true,
+                        tab: .friends
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -152,7 +144,8 @@ class AchievementManager: ObservableObject {
                         isUnlocked: true,
                         category: .iceSands,
                         badgeNumber: pet.amount,
-                        isRemoteImage: true
+                        isRemoteImage: true,
+                        tab: .friends
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -171,7 +164,8 @@ class AchievementManager: ObservableObject {
                         isUnlocked: true,
                         category: .tropicalWilds,
                         badgeNumber: pet.amount,
-                        isRemoteImage: true
+                        isRemoteImage: true,
+                        tab: .friends
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -193,7 +187,8 @@ class AchievementManager: ObservableObject {
                         isUnlocked: true,
                         category: .calmFields,
                         badgeNumber: poster.amount,
-                        isRemoteImage: true
+                        isRemoteImage: true,
+                        tab: .posting
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -212,7 +207,8 @@ class AchievementManager: ObservableObject {
                         isUnlocked: true,
                         category: .iceSands,
                         badgeNumber: poster.amount,
-                        isRemoteImage: true
+                        isRemoteImage: true,
+                        tab: .posting
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -231,7 +227,8 @@ class AchievementManager: ObservableObject {
                         isUnlocked: true,
                         category: .tropicalWilds,
                         badgeNumber: poster.amount,
-                        isRemoteImage: true
+                        isRemoteImage: true,
+                        tab: .posting
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -240,7 +237,7 @@ class AchievementManager: ObservableObject {
         }
 
         // 添加未解锁的成就占位符
-        generatedAchievements.append(contentsOf: generatePlaceholderAchievements(startingId: achievementId))
+//        generatedAchievements.append(contentsOf: generatePlaceholderAchievements(startingId: achievementId))
 
         DispatchQueue.main.async {
             self.achievements = generatedAchievements
@@ -249,90 +246,42 @@ class AchievementManager: ObservableObject {
         print("✅ 从登录数据生成了 \(generatedAchievements.count) 个成就")
     }
 
-    /// 从 UserInfo 生成成就（兼容现有的用户管理器）
-    private func generateAchievementsFromUserInfo(_ user: UserInfo) {
-        var generatedAchievements: [Achievement] = []
-        var achievementId = 1
 
-        // 根据用户物品生成成就
-        for userStuff in user.userStuffs {
-            let achievement = Achievement(
-                id: achievementId,
-                title: "物品收集者",
-                description: "收集了物品",
-                image: "hedgehog", // 默认图标
-                isUnlocked: true,
-                category: .calmFields, // 默认分类
-                badgeNumber: userStuff.amount,
-                isRemoteImage: false
-            )
-            generatedAchievements.append(achievement)
-            achievementId += 1
-        }
-
-        // 添加未解锁的成就占位符
-        generatedAchievements.append(contentsOf: generatePlaceholderAchievements(startingId: achievementId))
-
-        DispatchQueue.main.async {
-            self.achievements = generatedAchievements
-        }
-
-        print("✅ 从用户信息生成了 \(generatedAchievements.count) 个成就")
-    }
-
-    /// 生成默认成就
-    private func generateDefaultAchievements() {
-        let defaultAchievements = [
-            Achievement(id: 1, title: "开始专注", description: "完成第一次专注", image: "hedgehog", isUnlocked: false, category: .calmFields, badgeNumber: nil, isRemoteImage: false),
-            Achievement(id: 2, title: "专注新手", description: "完成10次专注", image: "owl", isUnlocked: false, category: .calmFields, badgeNumber: nil, isRemoteImage: false),
-            Achievement(id: 3, title: "冰雪精灵", description: "在冰雪场景中专注", image: "question", isUnlocked: false, category: .iceSands, badgeNumber: nil, isRemoteImage: false),
-            Achievement(id: 4, title: "冰雪大师", description: "完成冰雪挑战", image: "question", isUnlocked: false, category: .iceSands, badgeNumber: nil, isRemoteImage: false),
-            Achievement(id: 5, title: "热带探险者", description: "在热带场景中专注", image: "question", isUnlocked: false, category: .tropicalWilds, badgeNumber: nil, isRemoteImage: false),
-            Achievement(id: 6, title: "热带大师", description: "完成热带挑战", image: "question", isUnlocked: false, category: .tropicalWilds, badgeNumber: nil, isRemoteImage: false)
-        ]
-
-        DispatchQueue.main.async {
-            self.achievements = defaultAchievements
-        }
-
-        print("✅ 生成了默认成就")
-    }
-
-    /// 生成占位符成就
-    private func generatePlaceholderAchievements(startingId: Int) -> [Achievement] {
-        var placeholders: [Achievement] = []
-        var id = startingId
-
-        // 为每个分类添加一些未解锁的成就
-        let categories: [(AchievementCategory, String)] = [
-            (.calmFields, "CalmFields"),
-            (.iceSands, "IceSands"),
-            (.tropicalWilds, "TropicalWilds")
-        ]
-
-        for (category, name) in categories {
-            // 只为没有成就的分类添加占位符
-            let existingAchievements = achievements.filter { $0.category == category && $0.isUnlocked }
-            if existingAchievements.isEmpty {
-                for i in 1...2 {
-                    let achievement = Achievement(
-                        id: id,
-                        title: "未解锁成就 \(i)",
-                        description: "在 \(name) 场景中获得更多物品来解锁",
-                        image: "question",
-                        isUnlocked: false,
-                        category: category,
-                        badgeNumber: nil,
-                        isRemoteImage: false
-                    )
-                    placeholders.append(achievement)
-                    id += 1
-                }
-            }
-        }
-
-        return placeholders
-    }
+//    /// 生成占位符成就
+//    private func generatePlaceholderAchievements(startingId: Int) -> [Achievement] {
+//        var placeholders: [Achievement] = []
+//        var id = startingId
+//
+//        // 为每个分类添加一些未解锁的成就
+//        let categories: [(AchievementCategory, String)] = [
+//            (.calmFields, "CalmFields"),
+//            (.iceSands, "IceSands"),
+//            (.tropicalWilds, "TropicalWilds")
+//        ]
+//
+//        for (category, name) in categories {
+//            // 只为没有成就的分类添加占位符
+//            let existingAchievements = achievements.filter { $0.category == category && $0.isUnlocked }
+//            if existingAchievements.isEmpty {
+//                for i in 1...2 {
+//                    let achievement = Achievement(
+//                        id: id,
+//                        title: "未解锁成就 \(i)",
+//                        description: "在 \(name) 场景中获得更多物品来解锁",
+//                        image: "question",
+//                        isUnlocked: false,
+//                        category: category,
+//                        badgeNumber: nil,
+//                        isRemoteImage: false
+//                    )
+//                    placeholders.append(achievement)
+//                    id += 1
+//                }
+//            }
+//        }
+//
+//        return placeholders
+//    }
 
     /// 根据物品信息获取对应的图片URL
     private func getImageForStuff(_ stuffBase: AchievementUserStuffBase) -> String {

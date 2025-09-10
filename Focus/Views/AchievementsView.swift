@@ -205,8 +205,9 @@ struct Achievement: Identifiable {
     let category: AchievementCategory
     let badgeNumber: Int?
     let isRemoteImage: Bool // 新增字段，标识是否为远程图片
-    
-    init(id: Int, title: String, description: String, image: String, isUnlocked: Bool, category: AchievementCategory, badgeNumber: Int?, isRemoteImage: Bool = false) {
+    let tab : AchievementTab
+
+    init(id: Int, title: String, description: String, image: String, isUnlocked: Bool, category: AchievementCategory, badgeNumber: Int?, isRemoteImage: Bool = false, tab: AchievementTab) {
         self.id = id
         self.title = title
         self.description = description
@@ -215,7 +216,13 @@ struct Achievement: Identifiable {
         self.category = category
         self.badgeNumber = badgeNumber
         self.isRemoteImage = isRemoteImage
+        self.tab = tab
     }
+}
+
+enum AchievementTab: String, CaseIterable {
+    case friends = "Friends"
+    case posting = "Posting"
 }
 
 enum AchievementCategory: String, CaseIterable {
