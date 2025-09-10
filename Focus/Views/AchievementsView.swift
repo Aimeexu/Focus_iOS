@@ -255,14 +255,20 @@ struct AchievementSection: View {
         HStack(alignment: .center, spacing: 0) {
             // 左侧分类标题
             VStack {
-                Text(category.sideLabel)
-                    .font(.appButton(size: 16))
-                    .foregroundColor(AppColors.Text.inverse)
-                    .rotationEffect(.degrees(90))
-                    .frame(width: 46, height: 100)
-                    .background(category.sideLabelColor)
-                    .cornerRadius(12)
-                    .padding(4)
+                ZStack {
+                    category.sideLabelColor
+                        .cornerRadius(12)
+
+                    Text(category.sideLabel)
+                        .font(.appButton(size: 16))
+                        .foregroundColor(AppColors.Text.inverse)
+                        .rotationEffect(.degrees(90))
+                        .fixedSize() // 让文字按照内容显示，不被压缩
+                        .offset(x: 0, y: 0) // 调整文字位置，可根据需要微调
+                }
+                .frame(minWidth: 46, maxWidth: 46, minHeight: 100, maxHeight: 120)// 背景固定大小
+                .clipped() // 超出的部分裁剪掉
+                .cornerRadius(12)
 
 //                // 如果是第一个分类，显示new标签
 //                if category == .calmFields {
