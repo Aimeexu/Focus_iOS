@@ -126,7 +126,7 @@ struct AchievementsView: View {
                 ForEach(AchievementCategory.allCases, id: \.self) { category in
                     AchievementSection(
                         category: category,
-                        achievements: achievementManager.achievements.filter { $0.category == category },
+                        achievements: achievementManager.achievements.filter { $0.category == category && $0.tab == .friends},
                         onAchievementTap: handleAchievementTap
                     )
                 }
