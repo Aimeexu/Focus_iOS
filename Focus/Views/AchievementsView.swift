@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftyJSON
 
 struct AchievementsView: View {
     @StateObject private var userManager = UserManager.shared
@@ -28,6 +29,14 @@ struct AchievementsView: View {
         .overlay(shareOverlay)
         .onAppear {
             loadAchievementsFromUserData()
+            Task {
+                    do {
+                        let response = try await NetworkManager.shared.checkPosterExchangeWithJSON()
+                        print("🎫 海报兑换资格检查API请求返回 \(response)")
+                    } catch {
+                        print("❌ 检查海报兑换资格失败: \(error)")
+                    }
+                }
         }
         .onChange(of: userManager.currentUser) { _ in
             loadAchievementsFromUserData()
