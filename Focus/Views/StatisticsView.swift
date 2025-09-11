@@ -130,6 +130,20 @@ struct StatisticsView: View {
             }
         }
         .background(AppColors.Background.primary)
+        .onAppear {
+            Task {
+                do {
+                    let response = try await NetworkManager.shared.getConcentrationStatistics(
+                        period: "MONTH",
+                        month: 9,
+                        year: 2025
+                    )
+                    print("📊 专注统计返回: \(response)")
+                } catch {
+                    print("❌ 检查海报兑换资格失败: \(error)")
+                }
+            }
+        }
     }
     
     private func labelAngle(for index: Int) -> Angle {

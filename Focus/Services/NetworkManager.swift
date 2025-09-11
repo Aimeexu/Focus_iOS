@@ -980,55 +980,11 @@ extension NetworkManager {
             cookies: cookies
         )
     }
-    
-    /// 使用SwiftyJSON结束专注计时
-    /// - Parameters:
-    ///   - id: 专注计划ID
-    /// - Returns: SwiftyJSON对象
-    func endConcentrationWithJSON(id: String) async throws -> JSON {
-        let baseURL = "http://ds2.tapgame.cn"
-        let endpoint = "/app/user/concentration/finish"
-        let url = baseURL + endpoint
-        
-        // 获取当前日期和时区信息
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        let operateDate = dateFormatter.string(from: Date())
-        let timeZone = TimeZone.current.identifier
-        
-        let parameters: [String: Any] = [
-            "operateDate": operateDate,
-            "timeZone": timeZone,
-            "id": id
-        ]
-        
-        print("🏁 结束专注计时API请求 (SwiftyJSON):")
-        print("   operateDate: \(operateDate)")
-        print("   timeZone: \(timeZone)")
-        print("   id: \(id)")
-        
-        let headers = [
-            "Content-Type": "application/json"
-        ]
-        
-        // 获取Cookie信息
-        var cookies: [String: String] = [:]
-        if let authCookie = AuthService.shared.getAuthCookie() {
-            cookies[authCookie.name] = authCookie.value
-        }
-        
-        return try await postJSON(
-            url: url,
-            parameters: parameters,
-            headers: headers,
-            cookies: cookies
-        )
-    }
 
     /// 检查海报兑换资格
     /// - Parameter posterId: 海报ID
     /// - Returns: SwiftyJSON对象
-    func checkPosterExchangeWithJSON() async throws -> PosterExchangeCheckResponse {
+    func checkPosterExchange() async throws -> PosterExchangeCheckResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/stuff/poster/exchange/check"
         let url = baseURL + endpoint
@@ -1070,7 +1026,7 @@ extension NetworkManager {
     /// 兑换海报
     /// - Parameter posterId: 海报ID
     /// - Returns: SwiftyJSON对象
-    func exchangePosterWithJSON() async throws -> UserPosterStuffResponse {
+    func exchangePoster() async throws -> UserPosterStuffResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/stuff/poster/exchange"
         let url = baseURL + endpoint
@@ -1104,6 +1060,53 @@ extension NetworkManager {
             headers: headers,
             cookies: cookies,
             responseType: UserPosterStuffResponse.self
+        )
+    }
+
+    /// 获取专注统计数据
+    /// - Parameters:
+    ///   - period: 统计周期，如 "MONTH"、"WEEK"、"DAY"
+    ///   - month: 月份
+    ///   - year: 年份
+    /// - Returns: SwiftyJSON对象
+    func getConcentrationStatistics(period: String, month: Int, year: Int) async throws -> ConcentrationStatisticsResponse {
+        let baseURL = "http://ds2.tapgame.cn"
+        let endpoint = "/app/user/concentration/statistics"
+        let url = baseURL + endpoint
+
+        // 当前日期和时区
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let operateDate = dateFormatter.string(from: Date())
+        let timeZone = TimeZone.current.identifier
+
+        let parameters: [String: Any] = [
+            "operateDate": operateDate,
+            "timeZone": timeZone,
+            "period": period,
+            "month": month,
+            "year": year
+        ]
+
+        print("📊 获取专注统计API请求 (SwiftyJSON):")
+        print("   operateDate: \(operateDate)")
+        print("   timeZone: \(timeZone)")
+        print("   period: \(period), month: \(month), year: \(year)")
+
+        let headers = ["Content-Type": "application/json"]
+
+        // 获取Cookie信息
+        var cookies: [String: String] = [:]
+        if let authCookie = AuthService.shared.getAuthCookie() {
+            cookies[authCookie.name] = authCookie.value
+        }
+
+        return try await post(
+            url: url,
+            parameters: parameters,
+            headers: headers,
+            cookies: cookies,
+            responseType: ConcentrationStatisticsResponse.self
         )
     }
 

@@ -34,7 +34,7 @@ struct AchievementsView: View {
             loadAchievementsFromUserData()
             Task {
                     do {
-                        let response = try await NetworkManager.shared.checkPosterExchangeWithJSON()
+                        let response = try await NetworkManager.shared.checkPosterExchange()
                         print("🎫 海报兑换资格检查API请求返回 \(response.data.canExchange)")
                         self.canExchange = response.data.canExchange
                     } catch {
