@@ -32,7 +32,7 @@ struct AchievementsView: View {
             Task {
                     do {
                         let response = try await NetworkManager.shared.checkPosterExchangeWithJSON()
-                        print("🎫 海报兑换资格检查API请求返回 \(response)")
+                        print("🎫 海报兑换资格检查API请求返回 \(response.data.canExchange)")
                     } catch {
                         print("❌ 检查海报兑换资格失败: \(error)")
                     }
