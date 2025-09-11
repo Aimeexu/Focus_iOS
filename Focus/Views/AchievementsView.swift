@@ -92,12 +92,12 @@ struct AchievementsView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
                         .background(selectedTab == tab ? AppColors.Brand.primary : AppColors.Background.secondary)
-                        .cornerRadius(selectedTab == tab ? 22 : 0)
+                        .cornerRadius(selectedTab == tab ? 12 : 0)
                 }
             }
         }
         .background(AppColors.Background.secondary)
-        .cornerRadius(22)
+        .cornerRadius(12)
     }
     
     private var contentView: some View {

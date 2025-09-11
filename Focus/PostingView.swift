@@ -100,7 +100,7 @@ struct PosterSection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
                     ForEach(achievements) { achievement in
-                        AchievementCard(
+                        PosterCard(
                             achievement: achievement,
                             onTap: {
                                 onAchievementTap(achievement)
@@ -121,40 +121,31 @@ struct PosterCard: View {
     var body: some View {
         ZStack {
             // 主卡片 - 使用背景图片
-            Image("achieve_bg")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+            // 主卡片
+            if achievement.isRemoteImage, achievement.isUnlocked {
+                AsyncImage(url: URL(string: achievement.image)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    ProgressView()
+                        .frame(width: 146, height: 160)
+                }
                 .frame(width: 146, height: 160)
                 .clipped()
                 .cornerRadius(16)
                 .overlay(
-                    VStack {
-                        if achievement.isUnlocked {
-                            // 解锁的成就显示图片
-                            if achievement.isRemoteImage {
-                                // 显示远程图片
-                                AsyncImage(url: URL(string: achievement.image)) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                } placeholder: {
-                                    ProgressView()
-                                        .frame(width: 96, height: 100)
-                                }
-                                .frame(width: 96, height: 100)
-                                .offset(x: 16, y: 24)
-                            } else {
-                                // 显示本地图片
-                                Image(achievement.image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 96, height: 100)
-                                    .offset(x: 16, y: 24)
-                            }
-                        } else {
-                        }
-                    }
-                )
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color(red: 250/255, green: 242/255, blue: 232/255), lineWidth: 1)
+                    )
+            } else {
+                Image(achievement.isUnlocked ? achievement.image : "posting_bg")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 146, height: 160)
+                    .clipped()
+                    .cornerRadius(16)
+            }
 
             // 徽章数字（左上角）
             if let badgeNumber = achievement.badgeNumber {
