@@ -76,24 +76,7 @@ class AchievementManager: ObservableObject {
         isLoading = true
 
         if let userAchievement = UserManager.shared.getUserAchievement() {
-//            generateAchievementsFromLoginData(userAchievement)
             self.achievements = generateAchievements(from: userAchievement, startingId: 1000)
-        }
-
-        // 优先使用已保存的完整登录数据
-        if let userData = currentUserData {
-            print("🎯 使用已保存的完整用户数据生成成就...")
-//<<<<<<< HEAD
-//            generateAchievementsFromLoginData(userData)
-//=======
-////            generateAchievementsFromLoginData(userData)
-//        } else if let user = UserManager.shared.currentUser {
-//            print("⚠️ 使用简化的用户信息生成成就...")
-//            generateAchievementsFromUserInfo(user)
-//        } else {
-//            print("❌ 没有用户数据，生成默认成就...")
-//            generateDefaultAchievements()
-//>>>>>>> achievement
         }
 
         isLoading = false
@@ -103,17 +86,6 @@ class AchievementManager: ObservableObject {
     var hasCompleteUserData: Bool {
         return currentUserData != nil
     }
-    
-//    /// 强制重新从登录数据生成成就（用于调试）
-//    func forceRegenerateFromLoginData() {
-//        guard let userData = currentUserData else {
-//            print("❌ 没有完整的登录数据可用于重新生成")
-//            return
-//        }
-//        
-//        print("🔄 强制重新从登录数据生成成就...")
-//        generateAchievementsFromLoginData(userData)
-//    }
 
     /// 从登录数据的用户信息生成成就
     func generateAchievementsFromLoginData(_ userStuffs: AchievementUserStuffs) {

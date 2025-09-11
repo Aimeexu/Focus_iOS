@@ -20,7 +20,7 @@ class UserManager: ObservableObject {
     }
     
     // MARK: - UserDefaults Keys
-    private struct Keys {
+    struct Keys {
         // 认证相关
         static let authToken = "auth_token"
         static let refreshToken = "refresh_token"

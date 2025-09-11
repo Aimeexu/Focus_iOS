@@ -158,14 +158,19 @@ class ConcentrationService: ObservableObject {
             
             if response.status == "success" {
                 print("✅ 专注计时结束成功")
+                // 更新数据
+                if let userStuff = response.data?.userStuff {
+                    StuffManager.shared.updateLocalUserStuff(with:userStuff)
+                }
             } else {
 //                print("⚠️ 结束专注计时API返回失败: \(response.message)")
             }
-            
-            // 无论API调用成功与否，都清除本地状态
-            clearState()
-            isLoading = false
-            
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
+                // 无论API调用成功与否，都清除本地状态
+                self?.clearState()
+                self?.isLoading = false
+            }
         } catch {
             // 即使API调用失败，也要清除本地状态
             clearState()
