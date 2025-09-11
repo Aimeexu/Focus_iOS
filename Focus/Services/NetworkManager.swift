@@ -1070,7 +1070,7 @@ extension NetworkManager {
     /// 兑换海报
     /// - Parameter posterId: 海报ID
     /// - Returns: SwiftyJSON对象
-    func exchangePosterWithJSON() async throws -> JSON {
+    func exchangePosterWithJSON() async throws -> UserPosterStuffResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/stuff/poster/exchange"
         let url = baseURL + endpoint
@@ -1098,11 +1098,12 @@ extension NetworkManager {
             cookies[authCookie.name] = authCookie.value
         }
 
-        return try await postJSON(
+        return try await post(
             url: url,
             parameters: parameters,
             headers: headers,
-            cookies: cookies
+            cookies: cookies,
+            responseType: UserPosterStuffResponse.self
         )
     }
 

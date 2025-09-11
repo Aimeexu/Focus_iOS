@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftyJSON
+import Kingfisher
 
 struct AchievementsView: View {
     @StateObject private var userManager = UserManager.shared
@@ -43,6 +44,11 @@ struct AchievementsView: View {
         }
         .onChange(of: userManager.currentUser) { _ in
             loadAchievementsFromUserData()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didUpdateAchievement)) { notification in
+            // 收到通知后刷新数据
+            loadAchievementsFromUserData()
+            selectedTab = .posting
         }
     }
     
@@ -308,7 +314,7 @@ struct AchievementSection: View {
                         }
                 }
             }
-            .frame(width: 46)
+            .frame(width: 30)
 
             // 右侧可滚动的成就卡片
             ScrollView(.horizontal, showsIndicators: false) {
@@ -346,17 +352,15 @@ struct AchievementCard: View {
                         if achievement.isUnlocked {
                             // 解锁的成就显示图片
                             if achievement.isRemoteImage {
-                                // 显示远程图片
-                                AsyncImage(url: URL(string: achievement.image)) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                } placeholder: {
-                                    ProgressView()
-                                        .frame(width: 96, height: 100)
-                                }
-                                .frame(width: 96, height: 100)
-                                .offset(x: 16, y: 24)
+                                KFImage(URL(string: achievement.image))
+                                    .placeholder {
+                                        ProgressView()
+                                            .frame(width: 96, height: 100)
+                                    }
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 96, height: 100)
+                                    .offset(x: 16, y: 24)
                             } else {
                                 // 显示本地图片
                                 Image(achievement.image)

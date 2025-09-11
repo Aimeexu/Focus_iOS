@@ -1,34 +1,31 @@
 import SwiftUI
 
 struct NewTagPopupView: View {
-    let title: String = "New Achievement!"
-    let message: String = "You have a new achievement available."
     @Binding var isPresented: Bool
 
     var body: some View {
         ZStack {
-            // 半透明背景
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture {
                     isPresented = false
                 }
 
-            // 弹窗内容
             VStack(spacing: 20) {
-                Text(title)
+                Text("New Achievement!")
                     .font(.appLargeTitle(size: 20))
                     .foregroundColor(AppColors.Text.primary)
 
-                Text(message)
+                Text("You have a new achievement available.")
                     .font(.appBody(size: 16))
                     .foregroundColor(AppColors.Text.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
 
-                // 确定按钮
                 Button(action: {
-                    isPresented = false
+                    Task {
+                        await confirmNewPopup()
+                    }
                 }) {
                     Text("确定")
                         .font(.appButton(size: 18))
@@ -45,6 +42,29 @@ struct NewTagPopupView: View {
             .cornerRadius(20)
             .shadow(color: AppColors.Neutral.black.opacity(0.2), radius: 10, x: 0, y: 5)
             .frame(maxWidth: 300)
+        }
+    }
+
+    // MARK: - API 调用
+    private func confirmNewPopup() async {
+        do {
+            let response = try await NetworkManager.shared.exchangePosterWithJSON()
+            print("✅ 弹框确认调用接口成功")
+            await MainActor.run {
+                isPresented = false
+                let userDefaults = UserDefaults.standard
+
+                if let userAchievement = try? JSONEncoder().encode(response.data.userStuffMap) {
+                    userDefaults.set(userAchievement, forKey: UserManager.Keys.userAchievement)
+                    NotificationCenter.default.post(
+                        name: .didUpdateAchievement,
+                        object: nil,
+                        userInfo: ["message": "更新成功"]
+                    )
+                }
+            }
+        } catch {
+            print("❌ 弹框确认调用接口失败: \(error)")
         }
     }
 }

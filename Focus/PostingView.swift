@@ -147,24 +147,24 @@ struct PosterCard: View {
                     .cornerRadius(16)
             }
 
-            // 徽章数字（左上角）
-            if let badgeNumber = achievement.badgeNumber {
-                VStack {
-                    HStack {
-                        Circle()
-                            .fill(AppColors.Brand.primary)
-                            .frame(width: 28, height: 28)
-                            .overlay(
-                                Text("\(badgeNumber)")
-                                    .font(.appButton(size: 14))
-                                    .foregroundColor(AppColors.Text.inverse)
-                            )
-                            .offset(x: 22, y: 14)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            }
+//            // 徽章数字（左上角）
+//            if let badgeNumber = achievement.badgeNumber {
+//                VStack {
+//                    HStack {
+//                        Circle()
+//                            .fill(AppColors.Brand.primary)
+//                            .frame(width: 28, height: 28)
+//                            .overlay(
+//                                Text("\(badgeNumber)")
+//                                    .font(.appButton(size: 14))
+//                                    .foregroundColor(AppColors.Text.inverse)
+//                            )
+//                            .offset(x: 22, y: 14)
+//                        Spacer()
+//                    }
+//                    Spacer()
+//                }
+//            }
         }
         .onTapGesture {
             onTap()

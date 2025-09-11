@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Kingfisher
 
 struct ShareAchievementView: View {
     let achievement: Achievement
@@ -25,9 +26,13 @@ struct ShareAchievementView: View {
                 // 分享图片区域
                 VStack(spacing: 20) {
                     // 成就图片
-                    Image(achievement.image)
+                    KFImage(URL(string: achievement.image))
+                        .placeholder {
+                            ProgressView() // 占位视图（加载中）
+                                .frame(width: 120, height: 120)
+                        }
+                        .onFailureImage(UIImage(systemName: "xmark.octagon")) // 加载失败时的图
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
                         .frame(width: 120, height: 120)
                     
                     // 成就标题

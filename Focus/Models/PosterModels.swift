@@ -23,3 +23,18 @@ struct PosterExchangeCheckResponse: Codable {
 struct PosterExchangeCheckData: Codable {
     let canExchange: Bool
 }
+
+
+// MARK: - 顶层响应
+struct UserPosterStuffResponse: Codable {
+    let status: String
+    let errors: String?
+    let code: String
+    let message: String
+    let data: UserPosterStuffData
+}
+
+// MARK: - Data
+struct UserPosterStuffData: Codable {
+    let userStuffMap: AchievementUserStuffs
+}
