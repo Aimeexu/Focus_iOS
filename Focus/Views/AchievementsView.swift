@@ -14,7 +14,8 @@ struct AchievementsView: View {
     @State private var selectedTab: AchievementTab = .friends
     @State private var showShareView = false
     @State private var selectedAchievement: Achievement?
-    
+    @State private var canExchange: Bool = false
+
     enum AchievementTab: String, CaseIterable {
         case friends = "Friends"
         case posting = "Posting"
@@ -33,10 +34,11 @@ struct AchievementsView: View {
                     do {
                         let response = try await NetworkManager.shared.checkPosterExchangeWithJSON()
                         print("🎫 海报兑换资格检查API请求返回 \(response.data.canExchange)")
+                        self.canExchange = response.data.canExchange
                     } catch {
                         print("❌ 检查海报兑换资格失败: \(error)")
                     }
-                }
+            }
         }
         .onChange(of: userManager.currentUser) { _ in
             loadAchievementsFromUserData()
@@ -135,6 +137,7 @@ struct AchievementsView: View {
                 ForEach(AchievementCategory.allCases, id: \.self) { category in
                     AchievementSection(
                         category: category,
+                        canExchange: canExchange,
                         achievements: achievementManager.achievements.filter { $0.category == category && $0.tab == .friends},
                         onAchievementTap: handleAchievementTap
                     )
@@ -257,13 +260,15 @@ enum AchievementCategory: String, CaseIterable {
 
 struct AchievementSection: View {
     let category: AchievementCategory
+    let canExchange: Bool
     let achievements: [Achievement]
     let onAchievementTap: (Achievement) -> Void
     
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
             // 左侧分类标题
-            VStack {
+            ZStack {
+                // 背景和旋转文字
                 ZStack {
                     category.sideLabelColor
                         .cornerRadius(12)
@@ -272,28 +277,27 @@ struct AchievementSection: View {
                         .font(.appButton(size: 16))
                         .foregroundColor(AppColors.Text.inverse)
                         .rotationEffect(.degrees(90))
-                        .fixedSize() // 让文字按照内容显示，不被压缩
-                        .offset(x: 0, y: 0) // 调整文字位置，可根据需要微调
+                        .fixedSize()
                 }
-                .frame(minWidth: 46, maxWidth: 46, minHeight: 100, maxHeight: 120)// 背景固定大小
-                .clipped() // 超出的部分裁剪掉
+                .frame(minWidth: 46, maxWidth: 46, minHeight: 100, maxHeight: 120)
+                .clipped()
                 .cornerRadius(12)
 
-//                // 如果是第一个分类，显示new标签
-//                if category == .calmFields {
-//                    Text("new!")
-//                        .font(.system(size: 10, weight: .bold))
-//                        .foregroundColor(AppColors.Text.inverse)
-//                        .padding(.horizontal, 8)
-//                        .padding(.vertical, 4)
-//                        .background(AppColors.Semantic.error)
-//                        .cornerRadius(8)
-//                        .rotationEffect(.degrees(-15))
-//                        .offset(y: -10)
-//                }
+                // NEW 标签 - 绝对定位在右上角
+                if category == .calmFields && canExchange {
+                    Text("new!")
+                        .font(.appBody(size: 12))
+                        .foregroundColor(AppColors.Text.inverse)
+                        .padding(.horizontal, 2)
+                        .padding(.vertical, 2)
+                        .background(AppColors.Semantic.error)
+                        .cornerRadius(10)
+                        .frame(height: 20)
+                        .position(x: 46 - 10, y: 20) // x: 背景宽度减偏移, y: 顶部偏移
+                }
             }
-            .frame(width: 30)
-            
+            .frame(width: 46)
+
             // 右侧可滚动的成就卡片
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {

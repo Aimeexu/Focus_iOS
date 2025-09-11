@@ -1067,6 +1067,45 @@ extension NetworkManager {
         )
     }
 
+    /// 兑换海报
+    /// - Parameter posterId: 海报ID
+    /// - Returns: SwiftyJSON对象
+    func exchangePosterWithJSON() async throws -> JSON {
+        let baseURL = "http://ds2.tapgame.cn"
+        let endpoint = "/app/user/stuff/poster/exchange"
+        let url = baseURL + endpoint
+
+        // 当前日期和时区
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let operateDate = dateFormatter.string(from: Date())
+        let timeZone = TimeZone.current.identifier
+
+        let parameters: [String: Any] = [
+            "operateDate": operateDate,
+            "timeZone": timeZone,
+        ]
+
+        print("🎫 海报兑换API请求 (SwiftyJSON):")
+        print("   operateDate: \(operateDate)")
+        print("   timeZone: \(timeZone)")
+
+        let headers = ["Content-Type": "application/json"]
+
+        // 获取Cookie信息
+        var cookies: [String: String] = [:]
+        if let authCookie = AuthService.shared.getAuthCookie() {
+            cookies[authCookie.name] = authCookie.value
+        }
+
+        return try await postJSON(
+            url: url,
+            parameters: parameters,
+            headers: headers,
+            cookies: cookies
+        )
+    }
+
 }
 
 // MARK: - 物品相关API

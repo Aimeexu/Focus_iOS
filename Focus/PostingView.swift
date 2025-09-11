@@ -98,7 +98,7 @@ struct PosterSection: View {
 
             // 右侧可滚动的成就卡片
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
+                HStack(spacing: 16) {
                     ForEach(achievements) { achievement in
                         PosterCard(
                             achievement: achievement,
