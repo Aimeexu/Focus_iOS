@@ -131,27 +131,25 @@ struct ConcentrationAnimationView: View {
                 )
                 
                 // 状态切换指示器
-                if concentrationService.isAnimationSwitching {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            VStack {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.white)
-                                Text("切换中")
-                                    .font(.caption2)
-                                    .foregroundColor(.white)
-                            }
-                            .padding(8)
-                            .background(Color.blue.opacity(0.8))
-                            .cornerRadius(8)
-                            .padding(.trailing, 8)
-                            .padding(.bottom, 8)
-                        }
-                    }
-                }
+//                if concentrationService.isAnimationSwitching {
+//                    VStack {
+//                        Spacer()
+//                        HStack {
+//                            Spacer()
+//                            VStack {
+//                                Image(systemName: "arrow.triangle.2.circlepath")
+//                                    .font(.system(size: 16))
+//                                    .foregroundColor(.white)
+//
+//                            }
+//                            .padding(8)
+//                            .background(Color.blue.opacity(0.8))
+//                            .cornerRadius(8)
+//                            .padding(.trailing, 8)
+//                            .padding(.bottom, 8)
+//                        }
+//                    }
+//                }
                 
                 // 状态指示器
                 if showStateIndicator {
