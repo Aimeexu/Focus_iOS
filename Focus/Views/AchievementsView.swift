@@ -15,6 +15,7 @@ struct AchievementsView: View {
     @State private var showShareView = false
     @State private var selectedAchievement: Achievement?
     @State private var canExchange: Bool = false
+    @State private var showNewpopView = false
 
     enum AchievementTab: String, CaseIterable {
         case friends = "Friends"
@@ -139,7 +140,8 @@ struct AchievementsView: View {
                         category: category,
                         canExchange: canExchange,
                         achievements: achievementManager.achievements.filter { $0.category == category && $0.tab == .friends},
-                        onAchievementTap: handleAchievementTap
+                        onAchievementTap: handleAchievementTap,
+                        onNewTap: handleNewTap
                     )
                 }
             }
@@ -155,6 +157,8 @@ struct AchievementsView: View {
                     achievement: achievement,
                     isPresented: $showShareView
                 )
+            } else if showNewpopView {
+                NewTagPopupView(isPresented: $showNewpopView)
             }
         }
     }
@@ -165,7 +169,11 @@ struct AchievementsView: View {
             showShareView = true
         }
     }
-    
+
+    private func handleNewTap() {
+        showNewpopView = true
+    }
+
     // MARK: - 辅助方法
     
     /// 获取用户显示名称
@@ -263,7 +271,8 @@ struct AchievementSection: View {
     let canExchange: Bool
     let achievements: [Achievement]
     let onAchievementTap: (Achievement) -> Void
-    
+    let onNewTap:() -> Void
+
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
             // 左侧分类标题
@@ -294,6 +303,9 @@ struct AchievementSection: View {
                         .cornerRadius(10)
                         .frame(height: 20)
                         .position(x: 46 - 10, y: 20) // x: 背景宽度减偏移, y: 顶部偏移
+                        .onTapGesture {
+                            onNewTap()
+                        }
                 }
             }
             .frame(width: 46)
