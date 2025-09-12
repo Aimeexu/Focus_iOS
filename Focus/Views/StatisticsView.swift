@@ -39,25 +39,27 @@ struct StatisticsView: View {
                 } else {
                     VStack(spacing: 0) {
                         barChartSection
+                            .padding(.top, 30)
 
                         ZStack {
                             PieChartView(data: focusData, total: totalMinutes)
-                                .frame(width: 150, height: 150)
+                                .frame(width: 180, height: 180)
 
                             Text("\(totalMinutes)")
-                                .font(.appNumber(size: 24))
+                                .font(.appNumber(size: 36))
                                 .foregroundColor(AppColors.Text.primary)
 
                             ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
                                 PieChartLabel(
                                     data: data,
                                     angle: labelAngle(for: index),
-                                    radius: 90
+                                    radius: 120
                                 )
                             }
                         }
-                        .padding(.top, 20)
-                        .padding(.bottom, 180)
+                        .padding(.top, 30)
+
+                        Spacer()
                     }
                 }
             }
@@ -80,7 +82,7 @@ struct StatisticsView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 58)
+            .padding(.top, 78)
             .background(AppColors.Background.primary)
         }
         .onAppear {
@@ -116,7 +118,7 @@ struct StatisticsView: View {
                     PieChartLabel(
                         data: data,
                         angle: labelAngle(for: index),
-                        radius: 140
+                        radius: 120
                     )
                 }
             }
@@ -186,7 +188,7 @@ struct StatisticsView: View {
                 .padding(.trailing, 5)
 
                 GeometryReader { geo in
-                    HStack(alignment: .bottom, spacing: 8) {
+                    HStack(alignment: .bottom, spacing: 4) {
                         ForEach(weeklyData, id: \.day) { data in
                             VStack(spacing: 4) {
                                 RoundedRectangle(cornerRadius: 10)
