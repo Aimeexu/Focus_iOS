@@ -101,13 +101,12 @@ struct StatisticsView: View {
         }
     }
 
-    // 饼图部分
     private var pieChartSection: some View {
         VStack(spacing: 40) {
             Spacer()
 
             ZStack {
-                PieChartView(data: focusData, total: totalMinutes)
+                RoundedDonutChartView(data: focusData, total: totalMinutes)
                     .frame(width: 180, height: 180)
 
                 Text("\(totalMinutes)")
@@ -122,7 +121,6 @@ struct StatisticsView: View {
                     )
                 }
             }
-
 
             Spacer()
 
@@ -150,6 +148,102 @@ struct StatisticsView: View {
                 }
             }
             .padding(.bottom, 200)
+        }
+    }
+
+    
+
+    struct PieChartView: View {
+        let data: [FocusData]
+        let total: Int
+        private let gapDegrees: Double = 2   // 切片之间的间隙角度
+        private let innerRatio: CGFloat = 0.6
+        private let cornerRadius: CGFloat = 12
+
+        var body: some View {
+            GeometryReader { geometry in
+                ZStack {
+                    ForEach(Array(data.enumerated()), id: \.offset) { index, item in
+                        let start = startAngle(for: index)
+                        let end = endAngle(for: index)
+
+                        RoundedPieSlice(
+                            startAngle: start,
+                            endAngle: end,
+                            innerRadiusRatio: innerRatio,
+                            cornerRadius: cornerRadius
+                        )
+                        .fill(item.color)
+                    }
+                }
+            }
+        }
+
+        private func startAngle(for index: Int) -> Angle {
+            let previous = data.prefix(index).reduce(0) { $0 + $1.minutes }
+            let degrees = Double(previous) / Double(total) * 360 - 90 + Double(index) * gapDegrees
+            return Angle(degrees: degrees)
+        }
+
+        private func endAngle(for index: Int) -> Angle {
+            let current = data[index].minutes
+            let previous = data.prefix(index).reduce(0) { $0 + $1.minutes }
+            let degrees = Double(previous + current) / Double(total) * 360 - 90 + Double(index) * gapDegrees
+            return Angle(degrees: degrees)
+        }
+    }
+
+    struct RoundedPieSlice: Shape {
+        let startAngle: Angle
+        let endAngle: Angle
+        let innerRadiusRatio: CGFloat
+        let cornerRadius: CGFloat
+
+        func path(in rect: CGRect) -> Path {
+            let center = CGPoint(x: rect.midX, y: rect.midY)
+            let radius = min(rect.width, rect.height) / 2
+            let innerRadius = radius * innerRadiusRatio
+
+            var path = Path()
+
+            let start = CGFloat(startAngle.radians)
+            let end = CGFloat(endAngle.radians)
+
+            // 外圆起点终点
+            let p1 = CGPoint(x: center.x + cos(start) * radius,
+                             y: center.y + sin(start) * radius)
+            let p2 = CGPoint(x: center.x + cos(end) * radius,
+                             y: center.y + sin(end) * radius)
+
+            // 内圆起点终点
+            let p3 = CGPoint(x: center.x + cos(end) * innerRadius,
+                             y: center.y + sin(end) * innerRadius)
+            let p4 = CGPoint(x: center.x + cos(start) * innerRadius,
+                             y: center.y + sin(start) * innerRadius)
+
+            // 外圆弧
+            path.move(to: p1)
+            path.addArc(center: center,
+                        radius: radius,
+                        startAngle: startAngle,
+                        endAngle: endAngle,
+                        clockwise: false)
+
+            // 外角过渡
+            path.addArc(tangent1End: p2, tangent2End: p3, radius: cornerRadius)
+//
+//            // 内圆弧
+//            path.addArc(center: center,
+//                        radius: innerRadius,
+//                        startAngle: endAngle,
+//                        endAngle: startAngle,
+//                        clockwise: true)
+//
+//            // 内角过渡
+//            path.addArc(tangent1End: p4, tangent2End: p1, radius: cornerRadius)
+//
+            path.closeSubpath()
+            return path
         }
     }
 
@@ -341,4 +435,50 @@ struct PieChartLabel: View {
 
 #Preview {
     StatisticsView()
+}
+
+// 注意：DonutChartView 要放在 StatisticsView 外面
+struct RoundedDonutChartView: View {
+    let data: [FocusData]
+    let total: Int
+    private let lineWidth: CGFloat = 40      // 环形厚度
+    private let gapDegrees: Double = 26       // 每个扇形之间的间隙角度
+
+    var body: some View {
+        GeometryReader { geo in
+            let radius = min(geo.size.width, geo.size.height) / 2
+
+            ZStack {
+                ForEach(Array(data.enumerated()), id: \.offset) { index, item in
+                    let start = startAngle(for: index)
+                    let end = endAngle(for: index)
+
+                    Circle()
+                        .trim(from: CGFloat(start.degrees / 360),
+                              to: CGFloat(end.degrees / 360))
+                        .stroke(item.color,
+                                style: StrokeStyle(
+                                    lineWidth: lineWidth,
+                                    lineCap: .round
+                                ))
+                        .rotationEffect(.degrees(-90)) // 让 0 度朝上
+                    
+                }
+            }
+        }
+    }
+
+    // 起始角度（加半个 gap）
+    private func startAngle(for index: Int) -> Angle {
+        let sum = data.prefix(index).reduce(0) { $0 + $1.minutes }
+        let degrees = Double(sum) / Double(total) * 360 + gapDegrees / 2
+        return .degrees(degrees)
+    }
+
+    // 结束角度（减半个 gap）
+    private func endAngle(for index: Int) -> Angle {
+        let sum = data.prefix(index + 1).reduce(0) { $0 + $1.minutes }
+        let degrees = Double(sum) / Double(total) * 360 - gapDegrees / 2
+        return .degrees(degrees)
+    }
 }
