@@ -9,23 +9,15 @@ import SwiftUI
 
 struct StatisticsView: View {
     @State private var selectedPeriod: TimePeriod = .day
+    @State private var responseData = ConcentrationStatisticsResponse.empty
+
+    @State private var focusData: [FocusData] = []
 
     enum TimePeriod: String, CaseIterable {
         case day = "DAY"
         case week = "WEEK"
         case month = "MONTH"
         case year = "YEAR"
-    }
-
-    // 示例数据
-    let focusData = [
-        FocusData(category: "Study", minutes: 53, color: AppColors.Brand.primary),
-        FocusData(category: "Work", minutes: 210, color: AppColors.Semantic.lightGray),
-        FocusData(category: "Read", minutes: 200, color: AppColors.Semantic.beige)
-    ]
-
-    var totalMinutes: Int {
-        focusData.reduce(0) { $0 + $1.minutes }
     }
 
     var body: some View {
@@ -42,10 +34,11 @@ struct StatisticsView: View {
                             .padding(.top, 30)
 
                         ZStack {
-                            PieChartView(data: focusData, total: totalMinutes)
+                            PieChartView(data: focusData, total: responseData.data.totalDuration)
                                 .frame(width: 180, height: 180)
 
-                            Text("\(totalMinutes)")
+
+                            Text("\(responseData.data.totalDuration)")
                                 .font(.appNumber(size: 36))
                                 .foregroundColor(AppColors.Text.primary)
 
@@ -88,12 +81,23 @@ struct StatisticsView: View {
         .onAppear {
             Task {
                 do {
+                    // 获取当前日期
+                    let currentDate = Date()
+                    // 使用 Calendar 获取月份、年份
+                    let month = Calendar.current.component(.month, from: currentDate)
+                    let year = Calendar.current.component(.year, from: currentDate)
                     let response = try await NetworkManager.shared.getConcentrationStatistics(
-                        period: "MONTH",
-                        month: 9,
-                        year: 2025
+                        period: "MONTH",//selectedPeriod.rawValue,
+                        month: month,
+                        year: year
                     )
                     print("📊 专注统计返回: \(response)")
+                    responseData = response
+
+                    focusData = responseData.data.durationByTag.map { (key, value) in
+                        let color = categoryColors[key] ?? randomColor()
+                        return FocusData(category: key, minutes: value, color: color)
+                    }
                 } catch {
                     print("❌ 检查海报兑换资格失败: \(error)")
                 }
@@ -107,10 +111,10 @@ struct StatisticsView: View {
             Spacer()
 
             ZStack {
-                PieChartView(data: focusData, total: totalMinutes)
+                PieChartView(data: focusData, total: responseData.data.totalDuration)
                     .frame(width: 180, height: 180)
 
-                Text("\(totalMinutes)")
+                Text("\(responseData.data.totalDuration)")
                     .font(.appNumber(size: 36))
                     .foregroundColor(AppColors.Text.primary)
 
@@ -131,7 +135,7 @@ struct StatisticsView: View {
                     Text("Total Focus")
                         .font(.appBody(size: 18))
                         .foregroundColor(AppColors.Text.secondary)
-                    Text("\(totalMinutes) m")
+                    Text("\(responseData.data.totalDuration) m")
                         .font(.appNumber(size: 24))
                         .foregroundColor(AppColors.Text.primary)
                 }
@@ -255,7 +259,7 @@ struct StatisticsView: View {
         let previousTotal = focusData.prefix(index).reduce(0) { $0 + $1.minutes }
         let currentValue = focusData[index].minutes
         let midPoint = previousTotal + currentValue / 2
-        return Angle(degrees: Double(midPoint) / Double(totalMinutes) * 360 - 90)
+        return Angle(degrees: Double(midPoint) / Double(responseData.data.totalDuration) * 360 - 90)
     }
 }
 
@@ -263,6 +267,22 @@ struct FocusData {
     let category: String
     let minutes: Int
     let color: Color
+}
+
+// 固定颜色映射
+let categoryColors: [String: Color] = [
+    "Study": AppColors.Brand.primary,
+    "Work": AppColors.Semantic.lightGray,
+    "Read": AppColors.Semantic.beige
+]
+
+// 随机颜色生成函数
+func randomColor() -> Color {
+    return Color(
+        red: .random(in: 0...1),
+        green: .random(in: 0...1),
+        blue: .random(in: 0...1)
+    )
 }
 
 struct PieChartView: View {
@@ -339,6 +359,3 @@ struct PieChartLabel: View {
     }
 }
 
-#Preview {
-    StatisticsView()
-}

@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		F2044C2D2E72C84E0080EDD1 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F2044C2C2E72C84E0080EDD1 /* Kingfisher */; };
+		F29E1FC82E811ECC0048E484 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F29E1FC72E811ECC0048E484 /* Alamofire */; };
 		F2DF94482E60538500AC8E67 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF94472E60538500AC8E67 /* Lottie */; };
-		F2DF944B2E6053E300AC8E67 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF944A2E6053E300AC8E67 /* Alamofire */; };
 		F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF95252E69805D00AC8E67 /* SwiftyJSON */; };
 /* End PBXBuildFile section */
 
@@ -63,9 +63,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F2044C2D2E72C84E0080EDD1 /* Kingfisher in Frameworks */,
+				F29E1FC82E811ECC0048E484 /* Alamofire in Frameworks */,
 				F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */,
 				F2DF94482E60538500AC8E67 /* Lottie in Frameworks */,
-				F2DF944B2E6053E300AC8E67 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,9 +109,9 @@
 			name = Focus;
 			packageProductDependencies = (
 				F2DF94472E60538500AC8E67 /* Lottie */,
-				F2DF944A2E6053E300AC8E67 /* Alamofire */,
 				F2DF95252E69805D00AC8E67 /* SwiftyJSON */,
 				F2044C2C2E72C84E0080EDD1 /* Kingfisher */,
+				F29E1FC72E811ECC0048E484 /* Alamofire */,
 			);
 			productName = Focus;
 			productReference = F2B61A6B2E447C5000CC4F17 /* Focus.app */;
@@ -143,9 +143,9 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F2DF94462E60538500AC8E67 /* XCRemoteSwiftPackageReference "lottie-spm" */,
-				F2DF94492E6053E300AC8E67 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				F2DF95242E69805D00AC8E67 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				F2044C2B2E72C84E0080EDD1 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				F29E1FC62E811ECC0048E484 /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2B61A6C2E447C5000CC4F17 /* Products */;
@@ -391,20 +391,20 @@
 				minimumVersion = 8.5.0;
 			};
 		};
+		F29E1FC62E811ECC0048E484 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.10.2;
+			};
+		};
 		F2DF94462E60538500AC8E67 /* XCRemoteSwiftPackageReference "lottie-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/airbnb/lottie-spm.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 4.5.2;
-			};
-		};
-		F2DF94492E6053E300AC8E67 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.10.2;
 			};
 		};
 		F2DF95242E69805D00AC8E67 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
@@ -423,15 +423,15 @@
 			package = F2044C2B2E72C84E0080EDD1 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
 		};
+		F29E1FC72E811ECC0048E484 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F29E1FC62E811ECC0048E484 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
 		F2DF94472E60538500AC8E67 /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F2DF94462E60538500AC8E67 /* XCRemoteSwiftPackageReference "lottie-spm" */;
 			productName = Lottie;
-		};
-		F2DF944A2E6053E300AC8E67 /* Alamofire */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F2DF94492E6053E300AC8E67 /* XCRemoteSwiftPackageReference "Alamofire" */;
-			productName = Alamofire;
 		};
 		F2DF95252E69805D00AC8E67 /* SwiftyJSON */ = {
 			isa = XCSwiftPackageProductDependency;
