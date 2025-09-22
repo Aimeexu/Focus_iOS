@@ -1074,11 +1074,26 @@ extension NetworkManager {
         let endpoint = "/app/user/concentration/statistics"
         let url = baseURL + endpoint
 
-        // 当前日期和时区
+//        // 当前日期和时区
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        let operateDate = dateFormatter.string(from: Date())
+        var operateDate = dateFormatter.string(from: Date())
         let timeZone = TimeZone.current.identifier
+
+        let calendar = Calendar.current
+        let today = Date()
+
+        // 获取本周的周一
+        if let thisWeekMonday = calendar.date(
+            from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+        ) {
+            // 上上周周一 = 本周周一 - 2周
+            if let twoWeeksAgoMonday = calendar.date(byAdding: .weekOfYear, value: -1, to: thisWeekMonday) {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                operateDate = dateFormatter.string(from: twoWeeksAgoMonday)
+            }
+        }
 
         let parameters: [String: Any] = [
             "operateDate": operateDate,

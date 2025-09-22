@@ -63,6 +63,29 @@ struct StatisticsView: View {
                 ForEach(TimePeriod.allCases, id: \.self) { period in
                     Button(action: {
                         selectedPeriod = period
+                        Task {
+                            do {
+                                // 获取当前日期
+                                let currentDate = Date()
+                                // 使用 Calendar 获取月份、年份
+                                let month = Calendar.current.component(.month, from: currentDate)
+                                let year = Calendar.current.component(.year, from: currentDate)
+                                let response = try await NetworkManager.shared.getConcentrationStatistics(
+                                    period: selectedPeriod.rawValue == "DAY" ? "TODAY" : selectedPeriod.rawValue,
+                                    month: month,
+                                    year: year
+                                )
+                                print("📊 专注统计返回: \(response)")
+                                responseData = response
+
+                                focusData = responseData.data.durationByTag.map { (key, value) in
+                                    let color = categoryColors[key] ?? randomColor()
+                                    return FocusData(category: key, minutes: value, color: color)
+                                }
+                            } catch {
+                                print("❌ 检查海报兑换资格失败: \(error)")
+                            }
+                        }
                     }) {
                         Text(period.rawValue)
                             .font(.appButton(size: 16))
@@ -87,7 +110,7 @@ struct StatisticsView: View {
                     let month = Calendar.current.component(.month, from: currentDate)
                     let year = Calendar.current.component(.year, from: currentDate)
                     let response = try await NetworkManager.shared.getConcentrationStatistics(
-                        period: "MONTH",//selectedPeriod.rawValue,
+                        period: "TODAY",//selectedPeriod.rawValue,
                         month: month,
                         year: year
                     )
