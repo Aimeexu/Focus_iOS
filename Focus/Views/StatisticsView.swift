@@ -182,15 +182,8 @@ struct StatisticsView: View {
 
     // 条形图部分
     private var barChartSection: some View {
-        let weeklyData = [
-            BarData(day: "Mon", value: 90),
-            BarData(day: "Tue", value: 15),
-            BarData(day: "Wed", value: 22),
-            BarData(day: "Thu", value: 78),
-            BarData(day: "Fri", value: 62),
-            BarData(day: "Sat", value: 20),
-            BarData(day: "Sun", value: 88)
-        ]
+        // 使用真实的周数据
+        let weeklyData = generateWeeklyData(from: responseData.data.dataByDate)
 
         let maxValue = (weeklyData.map { $0.value }.max() ?? 100)
         let totalFocus = weeklyData.reduce(0) { $0 + $1.value }
@@ -308,6 +301,22 @@ func randomColor() -> Color {
     )
 }
 
+// 生成周数据的辅助函数
+private func generateWeeklyData(from dataByDate: [ConcentrationDataByDate]) -> [BarData] {
+    let dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    var weeklyData: [BarData] = []
+
+    // 遍历返回的数据，按顺序添加
+    for i in 0..<7 {
+        let dayName = dayNames[i]
+        let value = i < dataByDate.count ? dataByDate[i].durationTotal : 0
+        weeklyData.append(BarData(day: dayName, value: value))
+    }
+
+    return weeklyData
+}
+
 struct PieChartView: View {
     let data: [FocusData]
     let total: Int
@@ -381,4 +390,3 @@ struct PieChartLabel: View {
         .offset(x: x, y: y)
     }
 }
-
