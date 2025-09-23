@@ -182,12 +182,14 @@ struct StatisticsView: View {
 
     // 条形图部分
     private var barChartSection: some View {
-        // 使用真实的周数据
-        let weeklyData = generateWeeklyData(from: responseData.data.dataByDate)
+        // 根据选择的时间周期生成数据
+        let chartData = selectedPeriod == .week ?
+            generateWeeklyData(from: responseData.data.dataByDate) :
+            generateMonthlyData(from: responseData.data.dataByDate)
 
-        let maxValue = (weeklyData.map { $0.value }.max() ?? 100)
-        let totalFocus = weeklyData.reduce(0) { $0 + $1.value }
-        let dailyAverage = totalFocus / weeklyData.count
+        let maxValue = (chartData.map { $0.value }.max() ?? 100)
+        let totalFocus = chartData.reduce(0) { $0 + $1.value }
+        let dailyAverage = totalFocus / chartData.count
 
         // 计算 5 等分
         let step = maxValue / 5
@@ -208,18 +210,18 @@ struct StatisticsView: View {
                 .padding(.trailing, 5)
 
                 GeometryReader { geo in
-                    HStack(alignment: .bottom, spacing: 4) {
-                        ForEach(weeklyData, id: \.day) { data in
+                    HStack(alignment: .bottom, spacing: selectedPeriod == .week ? 4 : 1) {
+                        ForEach(chartData, id: \.day) { data in
                             VStack(spacing: 4) {
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 6)
                                     .fill(AppColors.Brand.primary)
                                     .frame(
-                                        width: 20,
+                                        width: selectedPeriod == .week ? 20 : 8,
                                         height: geo.size.height * CGFloat(data.value) / CGFloat(maxValue)
                                     )
 
                                 Text(data.day)
-                                    .font(.appBody(size: 12))
+                                    .font(.appBody(size: selectedPeriod == .week ? 12 : 8))
                                     .foregroundColor(AppColors.Text.primary)
                             }
                             .frame(maxWidth: .infinity)
@@ -315,6 +317,22 @@ private func generateWeeklyData(from dataByDate: [ConcentrationDataByDate]) -> [
     }
 
     return weeklyData
+}
+
+// 生成月数据的辅助函数
+private func generateMonthlyData(from dataByDate: [ConcentrationDataByDate]) -> [BarData] {
+    var monthlyData: [BarData] = []
+
+    // 显示所有天的数据
+    for (index, dayData) in dataByDate.enumerated() {
+        // 从日期字符串中提取日期数字，格式：2025-9-1
+        let dateComponents = dayData.date.split(separator: "-")
+        let dayNumber = String(dateComponents.last ?? "\(index + 1)")
+
+        monthlyData.append(BarData(day: dayNumber, value: dayData.durationTotal))
+    }
+
+    return monthlyData
 }
 
 struct PieChartView: View {
