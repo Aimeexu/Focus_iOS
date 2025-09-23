@@ -283,7 +283,9 @@ struct StatisticsView: View {
             generateWeeklyData(from: responseData.data.dataByDate) :
             generateMonthlyData(from: responseData.data.dataByDate)
 
-        let maxValue = (chartData.map { $0.value }.max() ?? 100)
+        let actualMaxValue = chartData.map { $0.value }.max() ?? 0
+        let isAllZero = actualMaxValue == 0
+        let maxValue = isAllZero ? 1 : actualMaxValue
         let totalFocus = chartData.reduce(0) { $0 + $1.value }
         let dailyAverage = totalFocus / chartData.count
 
@@ -305,26 +307,37 @@ struct StatisticsView: View {
                 .frame(width: 30)
                 .padding(.trailing, 5)
 
-                GeometryReader { geo in
-                    HStack(alignment: .bottom, spacing: selectedPeriod == .week ? 4 : 1) {
-                        ForEach(chartData, id: \.day) { data in
-                            VStack(spacing: 4) {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(AppColors.Brand.primary)
-                                    .frame(
-                                        width: selectedPeriod == .week ? 20 : 8,
-                                        height: geo.size.height * CGFloat(data.value) / CGFloat(maxValue)
-                                    )
-
-                                Text(data.day)
-                                    .font(.appBody(size: selectedPeriod == .week ? 12 : 8))
-                                    .foregroundColor(AppColors.Text.primary)
+                VStack(spacing: 8) {
+                    GeometryReader { geo in
+                        VStack {
+                            Spacer()
+                            HStack(alignment: .bottom, spacing: selectedPeriod == .week ? 4 : 1) {
+                                ForEach(chartData, id: \.day) { data in
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(AppColors.Brand.primary)
+                                        .frame(
+                                            width: selectedPeriod == .week ? 20 : 8,
+                                            height: {
+                                                let displayValue: CGFloat = (isAllZero && data.value == 0) ? 0.1 : CGFloat(data.value)
+                                                return geo.size.height * displayValue / CGFloat(maxValue)
+                                            }()
+                                        )
+                                        .frame(maxWidth: .infinity)
+                                }
                             }
-                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .frame(height: 160)
+
+                    HStack(spacing: selectedPeriod == .week ? 4 : 1) {
+                        ForEach(chartData, id: \.day) { data in
+                            Text(data.day)
+                                .font(.appBody(size: selectedPeriod == .week ? 12 : 8))
+                                .foregroundColor(AppColors.Text.primary)
+                                .frame(maxWidth: .infinity)
                         }
                     }
                 }
-                .frame(height: 160)
             }
             .padding(.horizontal, 10)
             .padding(.top, 10)
