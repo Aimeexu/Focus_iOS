@@ -10,8 +10,10 @@ import SwiftUI
 struct StatisticsView: View {
     @State private var selectedPeriod: TimePeriod = .day
     @State private var responseData = ConcentrationStatisticsResponse.empty
-
+    @State private var currentDate = Date() // 当前查看的日期
     @State private var focusData: [FocusData] = []
+    @State private var dragOffset: CGFloat = 0
+    @State private var isLoading = false
 
     enum TimePeriod: String, CaseIterable {
         case day = "DAY"
@@ -110,7 +112,7 @@ struct StatisticsView: View {
                     let month = Calendar.current.component(.month, from: currentDate)
                     let year = Calendar.current.component(.year, from: currentDate)
                     let response = try await NetworkManager.shared.getConcentrationStatistics(
-                        period: "TODAY",//selectedPeriod.rawValue,
+                        period: "TODAY",
                         month: month,
                         year: year
                     )
@@ -128,18 +130,74 @@ struct StatisticsView: View {
         }
     }
 
+    // 改变日期并请求数据
+    private func changeDate(by days: Int) {
+        let newDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) ?? currentDate
+        currentDate = newDate
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isLoading = true
+        }
+
+        Task {
+            await loadDataForCurrentDate()
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isLoading = false
+                }
+            }
+        }
+    }
+
+    // 为当前日期加载数据
+    private func loadDataForCurrentDate() async {
+        do {
+            let month = Calendar.current.component(.month, from: currentDate)
+            let year = Calendar.current.component(.year, from: currentDate)
+
+            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            let operateDateString = dateFormatter.string(from: currentDate)
+
+            let response = try await NetworkManager.shared.getConcentrationStatistics(
+                period: "DAY",
+                month: month,
+                year: year,
+                operateDate: operateDateString
+            )
+
+            responseData = response
+            focusData = responseData.data.durationByTag.map { (key, value) in
+                let color = categoryColors[key] ?? randomColor()
+                return FocusData(category: key, minutes: value, color: color)
+            }
+        } catch {
+            print("❌ 加载日期数据失败: \(error)")
+        }
+    }
+
     // 饼图部分
     private var pieChartSection: some View {
         VStack(spacing: 40) {
             Spacer()
 
+            // 显示当前日期和滑动提示
+            VStack(spacing: 4) {
+                Text(formatDate(currentDate))
+                    .font(.appBody(size: 18))
+                    .foregroundColor(AppColors.Text.secondary)
+            }
+
             ZStack {
                 PieChartView(data: focusData, total: responseData.data.totalDuration)
                     .frame(width: 180, height: 180)
+                    .opacity(isLoading ? 0.5 : 1.0)
 
                 Text("\(responseData.data.totalDuration)")
                     .font(.appNumber(size: 36))
                     .foregroundColor(AppColors.Text.primary)
+                    .opacity(isLoading ? 0.5 : 1.0)
 
                 ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
                     PieChartLabel(
@@ -147,8 +205,46 @@ struct StatisticsView: View {
                         angle: labelAngle(for: index),
                         radius: 120
                     )
+                    .opacity(isLoading ? 0.5 : 1.0)
+                }
+
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.Brand.primary))
                 }
             }
+            .offset(x: dragOffset)
+            .gesture(
+                DragGesture(minimumDistance: 10, coordinateSpace: .local)
+                    .onChanged { value in
+                        // 限制拖拽范围，提供视觉反馈
+                        let maxOffset: CGFloat = 50
+                        dragOffset = min(max(value.translation.width, -maxOffset), maxOffset) * 0.3
+                    }
+                    .onEnded { value in
+                        let threshold: CGFloat = 30
+                        let velocity = abs(value.predictedEndTranslation.width - value.translation.width)
+
+                        // 重置偏移
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            dragOffset = 0
+                        }
+
+                        // 检查是否需要切换日期
+                        if !isLoading {
+                            if value.translation.width > threshold || (value.translation.width > 15 && velocity > 80) {
+                                // 右滑：显示前一天
+                                changeDate(by: -1)
+                            } else if value.translation.width < -threshold || (value.translation.width < -15 && velocity > 80) {
+                                // 左滑：显示后一天（不能超过今天）
+                                if !Calendar.current.isDateInToday(currentDate) {
+                                    changeDate(by: 1)
+                                }
+                            }
+                        }
+                    }
+            )
 
 
             Spacer()
@@ -333,6 +429,19 @@ private func generateMonthlyData(from dataByDate: [ConcentrationDataByDate]) -> 
     }
 
     return monthlyData
+}
+
+// 格式化日期显示
+private func formatDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    if Calendar.current.isDateInToday(date) {
+        return "Today"
+    } else if Calendar.current.isDateInYesterday(date) {
+        return "Yesterday"
+    } else {
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter.string(from: date)
+    }
 }
 
 struct PieChartView: View {

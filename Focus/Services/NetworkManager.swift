@@ -16,7 +16,7 @@ enum NetworkError: Error, LocalizedError {
     case decodingError
     case serverError(Int)
     case networkError(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
@@ -45,18 +45,18 @@ enum HTTPMethod: String {
 // MARK: - 网络管理器
 class NetworkManager {
     static let shared = NetworkManager()
-    
+
     private let session: Session
-    
+
     private init() {
         // 配置Session
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 60
-        
+
         self.session = Session(configuration: configuration)
     }
-    
+
     // MARK: - 通用请求方法
     func request<T: Codable>(
         url: String,
@@ -66,12 +66,12 @@ class NetworkManager {
         cookies: [String: String]? = nil,
         responseType: T.Type
     ) async throws -> T {
-        
+
         guard let url = URL(string: url) else {
             printLog("❌ 请求失败: URL无效 - \(url)")
             throw NetworkError.invalidURL
         }
-        
+
         // 转换HTTP方法
         let alamofireMethod: Alamofire.HTTPMethod
         switch method {
@@ -86,7 +86,7 @@ class NetworkManager {
         case .PATCH:
             alamofireMethod = .patch
         }
-        
+
         // 构建headers
         var httpHeaders: HTTPHeaders = []
         if let headers = headers {
@@ -94,16 +94,16 @@ class NetworkManager {
                 httpHeaders.add(name: key, value: value)
             }
         }
-        
+
         // 添加Cookie到headers
         if let cookies = cookies, !cookies.isEmpty {
             let cookieString = cookies.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
             httpHeaders.add(name: "Cookie", value: cookieString)
         }
-        
+
         // 打印请求日志
         printRequestLog(url: url.absoluteString, method: method.rawValue, parameters: parameters, headers: headers, cookies: cookies)
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             _ = session.request(
                 url,
@@ -115,7 +115,7 @@ class NetworkManager {
             .response { response in
                 // 打印响应日志
                 self.printResponseLog(response: response)
-                
+
                 // 检查HTTP状态码
                 if let statusCode = response.response?.statusCode {
                     if statusCode == 200 {
@@ -124,27 +124,27 @@ class NetworkManager {
                             continuation.resume(throwing: NetworkError.noData)
                             return
                         }
-                        
+
                         // 增强的SwiftyJSON解析处理
                         do {
                             // 先打印原始响应内容用于调试
                             if let responseString = String(data: data, encoding: .utf8) {
                                 print("🔍 原始响应内容: \(responseString)")
                             }
-                            
+
                             // 检查Content-Type
                             let contentType = response.response?.allHeaderFields["Content-Type"] as? String ?? ""
                             print("📋 Content-Type: \(contentType)")
-                            
+
                             // 尝试多种解析策略
                             let result = try self.parseResponseData(data: data, targetType: T.self, contentType: contentType)
                             continuation.resume(returning: result)
-                            
+
                         } catch {
                             print("❌ 所有解析方法都失败: \(error)")
                             continuation.resume(throwing: NetworkError.decodingError)
                         }
-                        
+
                     } else {
                         // 非200状态码，抛出服务器错误
                         continuation.resume(throwing: NetworkError.serverError(statusCode))
@@ -160,7 +160,7 @@ class NetworkManager {
             }
         }
     }
-    
+
     // MARK: - GET请求
     func get<T: Codable>(
         url: String,
@@ -178,7 +178,7 @@ class NetworkManager {
             responseType: responseType
         )
     }
-    
+
     // MARK: - POST请求
     func post<T: Codable>(
         url: String,
@@ -196,7 +196,7 @@ class NetworkManager {
             responseType: responseType
         )
     }
-    
+
     // MARK: - PUT请求
     func put<T: Codable>(
         url: String,
@@ -212,7 +212,7 @@ class NetworkManager {
             responseType: responseType
         )
     }
-    
+
     // MARK: - DELETE请求
     func delete<T: Codable>(
         url: String,
@@ -228,9 +228,9 @@ class NetworkManager {
             responseType: responseType
         )
     }
-    
+
     // MARK: - SwiftyJSON专用请求方法
-    
+
     /// 使用SwiftyJSON解析的通用请求方法
     func requestWithJSON(
         url: String,
@@ -239,12 +239,12 @@ class NetworkManager {
         headers: [String: String]? = nil,
         cookies: [String: String]? = nil
     ) async throws -> JSON {
-        
+
         guard let url = URL(string: url) else {
             printLog("❌ 请求失败: URL无效 - \(url)")
             throw NetworkError.invalidURL
         }
-        
+
         // 转换HTTP方法
         let alamofireMethod: Alamofire.HTTPMethod
         switch method {
@@ -259,7 +259,7 @@ class NetworkManager {
         case .PATCH:
             alamofireMethod = .patch
         }
-        
+
         // 构建headers
         var httpHeaders: HTTPHeaders = []
         if let headers = headers {
@@ -267,16 +267,16 @@ class NetworkManager {
                 httpHeaders.add(name: key, value: value)
             }
         }
-        
+
         // 添加Cookie到headers
         if let cookies = cookies, !cookies.isEmpty {
             let cookieString = cookies.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
             httpHeaders.add(name: "Cookie", value: cookieString)
         }
-        
+
         // 打印请求日志
         printRequestLog(url: url.absoluteString, method: method.rawValue, parameters: parameters, headers: headers, cookies: cookies)
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             _ = session.request(
                 url,
@@ -288,7 +288,7 @@ class NetworkManager {
             .response { response in
                 // 打印响应日志
                 self.printResponseLog(response: response)
-                
+
                 // 检查HTTP状态码
                 if let statusCode = response.response?.statusCode {
                     if statusCode == 200 {
@@ -297,7 +297,7 @@ class NetworkManager {
                             continuation.resume(throwing: NetworkError.noData)
                             return
                         }
-                        
+
                         do {
                             let json = try JSON(data: data)
                             print("✅ SwiftyJSON解析成功")
@@ -306,7 +306,7 @@ class NetworkManager {
                             print("❌ SwiftyJSON解析失败: \(error)")
                             continuation.resume(throwing: NetworkError.decodingError)
                         }
-                        
+
                     } else {
                         // 非200状态码，抛出服务器错误
                         continuation.resume(throwing: NetworkError.serverError(statusCode))
@@ -322,7 +322,7 @@ class NetworkManager {
             }
         }
     }
-    
+
     /// SwiftyJSON GET请求
     func getJSON(
         url: String,
@@ -338,7 +338,7 @@ class NetworkManager {
             cookies: cookies
         )
     }
-    
+
     /// SwiftyJSON POST请求
     func postJSON(
         url: String,
@@ -354,16 +354,16 @@ class NetworkManager {
             cookies: cookies
         )
     }
-    
+
     // MARK: - 增强的数据解析方法
     private func parseResponseData<T: Codable>(data: Data, targetType: T.Type, contentType: String) throws -> T {
         print("🔧 开始增强解析，目标类型: \(targetType)")
-        
+
         // 策略1: 直接使用SwiftyJSON解析
         do {
             let json = try JSON(data: data)
             print("✅ SwiftyJSON解析成功")
-            
+
             // 如果目标类型是String，返回JSON字符串
             if T.self == String.self {
                 if let jsonString = json.rawString() {
@@ -371,7 +371,7 @@ class NetworkManager {
                     return jsonString as! T
                 }
             }
-            
+
             // 尝试直接从原始数据解码
             do {
                 let decoder = JSONDecoder()
@@ -384,7 +384,7 @@ class NetworkManager {
                     printDetailedDecodingError(decodingError)
                 }
             }
-            
+
             // 尝试从SwiftyJSON重新生成数据后解码
             if let jsonData = try? json.rawData() {
                 let decoder = JSONDecoder()
@@ -393,13 +393,13 @@ class NetworkManager {
                     return decodedData
                 }
             }
-            
+
             // 检查是否是嵌套的JSON字符串
             if let responseString = json.string {
                 print("🔍 检测到字符串响应: \(responseString)")
                 return try parseNestedJSONString(responseString, targetType: targetType)
             }
-            
+
             // 检查是否是数组中的单个JSON字符串
             if let arrayValue = json.array, arrayValue.count == 1 {
                 if let firstElement = arrayValue.first?.string {
@@ -407,28 +407,28 @@ class NetworkManager {
                     return try parseNestedJSONString(firstElement, targetType: targetType)
                 }
             }
-            
+
         } catch {
             print("⚠️ SwiftyJSON解析失败: \(error)")
         }
-        
+
         // 策略2: 处理不同的Content-Type
         if contentType.contains("text/") {
             return try parseTextResponse(data: data, targetType: targetType)
         }
-        
+
         // 策略3: 尝试修复常见的JSON格式问题
         return try parseWithJSONFix(data: data, targetType: targetType)
     }
-    
+
     private func parseNestedJSONString<T: Codable>(_ jsonString: String, targetType: T.Type) throws -> T {
         print("🔧 解析嵌套JSON字符串")
-        
+
         // 如果目标就是String类型，直接返回
         if T.self == String.self {
             return jsonString as! T
         }
-        
+
         // 尝试解析嵌套的JSON
         if jsonString.hasPrefix("{") || jsonString.hasPrefix("[") {
             if let nestedData = jsonString.data(using: .utf8) {
@@ -437,7 +437,7 @@ class NetworkManager {
                     print("✅ 嵌套JSON解析成功")
                     return decodedData
                 }
-                
+
                 // 尝试使用SwiftyJSON解析嵌套内容
                 do {
                     let nestedJson = try JSON(data: nestedData)
@@ -451,28 +451,28 @@ class NetworkManager {
                 }
             }
         }
-        
+
         throw NetworkError.decodingError
     }
-    
+
     private func parseTextResponse<T: Codable>(data: Data, targetType: T.Type) throws -> T {
         print("🔧 解析文本响应")
-        
+
         guard let responseString = String(data: data, encoding: .utf8) else {
             throw NetworkError.decodingError
         }
-        
+
         // 如果目标是String类型，直接返回
         if T.self == String.self {
             return responseString as! T
         }
-        
+
         // 尝试将文本作为JSON解析
         let cleanedString = responseString
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\n", with: "")
             .replacingOccurrences(of: "\r", with: "")
-        
+
         if let cleanedData = cleanedString.data(using: .utf8) {
             let decoder = JSONDecoder()
             if let decodedData = try? decoder.decode(T.self, from: cleanedData) {
@@ -480,32 +480,32 @@ class NetworkManager {
                 return decodedData
             }
         }
-        
+
         throw NetworkError.decodingError
     }
-    
+
     private func parseWithJSONFix<T: Codable>(data: Data, targetType: T.Type) throws -> T {
         print("🔧 尝试修复JSON格式问题")
-        
+
         guard let responseString = String(data: data, encoding: .utf8) else {
             throw NetworkError.decodingError
         }
-        
+
         // 常见的JSON修复策略
         var fixedString = responseString
-        
+
         // 移除BOM标记
         if fixedString.hasPrefix("\u{FEFF}") {
             fixedString = String(fixedString.dropFirst())
         }
-        
+
         // 移除前后的引号（如果整个响应被包装在引号中）
         if fixedString.hasPrefix("\"") && fixedString.hasSuffix("\"") {
             fixedString = String(fixedString.dropFirst().dropLast())
             // 反转义引号
             fixedString = fixedString.replacingOccurrences(of: "\\\"", with: "\"")
         }
-        
+
         // 尝试解析修复后的JSON
         if let fixedData = fixedString.data(using: .utf8) {
             let decoder = JSONDecoder()
@@ -513,7 +513,7 @@ class NetworkManager {
                 print("✅ JSON修复后解析成功")
                 return decodedData
             }
-            
+
             // 使用SwiftyJSON再次尝试
             do {
                 let json = try JSON(data: fixedData)
@@ -526,52 +526,52 @@ class NetworkManager {
                 print("⚠️ SwiftyJSON修复解析失败: \(error)")
             }
         }
-        
+
         throw NetworkError.decodingError
     }
-    
+
     /// 打印详细的解码错误信息
     private func printDetailedDecodingError(_ error: DecodingError) {
         print("🔍 详细解码错误:")
-        
+
         switch error {
         case .keyNotFound(let key, let context):
             print("   🔑 缺少键: \(key.stringValue)")
             print("   📍 路径: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
             print("   💬 描述: \(context.debugDescription)")
-            
+
         case .typeMismatch(let type, let context):
             print("   🔄 类型不匹配: 期望 \(type)")
             print("   📍 路径: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
             print("   💬 描述: \(context.debugDescription)")
-            
+
         case .valueNotFound(let type, let context):
             print("   ❓ 值未找到: \(type)")
             print("   📍 路径: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
             print("   💬 描述: \(context.debugDescription)")
-            
+
         case .dataCorrupted(let context):
             print("   💥 数据损坏")
             print("   📍 路径: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
             print("   💬 描述: \(context.debugDescription)")
-            
+
         @unknown default:
             print("   ❓ 未知解码错误: \(error)")
         }
     }
-    
+
     // MARK: - 日志打印方法
     private func printLog(_ message: String) {
         print("🌐 NetworkManager: \(message)")
     }
-    
+
     private func printRequestLog(url: String, method: String, parameters: [String: Any]?, headers: [String: String]?, cookies: [String: String]? = nil) {
         print("\n" + String(repeating: "=", count: 60))
         print("🚀 网络请求开始")
         print(String(repeating: "=", count: 60))
         print("📍 URL: \(url)")
         print("🔧 Method: \(method)")
-        
+
         if let headers = headers, !headers.isEmpty {
             print("📋 Headers:")
             for (key, value) in headers {
@@ -580,7 +580,7 @@ class NetworkManager {
                 print("   \(key): \(displayValue)")
             }
         }
-        
+
         if let parameters = parameters, !parameters.isEmpty {
             print("📦 Parameters:")
             for (key, value) in parameters {
@@ -589,7 +589,7 @@ class NetworkManager {
                 print("   \(key): \(displayValue)")
             }
         }
-        
+
         if let cookies = cookies, !cookies.isEmpty {
             print("🍪 Cookies:")
             for (key, value) in cookies {
@@ -606,11 +606,11 @@ class NetworkManager {
                 print("   \(key): \(displayValue)")
             }
         }
-        
+
         print("⏰ 请求时间: \(getCurrentTimeString())")
         print(String(repeating: "=", count: 60))
     }
-    
+
     private func printUploadLog(url: String, fileName: String, fileSize: Int, parameters: [String: Any]?, headers: [String: String]?) {
         print("\n" + String(repeating: "=", count: 60))
         print("📤 文件上传请求开始")
@@ -618,7 +618,7 @@ class NetworkManager {
         print("📍 URL: \(url)")
         print("📁 文件名: \(fileName)")
         print("📏 文件大小: \(formatFileSize(fileSize))")
-        
+
         if let headers = headers, !headers.isEmpty {
             print("📋 Headers:")
             for (key, value) in headers {
@@ -626,50 +626,50 @@ class NetworkManager {
                 print("   \(key): \(displayValue)")
             }
         }
-        
+
         if let parameters = parameters, !parameters.isEmpty {
             print("📦 Parameters:")
             for (key, value) in parameters {
                 print("   \(key): \(value)")
             }
         }
-        
+
         print("⏰ 请求时间: \(getCurrentTimeString())")
         print(String(repeating: "=", count: 60))
     }
-    
+
     private func printResponseLog(response: DataResponse<Data?, AFError>) {
         print("\n" + String(repeating: "-", count: 60))
         print("📥 网络响应")
         print(String(repeating: "-", count: 60))
-        
+
         if let httpResponse = response.response {
             let statusCode = httpResponse.statusCode
             let statusEmoji = getStatusEmoji(statusCode)
             print("\(statusEmoji) 状态码: \(statusCode)")
             print("🌐 URL: \(httpResponse.url?.absoluteString ?? "Unknown")")
-            
+
             // 打印Content-Type
             if let contentType = httpResponse.allHeaderFields["Content-Type"] as? String {
                 print("📋 Content-Type: \(contentType)")
             }
         }
-        
+
         if let headers = response.response?.allHeaderFields {
             print("📋 响应Headers:")
             for (key, value) in headers {
                 print("   \(key): \(value)")
             }
         }
-        
+
         // 打印响应数据
         if let data = response.data {
             print("📊 响应数据大小: \(formatFileSize(data.count))")
-            
+
             // 尝试打印响应内容
             if let responseString = String(data: data, encoding: .utf8) {
                 print("📄 响应内容:")
-                
+
                 // 尝试格式化JSON
                 if let jsonData = responseString.data(using: .utf8),
                    let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
@@ -684,7 +684,7 @@ class NetworkManager {
                 print("📄 响应内容: [二进制数据，无法显示为文本]")
             }
         }
-        
+
         // 打印错误信息
         if let error = response.error {
             print("❌ 错误信息: \(error.localizedDescription)")
@@ -692,12 +692,12 @@ class NetworkManager {
                 print("🔍 底层错误: \(underlyingError.localizedDescription)")
             }
         }
-        
+
         print("⏰ 响应时间: \(getCurrentTimeString())")
         print("⏱️ 请求耗时: \(String(format: "%.3f", response.metrics?.taskInterval.duration ?? 0))秒")
         print(String(repeating: "-", count: 60) + "\n")
     }
-    
+
     private func getStatusEmoji(_ statusCode: Int) -> String {
         switch statusCode {
         case 200...299:
@@ -712,20 +712,20 @@ class NetworkManager {
             return "❓"
         }
     }
-    
+
     private func formatFileSize(_ bytes: Int) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
     }
-    
+
     private func getCurrentTimeString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         return formatter.string(from: Date())
     }
-    
+
     // MARK: - 上传文件
     func upload<T: Codable>(
         url: String,
@@ -736,21 +736,21 @@ class NetworkManager {
         headers: [String: String]? = nil,
         responseType: T.Type
     ) async throws -> T {
-        
+
         guard let url = URL(string: url) else {
             throw NetworkError.invalidURL
         }
-        
+
         var httpHeaders: HTTPHeaders = []
         if let headers = headers {
             for (key, value) in headers {
                 httpHeaders.add(name: key, value: value)
             }
         }
-        
+
         // 打印上传请求日志
         printUploadLog(url: url.absoluteString, fileName: fileName, fileSize: data.count, parameters: parameters, headers: headers)
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             session.upload(
                 multipartFormData: { multipartFormData in
@@ -761,7 +761,7 @@ class NetworkManager {
                         fileName: fileName,
                         mimeType: mimeType
                     )
-                    
+
                     // 添加其他参数
                     if let parameters = parameters {
                         for (key, value) in parameters {
@@ -777,7 +777,7 @@ class NetworkManager {
             .validate()
             .responseDecodable(of: T.self) { response in
                 // 打印响应日志
-                
+
                 switch response.result {
                 case .success(let data):
                     continuation.resume(returning: data)
@@ -791,26 +791,26 @@ class NetworkManager {
             }
         }
     }
-    
+
     // MARK: - 认证相关方法
     func getAuthHeaders() -> [String: String] {
         var headers: [String: String] = [
             "Content-Type": "application/json",
             "Accept": "application/json"
         ]
-        
+
         // 添加Cookie认证
         if let cookieInfo = AuthService.shared.getAuthCookie() {
             headers["Cookie"] = "\(cookieInfo.name)=\(cookieInfo.value)"
         }
-        
+
         return headers
     }
-    
+
     // 获取物品列表
     func getStuffList() async throws -> StuffListResponse {
         let baseURL = "http://ds2.tapgame.cn"
-        
+
         return try await post(
             url: "\(baseURL)/app/user/stuff/base/list",
             parameters: ["body" : "{}"],
@@ -843,7 +843,7 @@ struct NetworkLoginResponse: Codable {
 
 // MARK: - 专注计时相关API
 extension NetworkManager {
-    
+
     /// 开始专注计时
     /// - Parameters:
     ///   - duration: 专注时长（分钟）
@@ -852,35 +852,35 @@ extension NetworkManager {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/start"
         let url = baseURL + endpoint
-        
+
         // 获取当前日期和时区信息
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let operateDate = dateFormatter.string(from: Date())
         let timeZone = TimeZone.current.identifier
-        
+
         let parameters: [String: Any] = [
             "operateDate": operateDate,
             "timeZone": timeZone,
             "duration": duration,
             "concentrationPlanTag": concentrationPlanTag
         ]
-        
+
         print("🎯 开始专注计时API请求:")
         print("   operateDate: \(operateDate)")
         print("   timeZone: \(timeZone)")
         print("   duration: \(duration)")
-        
+
         let headers = [
             "Content-Type": "application/json"
         ]
-        
+
         // 获取Cookie信息
         var cookies: [String: String] = [:]
         if let authCookie = AuthService.shared.getAuthCookie() {
             cookies[authCookie.name] = authCookie.value
         }
-        
+
         return try await post(
             url: url,
             parameters: parameters,
@@ -889,7 +889,7 @@ extension NetworkManager {
             responseType: ConcentrationStartResponse.self
         )
     }
-    
+
     /// 结束专注计时
     /// - Parameters:
     ///   - id: 专注计划ID
@@ -898,34 +898,34 @@ extension NetworkManager {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/finish"
         let url = baseURL + endpoint
-        
+
         // 获取当前日期和时区信息
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let operateDate = dateFormatter.string(from: Date())
         let timeZone = TimeZone.current.identifier
-        
+
         let parameters: [String: Any] = [
             "operateDate": operateDate,
             "timeZone": timeZone,
             "id": id
         ]
-        
+
         print("🏁 结束专注计时API请求:")
         print("   operateDate: \(operateDate)")
         print("   timeZone: \(timeZone)")
         print("   id: \(id)")
-        
+
         let headers = [
             "Content-Type": "application/json"
         ]
-        
+
         // 获取Cookie信息
         var cookies: [String: String] = [:]
         if let authCookie = AuthService.shared.getAuthCookie() {
             cookies[authCookie.name] = authCookie.value
         }
-        
+
         return try await post(
             url: url,
             parameters: parameters,
@@ -934,7 +934,7 @@ extension NetworkManager {
             responseType: ConcentrationEndResponse.self
         )
     }
-    
+
     /// 使用SwiftyJSON开始专注计时
     /// - Parameters:
     ///   - duration: 专注时长（分钟）
@@ -944,35 +944,35 @@ extension NetworkManager {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/start"
         let url = baseURL + endpoint
-        
+
         // 获取当前日期和时区信息
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let operateDate = dateFormatter.string(from: Date())
         let timeZone = TimeZone.current.identifier
-        
+
         let parameters: [String: Any] = [
             "operateDate": operateDate,
             "timeZone": timeZone,
             "duration": duration,
             "concentrationPlanTag": concentrationPlanTag
         ]
-        
+
         print("🎯 开始专注计时API请求 (SwiftyJSON):")
         print("   operateDate: \(operateDate)")
         print("   timeZone: \(timeZone)")
         print("   duration: \(duration)")
-        
+
         let headers = [
             "Content-Type": "application/json"
         ]
-        
+
         // 获取Cookie信息
         var cookies: [String: String] = [:]
         if let authCookie = AuthService.shared.getAuthCookie() {
             cookies[authCookie.name] = authCookie.value
         }
-        
+
         return try await postJSON(
             url: url,
             parameters: parameters,
@@ -1069,7 +1069,7 @@ extension NetworkManager {
     ///   - month: 月份
     ///   - year: 年份
     /// - Returns: SwiftyJSON对象
-    func getConcentrationStatistics(period: String, month: Int, year: Int) async throws -> ConcentrationStatisticsResponse {
+    func getConcentrationStatistics(period: String, month: Int, year: Int, operateDate: String? = nil) async throws -> ConcentrationStatisticsResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/concentration/statistics"
         let url = baseURL + endpoint
@@ -1077,34 +1077,22 @@ extension NetworkManager {
 //        // 当前日期和时区
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        var operateDate = dateFormatter.string(from: Date())
+        var finalOperateDate = operateDate ?? dateFormatter.string(from: Date())
         let timeZone = TimeZone.current.identifier
 
         let calendar = Calendar.current
         let today = Date()
 
-        // 获取本周的周一
-        if let thisWeekMonday = calendar.date(
-            from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
-        ) {
-            // 上上周周一 = 本周周一 - 2周
-            if let twoWeeksAgoMonday = calendar.date(byAdding: .weekOfYear, value: -1, to: thisWeekMonday) {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                operateDate = dateFormatter.string(from: twoWeeksAgoMonday)
-            }
-        }
-
         let parameters: [String: Any] = [
-            "operateDate": operateDate,
+            "operateDate": finalOperateDate,
             "timeZone": timeZone,
-            "period": period,
+            "period": period == "DAY" ? "TODAY" : period,
             "month": month,
             "year": year
         ]
 
         print("📊 获取专注统计API请求 (SwiftyJSON):")
-        print("   operateDate: \(operateDate)")
+        print("   operateDate: \(finalOperateDate)")
         print("   timeZone: \(timeZone)")
         print("   period: \(period), month: \(month), year: \(year)")
 
@@ -1129,14 +1117,14 @@ extension NetworkManager {
 
 // MARK: - 物品相关API
 extension NetworkManager {
-    
+
     /// 获取用户物品基础列表
     /// - Returns: 物品列表响应
     func getUserStuffBaseList() async throws -> StuffListResponse {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/stuff/base/list"
         let url = baseURL + endpoint
-        
+
         return try await post(
             url: url,
             parameters: ["body" : "{}"],
@@ -1144,20 +1132,20 @@ extension NetworkManager {
             responseType: StuffListResponse.self
         )
     }
-    
+
     /// 使用SwiftyJSON获取用户物品基础列表
     /// - Returns: SwiftyJSON对象
     func getUserStuffBaseListWithJSON() async throws -> JSON {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/stuff/base/list"
         let url = baseURL + endpoint
-        
+
         // 获取Cookie信息
         var cookies: [String: String] = [:]
         if let authCookie = AuthService.shared.getAuthCookie() {
             cookies[authCookie.name] = authCookie.value
         }
-        
+
         return try await postJSON(
             url: url,
             parameters: ["body" : "{}"],
@@ -1172,7 +1160,7 @@ extension NetworkManager {
 
 // MARK: - Apple登录相关API
 extension NetworkManager {
-    
+
     /// Apple登录
     /// - Parameters:
     ///   - operateDate: 操作日期
@@ -1183,22 +1171,22 @@ extension NetworkManager {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/login/apple"
         let url = baseURL + endpoint
-        
+
         let parameters: [String: Any] = [
             "operateDate": operateDate,
             "timeZone": timeZone,
             "identityToken": identityToken
         ]
-        
+
         let headers = [
             "Content-Type": "application/json",
             "Accept": "application/json"
         ]
-        
+
         print("🍎 Apple登录API请求:")
         print("   URL: \(url)")
         print("   参数: \(parameters)")
-        
+
         return try await post(
             url: url,
             parameters: parameters,
@@ -1206,7 +1194,7 @@ extension NetworkManager {
             responseType: AchievementLoginResponse.self
         )
     }
-    
+
     /// 使用SwiftyJSON进行Apple登录
     /// - Parameters:
     ///   - operateDate: 操作日期
@@ -1217,22 +1205,22 @@ extension NetworkManager {
         let baseURL = "http://ds2.tapgame.cn"
         let endpoint = "/app/user/login/apple"
         let url = baseURL + endpoint
-        
+
         let parameters: [String: Any] = [
             "operateDate": operateDate,
             "timeZone": timeZone,
             "identityToken": identityToken
         ]
-        
+
         let headers = [
             "Content-Type": "application/json",
             "Accept": "application/json"
         ]
-        
+
         print("🍎 Apple登录API请求 (SwiftyJSON):")
         print("   URL: \(url)")
         print("   参数: \(parameters)")
-        
+
         return try await postJSON(
             url: url,
             parameters: parameters,
