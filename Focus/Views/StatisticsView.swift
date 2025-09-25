@@ -23,121 +23,32 @@ struct StatisticsView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppColors.Background.primary.ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                AppColors.Background.primary.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // 图表内容区域
-                if selectedPeriod == .day {
-                    pieChartSection
-                } else {
-                    VStack(spacing: 0) {
-                        barChartSection
-                            .padding(.top, 30)
-                            .offset(x: dragOffset)
-                            .opacity(isLoading ? 0.5 : 1.0)
-
-                        ZStack {
-                            PieChartView(data: focusData, total: responseData.data.totalDuration)
-                                .frame(width: 180, height: 180)
-                                .opacity(isLoading ? 0.5 : 1.0)
-
-                            Text("\(responseData.data.totalDuration)")
-                                .font(.appNumber(size: 36))
-                                .foregroundColor(AppColors.Text.primary)
-                                .opacity(isLoading ? 0.5 : 1.0)
-
-                            ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
-                                PieChartLabel(
-                                    data: data,
-                                    angle: labelAngle(for: index),
-                                    radius: 120
-                                )
-                                .opacity(isLoading ? 0.5 : 1.0)
-                            }
-
-                            if isLoading {
-                                ProgressView()
-                                    .scaleEffect(1.2)
-                                    .progressViewStyle(
-                                        CircularProgressViewStyle(tint: AppColors.Brand.primary))
-                            }
-                        }
-                        .padding(.top, 30)
-                        .offset(x: dragOffset)
-
-                        Spacer()
+                VStack(spacing: 0) {
+                    // 图表内容区域
+                    if selectedPeriod == .day {
+                        dayModeContent
+                            .frame(maxHeight: geometry.size.height - 200)  // 预留底部空间
+                    } else {
+                        weekMonthYearModeContent
                     }
-                    .gesture(
-                        DragGesture(minimumDistance: 10, coordinateSpace: .local)
-                            .onChanged { value in
-                                // 限制拖拽范围，提供视觉反馈
-                                let maxOffset: CGFloat = 50
-                                dragOffset =
-                                    min(max(value.translation.width, -maxOffset), maxOffset) * 0.3
-                            }
-                            .onEnded { value in
-                                let threshold: CGFloat = 30
-                                let velocity = abs(
-                                    value.predictedEndTranslation.width - value.translation.width)
-
-                                // 重置偏移
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    dragOffset = 0
-                                }
-
-                                // 检查是否需要切换时间周期
-                                if !isLoading {
-                                    if value.translation.width > threshold
-                                        || (value.translation.width > 15 && velocity > 80)
-                                    {
-                                        // 右滑：显示上一个周期
-                                        switch selectedPeriod {
-                                        case .week:
-                                            changeWeek(by: -1)
-                                        case .month:
-                                            changeMonth(by: -1)
-                                        case .year:
-                                            changeYear(by: -1)
-                                        default:
-                                            break
-                                        }
-                                    } else if value.translation.width < -threshold
-                                        || (value.translation.width < -15 && velocity > 80)
-                                    {
-                                        // 左滑：显示下一个周期
-                                        switch selectedPeriod {
-                                        case .week:
-                                            changeWeek(by: 1)
-                                        case .month:
-                                            changeMonth(by: 1)
-                                        case .year:
-                                            changeYear(by: 1)
-                                        default:
-                                            break
-                                        }
-                                    }
-                                }
-                            }
-                    )
                 }
             }
         }
-        // ✅ 把 TabBar 固定在安全区域顶部
+        // TabBar 固定在安全区域顶部
         .safeAreaInset(edge: .top) {
             HStack(spacing: 0) {
                 ForEach(TimePeriod.allCases, id: \.self) { period in
                     Button(action: {
                         selectedPeriod = period
-
-                        // 重置当前日期为今天
                         currentDate = Date()
 
                         Task {
                             do {
-                                // 获取当前日期
                                 let currentDate = Date()
-                                // 使用 Calendar 获取月份、年份
                                 let month = Calendar.current.component(.month, from: currentDate)
                                 let year = Calendar.current.component(.year, from: currentDate)
 
@@ -146,7 +57,6 @@ struct StatisticsView: View {
                                 if selectedPeriod == .week || selectedPeriod == .month
                                     || selectedPeriod == .year
                                 {
-                                    // 构建operateDate字符串
                                     let dateFormatter = DateFormatter()
                                     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                                     let operateDateString = dateFormatter.string(from: currentDate)
@@ -202,9 +112,7 @@ struct StatisticsView: View {
         .onAppear {
             Task {
                 do {
-                    // 获取当前日期
                     let currentDate = Date()
-                    // 使用 Calendar 获取月份、年份
                     let month = Calendar.current.component(.month, from: currentDate)
                     let year = Calendar.current.component(.year, from: currentDate)
                     let response = try await NetworkManager.shared.getConcentrationStatistics(
@@ -224,6 +132,197 @@ struct StatisticsView: View {
                 }
             }
         }
+    }
+
+    // Day模式内容 - 使用ScrollView确保不被遮挡
+    private var dayModeContent: some View {
+        ScrollView {
+            VStack(spacing: 30) {
+                Spacer().frame(height: 20)
+
+                // 显示当前日期
+                VStack(spacing: 4) {
+                    Text(formatDate(currentDate))
+                        .font(.appBody(size: 18))
+                        .foregroundColor(AppColors.Text.secondary)
+                }
+
+                ZStack {
+                    PieChartView(data: focusData, total: responseData.data.totalDuration)
+                        .frame(width: 180, height: 180)
+                        .opacity(isLoading ? 0.5 : 1.0)
+
+                    Text("\(responseData.data.totalDuration)")
+                        .font(.appNumber(size: 36))
+                        .foregroundColor(AppColors.Text.primary)
+                        .opacity(isLoading ? 0.5 : 1.0)
+
+                    ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
+                        PieChartLabel(
+                            data: data,
+                            angle: labelAngle(for: index),
+                            radius: 120
+                        )
+                        .opacity(isLoading ? 0.5 : 1.0)
+                    }
+
+                    if isLoading {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                            .progressViewStyle(
+                                CircularProgressViewStyle(tint: AppColors.Brand.primary))
+                    }
+                }
+                .offset(x: dragOffset)
+                .gesture(dayModeGesture)
+
+                HStack(spacing: 40) {
+                    VStack(spacing: 8) {
+                        Text("Total Focus")
+                            .font(.appBody(size: 18))
+                            .foregroundColor(AppColors.Text.secondary)
+                        Text("\(responseData.data.totalDuration) m")
+                            .font(.appNumber(size: 24))
+                            .foregroundColor(AppColors.Text.primary)
+                    }
+
+                    Rectangle()
+                        .fill(AppColors.Brand.primary)
+                        .frame(width: 2, height: 40)
+
+                    VStack(spacing: 8) {
+                        Text("Focus Sessions")
+                            .font(.appBody(size: 18))
+                            .foregroundColor(AppColors.Text.secondary)
+                        Text("60")
+                            .font(.appNumber(size: 24))
+                            .foregroundColor(AppColors.Text.primary)
+                    }
+                }
+
+                Spacer().frame(height: 50)  // 底部安全空间
+            }
+        }
+        .scrollDisabled(true)  // 禁用滚动，只是为了避免被遮挡
+    }
+
+    // Week/Month/Year模式内容
+    private var weekMonthYearModeContent: some View {
+        VStack(spacing: 0) {
+            barChartSection
+                .padding(.top, 30)
+                .offset(x: dragOffset)
+                .opacity(isLoading ? 0.5 : 1.0)
+
+            ZStack {
+                PieChartView(data: focusData, total: responseData.data.totalDuration)
+                    .frame(width: 180, height: 180)
+                    .opacity(isLoading ? 0.5 : 1.0)
+
+                Text("\(responseData.data.totalDuration)")
+                    .font(.appNumber(size: 36))
+                    .foregroundColor(AppColors.Text.primary)
+                    .opacity(isLoading ? 0.5 : 1.0)
+
+                ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
+                    PieChartLabel(
+                        data: data,
+                        angle: labelAngle(for: index),
+                        radius: 120
+                    )
+                    .opacity(isLoading ? 0.5 : 1.0)
+                }
+
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.Brand.primary))
+                }
+            }
+            .padding(.top, 30)
+            .offset(x: dragOffset)
+
+            Spacer()
+        }
+        .gesture(weekMonthYearModeGesture)
+    }
+
+    // Day模式手势
+    private var dayModeGesture: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .local)
+            .onChanged { value in
+                let maxOffset: CGFloat = 50
+                dragOffset = min(max(value.translation.width, -maxOffset), maxOffset) * 0.3
+            }
+            .onEnded { value in
+                let threshold: CGFloat = 30
+                let velocity = abs(value.predictedEndTranslation.width - value.translation.width)
+
+                withAnimation(.easeOut(duration: 0.2)) {
+                    dragOffset = 0
+                }
+
+                if !isLoading {
+                    if value.translation.width > threshold
+                        || (value.translation.width > 15 && velocity > 80)
+                    {
+                        changeDate(by: -1)
+                    } else if value.translation.width < -threshold
+                        || (value.translation.width < -15 && velocity > 80)
+                    {
+                        if !Calendar.current.isDateInToday(currentDate) {
+                            changeDate(by: 1)
+                        }
+                    }
+                }
+            }
+    }
+
+    // Week/Month/Year模式手势
+    private var weekMonthYearModeGesture: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .local)
+            .onChanged { value in
+                let maxOffset: CGFloat = 50
+                dragOffset = min(max(value.translation.width, -maxOffset), maxOffset) * 0.3
+            }
+            .onEnded { value in
+                let threshold: CGFloat = 30
+                let velocity = abs(value.predictedEndTranslation.width - value.translation.width)
+
+                withAnimation(.easeOut(duration: 0.2)) {
+                    dragOffset = 0
+                }
+
+                if !isLoading {
+                    if value.translation.width > threshold
+                        || (value.translation.width > 15 && velocity > 80)
+                    {
+                        switch selectedPeriod {
+                        case .week:
+                            changeWeek(by: -1)
+                        case .month:
+                            changeMonth(by: -1)
+                        case .year:
+                            changeYear(by: -1)
+                        default:
+                            break
+                        }
+                    } else if value.translation.width < -threshold
+                        || (value.translation.width < -15 && velocity > 80)
+                    {
+                        switch selectedPeriod {
+                        case .week:
+                            changeWeek(by: 1)
+                        case .month:
+                            changeMonth(by: 1)
+                        case .year:
+                            changeYear(by: 1)
+                        default:
+                            break
+                        }
+                    }
+                }
+            }
     }
 
     // 改变日期并请求数据
@@ -313,7 +412,6 @@ struct StatisticsView: View {
             let month = Calendar.current.component(.month, from: currentDate)
             let year = Calendar.current.component(.year, from: currentDate)
 
-            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             let operateDateString = dateFormatter.string(from: currentDate)
@@ -341,7 +439,6 @@ struct StatisticsView: View {
             let month = Calendar.current.component(.month, from: currentDate)
             let year = Calendar.current.component(.year, from: currentDate)
 
-            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             let operateDateString = dateFormatter.string(from: currentDate)
@@ -369,7 +466,6 @@ struct StatisticsView: View {
             let month = Calendar.current.component(.month, from: currentDate)
             let year = Calendar.current.component(.year, from: currentDate)
 
-            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             let operateDateString = dateFormatter.string(from: currentDate)
@@ -397,7 +493,6 @@ struct StatisticsView: View {
             let month = Calendar.current.component(.month, from: currentDate)
             let year = Calendar.current.component(.year, from: currentDate)
 
-            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             let operateDateString = dateFormatter.string(from: currentDate)
@@ -419,112 +514,8 @@ struct StatisticsView: View {
         }
     }
 
-    // 饼图部分
-    private var pieChartSection: some View {
-        VStack(spacing: 40) {
-            Spacer()
-
-            // 显示当前日期和滑动提示
-            VStack(spacing: 4) {
-                Text(formatDate(currentDate))
-                    .font(.appBody(size: 18))
-                    .foregroundColor(AppColors.Text.secondary)
-            }
-
-            ZStack {
-                PieChartView(data: focusData, total: responseData.data.totalDuration)
-                    .frame(width: 180, height: 180)
-                    .opacity(isLoading ? 0.5 : 1.0)
-
-                Text("\(responseData.data.totalDuration)")
-                    .font(.appNumber(size: 36))
-                    .foregroundColor(AppColors.Text.primary)
-                    .opacity(isLoading ? 0.5 : 1.0)
-
-                ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
-                    PieChartLabel(
-                        data: data,
-                        angle: labelAngle(for: index),
-                        radius: 120
-                    )
-                    .opacity(isLoading ? 0.5 : 1.0)
-                }
-
-                if isLoading {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.Brand.primary))
-                }
-            }
-            .offset(x: dragOffset)
-            .gesture(
-                DragGesture(minimumDistance: 10, coordinateSpace: .local)
-                    .onChanged { value in
-                        // 限制拖拽范围，提供视觉反馈
-                        let maxOffset: CGFloat = 50
-                        dragOffset = min(max(value.translation.width, -maxOffset), maxOffset) * 0.3
-                    }
-                    .onEnded { value in
-                        let threshold: CGFloat = 30
-                        let velocity = abs(
-                            value.predictedEndTranslation.width - value.translation.width)
-
-                        // 重置偏移
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            dragOffset = 0
-                        }
-
-                        // 检查是否需要切换日期
-                        if !isLoading {
-                            if value.translation.width > threshold
-                                || (value.translation.width > 15 && velocity > 80)
-                            {
-                                // 右滑：显示前一天
-                                changeDate(by: -1)
-                            } else if value.translation.width < -threshold
-                                || (value.translation.width < -15 && velocity > 80)
-                            {
-                                // 左滑：显示后一天（不能超过今天）
-                                if !Calendar.current.isDateInToday(currentDate) {
-                                    changeDate(by: 1)
-                                }
-                            }
-                        }
-                    }
-            )
-
-            Spacer()
-
-            HStack(spacing: 40) {
-                VStack(spacing: 8) {
-                    Text("Total Focus")
-                        .font(.appBody(size: 18))
-                        .foregroundColor(AppColors.Text.secondary)
-                    Text("\(responseData.data.totalDuration) m")
-                        .font(.appNumber(size: 24))
-                        .foregroundColor(AppColors.Text.primary)
-                }
-
-                Rectangle()
-                    .fill(AppColors.Brand.primary)
-                    .frame(width: 2, height: 40)
-
-                VStack(spacing: 8) {
-                    Text("Focus Sessions")
-                        .font(.appBody(size: 18))
-                        .foregroundColor(AppColors.Text.secondary)
-                    Text("60")
-                        .font(.appNumber(size: 24))
-                        .foregroundColor(AppColors.Text.primary)
-                }
-            }
-            .padding(.bottom, 200)
-        }
-    }
-
     // 条形图部分
     private var barChartSection: some View {
-        // 根据选择的时间周期生成数据
         let chartData =
             selectedPeriod == .week
             ? generateWeeklyData(from: responseData.data.dataByDate)
@@ -536,9 +527,8 @@ struct StatisticsView: View {
         let totalFocus = chartData.reduce(0) { $0 + $1.value }
         let dailyAverage = totalFocus / chartData.count
 
-        // 计算 5 等分
         let step = maxValue / 5
-        let yAxisValues = (0...5).map { $0 * step }  // [0, step, 2step, ..., maxValue]
+        let yAxisValues = (0...5).map { $0 * step }
 
         return VStack(spacing: 0) {
             // 显示当前周/月/年信息
@@ -550,13 +540,12 @@ struct StatisticsView: View {
             }
 
             HStack(alignment: .bottom, spacing: 0) {
-                // 左侧刻度
                 VStack(alignment: .trailing, spacing: 0) {
                     ForEach(yAxisValues.reversed(), id: \.self) { value in
                         Text("\(value)")
                             .font(.appNumber(size: 12))
                             .foregroundColor(AppColors.Text.secondary)
-                            .frame(height: 160 / 5, alignment: .top)  // 160 高度对应 5 等分
+                            .frame(height: 160 / 5, alignment: .top)
                     }
                 }
                 .frame(width: 30)
@@ -653,7 +642,6 @@ struct StatisticsView: View {
 
         switch period {
         case .week:
-            // 获取该日期所在周的开始和结束日期
             guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: date) else {
                 return "This Week"
             }
@@ -662,7 +650,6 @@ struct StatisticsView: View {
             let endDate =
                 calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
 
-            // 检查是否是当前周
             if calendar.dateInterval(of: .weekOfYear, for: now) == weekInterval {
                 return "This Week"
             }
@@ -673,7 +660,6 @@ struct StatisticsView: View {
             let startString = formatter.string(from: startDate)
             let endString = formatter.string(from: endDate)
 
-            // 添加年份
             let yearFormatter = DateFormatter()
             yearFormatter.dateFormat = "yyyy"
             let year = yearFormatter.string(from: endDate)
@@ -740,7 +726,6 @@ private func generateWeeklyData(from dataByDate: [ConcentrationDataByDate]) -> [
 
     var weeklyData: [BarData] = []
 
-    // 遍历返回的数据，按顺序添加
     for i in 0..<7 {
         let dayName = dayNames[i]
         let value = i < dataByDate.count ? dataByDate[i].durationTotal : 0
@@ -754,9 +739,7 @@ private func generateWeeklyData(from dataByDate: [ConcentrationDataByDate]) -> [
 private func generateMonthlyData(from dataByDate: [ConcentrationDataByDate]) -> [BarData] {
     var monthlyData: [BarData] = []
 
-    // 显示所有天的数据
     for (index, dayData) in dataByDate.enumerated() {
-        // 从日期字符串中提取日期数字，格式：2025-9-1
         let dateComponents = dayData.date.split(separator: "-")
         let dayNumber = String(dateComponents.last ?? "\(index + 1)")
 
