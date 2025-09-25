@@ -34,15 +34,18 @@ struct StatisticsView: View {
                     VStack(spacing: 0) {
                         barChartSection
                             .padding(.top, 30)
+                            .offset(x: dragOffset)
+                            .opacity(isLoading ? 0.5 : 1.0)
 
                         ZStack {
                             PieChartView(data: focusData, total: responseData.data.totalDuration)
                                 .frame(width: 180, height: 180)
-
+                                .opacity(isLoading ? 0.5 : 1.0)
 
                             Text("\(responseData.data.totalDuration)")
                                 .font(.appNumber(size: 36))
                                 .foregroundColor(AppColors.Text.primary)
+                                .opacity(isLoading ? 0.5 : 1.0)
 
                             ForEach(Array(focusData.enumerated()), id: \.offset) { index, data in
                                 PieChartLabel(
@@ -50,12 +53,48 @@ struct StatisticsView: View {
                                     angle: labelAngle(for: index),
                                     radius: 120
                                 )
+                                .opacity(isLoading ? 0.5 : 1.0)
+                            }
+
+                            if isLoading {
+                                ProgressView()
+                                    .scaleEffect(1.2)
+                                    .progressViewStyle(CircularProgressViewStyle(tint: AppColors.Brand.primary))
                             }
                         }
                         .padding(.top, 30)
+                        .offset(x: dragOffset)
 
                         Spacer()
                     }
+                    .gesture(
+                        DragGesture(minimumDistance: 10, coordinateSpace: .local)
+                            .onChanged { value in
+                                // 限制拖拽范围，提供视觉反馈
+                                let maxOffset: CGFloat = 50
+                                dragOffset = min(max(value.translation.width, -maxOffset), maxOffset) * 0.3
+                            }
+                            .onEnded { value in
+                                let threshold: CGFloat = 30
+                                let velocity = abs(value.predictedEndTranslation.width - value.translation.width)
+
+                                // 重置偏移
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    dragOffset = 0
+                                }
+
+                                // 检查是否需要切换周
+                                if !isLoading {
+                                    if value.translation.width > threshold || (value.translation.width > 15 && velocity > 80) {
+                                        // 右滑：显示上一周
+                                        changeWeek(by: -1)
+                                    } else if value.translation.width < -threshold || (value.translation.width < -15 && velocity > 80) {
+                                        // 左滑：显示下一周
+                                        changeWeek(by: 1)
+                                    }
+                                }
+                            }
+                    )
                 }
             }
         }
@@ -65,6 +104,10 @@ struct StatisticsView: View {
                 ForEach(TimePeriod.allCases, id: \.self) { period in
                     Button(action: {
                         selectedPeriod = period
+
+                        // 重置当前日期为今天
+                        currentDate = Date()
+
                         Task {
                             do {
                                 // 获取当前日期
@@ -72,11 +115,29 @@ struct StatisticsView: View {
                                 // 使用 Calendar 获取月份、年份
                                 let month = Calendar.current.component(.month, from: currentDate)
                                 let year = Calendar.current.component(.year, from: currentDate)
-                                let response = try await NetworkManager.shared.getConcentrationStatistics(
-                                    period: selectedPeriod.rawValue == "DAY" ? "TODAY" : selectedPeriod.rawValue,
-                                    month: month,
-                                    year: year
-                                )
+
+                                let response: ConcentrationStatisticsResponse
+
+                                if selectedPeriod == .week {
+                                    // 构建operateDate字符串
+                                    let dateFormatter = DateFormatter()
+                                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                                    let operateDateString = dateFormatter.string(from: currentDate)
+
+                                    response = try await NetworkManager.shared.getConcentrationStatistics(
+                                        period: "WEEK",
+                                        month: month,
+                                        year: year,
+                                        operateDate: operateDateString
+                                    )
+                                } else {
+                                    response = try await NetworkManager.shared.getConcentrationStatistics(
+                                        period: selectedPeriod.rawValue == "DAY" ? "TODAY" : selectedPeriod.rawValue,
+                                        month: month,
+                                        year: year
+                                    )
+                                }
+
                                 print("📊 专注统计返回: \(response)")
                                 responseData = response
 
@@ -85,7 +146,7 @@ struct StatisticsView: View {
                                     return FocusData(category: key, minutes: value, color: color)
                                 }
                             } catch {
-                                print("❌ 检查海报兑换资格失败: \(error)")
+                                print("❌ 获取统计数据失败: \(error)")
                             }
                         }
                     }) {
@@ -149,6 +210,25 @@ struct StatisticsView: View {
         }
     }
 
+    // 按周改变日期并请求数据
+    private func changeWeek(by weeks: Int) {
+        let newDate = Calendar.current.date(byAdding: .weekOfYear, value: weeks, to: currentDate) ?? currentDate
+        currentDate = newDate
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isLoading = true
+        }
+
+        Task {
+            await loadDataForWeek()
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isLoading = false
+                }
+            }
+        }
+    }
+
     // 为当前日期加载数据
     private func loadDataForCurrentDate() async {
         do {
@@ -174,6 +254,34 @@ struct StatisticsView: View {
             }
         } catch {
             print("❌ 加载日期数据失败: \(error)")
+        }
+    }
+
+    // 为当前周加载数据
+    private func loadDataForWeek() async {
+        do {
+            let month = Calendar.current.component(.month, from: currentDate)
+            let year = Calendar.current.component(.year, from: currentDate)
+
+            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            let operateDateString = dateFormatter.string(from: currentDate)
+
+            let response = try await NetworkManager.shared.getConcentrationStatistics(
+                period: "WEEK",
+                month: month,
+                year: year,
+                operateDate: operateDateString
+            )
+
+            responseData = response
+            focusData = responseData.data.durationByTag.map { (key, value) in
+                let color = categoryColors[key] ?? randomColor()
+                return FocusData(category: key, minutes: value, color: color)
+            }
+        } catch {
+            print("❌ 加载周数据失败: \(error)")
         }
     }
 
@@ -294,6 +402,15 @@ struct StatisticsView: View {
         let yAxisValues = (0...5).map { $0 * step }  // [0, step, 2step, ..., maxValue]
 
         return VStack(spacing: 0) {
+            // 显示当前周/月信息
+            if selectedPeriod == .week {
+                VStack(spacing: 4) {
+                    Text(formatWeekRange(currentDate))
+                        .font(.appBody(size: 18))
+                        .foregroundColor(AppColors.Text.secondary)
+                        .padding(.bottom, 10)
+                }
+            }
             HStack(alignment: .bottom, spacing: 0) {
                 // 左侧刻度
                 VStack(alignment: .trailing, spacing: 0) {
@@ -455,6 +572,38 @@ private func formatDate(_ date: Date) -> String {
         formatter.dateFormat = "MMM d, yyyy"
         return formatter.string(from: date)
     }
+}
+
+// 格式化周范围显示
+private func formatWeekRange(_ date: Date) -> String {
+    let calendar = Calendar.current
+
+    // 获取该日期所在周的开始和结束日期
+    guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: date) else {
+        return "This Week"
+    }
+
+    let startDate = weekInterval.start
+    let endDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
+
+    // 检查是否是当前周
+    let now = Date()
+    if calendar.dateInterval(of: .weekOfYear, for: now) == weekInterval {
+        return "This Week"
+    }
+
+    let formatter = DateFormatter()
+    formatter.dateFormat = "MMM d"
+
+    let startString = formatter.string(from: startDate)
+    let endString = formatter.string(from: endDate)
+
+    // 添加年份
+    let yearFormatter = DateFormatter()
+    yearFormatter.dateFormat = "yyyy"
+    let year = yearFormatter.string(from: endDate)
+
+    return "\(startString) - \(endString), \(year)"
 }
 
 struct PieChartView: View {
