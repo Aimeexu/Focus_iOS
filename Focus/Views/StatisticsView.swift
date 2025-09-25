@@ -83,14 +83,32 @@ struct StatisticsView: View {
                                     dragOffset = 0
                                 }
 
-                                // 检查是否需要切换周
+                                // 检查是否需要切换时间周期
                                 if !isLoading {
                                     if value.translation.width > threshold || (value.translation.width > 15 && velocity > 80) {
-                                        // 右滑：显示上一周
-                                        changeWeek(by: -1)
+                                        // 右滑：显示上一个周期
+                                        switch selectedPeriod {
+                                        case .week:
+                                            changeWeek(by: -1)
+                                        case .month:
+                                            changeMonth(by: -1)
+                                        case .year:
+                                            changeYear(by: -1)
+                                        default:
+                                            break
+                                        }
                                     } else if value.translation.width < -threshold || (value.translation.width < -15 && velocity > 80) {
-                                        // 左滑：显示下一周
-                                        changeWeek(by: 1)
+                                        // 左滑：显示下一个周期
+                                        switch selectedPeriod {
+                                        case .week:
+                                            changeWeek(by: 1)
+                                        case .month:
+                                            changeMonth(by: 1)
+                                        case .year:
+                                            changeYear(by: 1)
+                                        default:
+                                            break
+                                        }
                                     }
                                 }
                             }
@@ -118,14 +136,14 @@ struct StatisticsView: View {
 
                                 let response: ConcentrationStatisticsResponse
 
-                                if selectedPeriod == .week {
+                                if selectedPeriod == .week || selectedPeriod == .month || selectedPeriod == .year {
                                     // 构建operateDate字符串
                                     let dateFormatter = DateFormatter()
                                     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                                     let operateDateString = dateFormatter.string(from: currentDate)
 
                                     response = try await NetworkManager.shared.getConcentrationStatistics(
-                                        period: "WEEK",
+                                        period: selectedPeriod.rawValue,
                                         month: month,
                                         year: year,
                                         operateDate: operateDateString
@@ -210,6 +228,44 @@ struct StatisticsView: View {
         }
     }
 
+    // 按月改变日期并请求数据
+    private func changeMonth(by months: Int) {
+        let newDate = Calendar.current.date(byAdding: .month, value: months, to: currentDate) ?? currentDate
+        currentDate = newDate
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isLoading = true
+        }
+
+        Task {
+            await loadDataForMonth()
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isLoading = false
+                }
+            }
+        }
+    }
+
+    // 按年改变日期并请求数据
+    private func changeYear(by years: Int) {
+        let newDate = Calendar.current.date(byAdding: .year, value: years, to: currentDate) ?? currentDate
+        currentDate = newDate
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isLoading = true
+        }
+
+        Task {
+            await loadDataForYear()
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isLoading = false
+                }
+            }
+        }
+    }
+
     // 按周改变日期并请求数据
     private func changeWeek(by weeks: Int) {
         let newDate = Calendar.current.date(byAdding: .weekOfYear, value: weeks, to: currentDate) ?? currentDate
@@ -226,6 +282,62 @@ struct StatisticsView: View {
                     isLoading = false
                 }
             }
+        }
+    }
+
+    // 为当前月加载数据
+    private func loadDataForMonth() async {
+        do {
+            let month = Calendar.current.component(.month, from: currentDate)
+            let year = Calendar.current.component(.year, from: currentDate)
+
+            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            let operateDateString = dateFormatter.string(from: currentDate)
+
+            let response = try await NetworkManager.shared.getConcentrationStatistics(
+                period: "MONTH",
+                month: month,
+                year: year,
+                operateDate: operateDateString
+            )
+
+            responseData = response
+            focusData = responseData.data.durationByTag.map { (key, value) in
+                let color = categoryColors[key] ?? randomColor()
+                return FocusData(category: key, minutes: value, color: color)
+            }
+        } catch {
+            print("❌ 加载月数据失败: \(error)")
+        }
+    }
+
+    // 为当前年加载数据
+    private func loadDataForYear() async {
+        do {
+            let month = Calendar.current.component(.month, from: currentDate)
+            let year = Calendar.current.component(.year, from: currentDate)
+
+            // 构建operateDate字符串 "yyyy-MM-dd HH:mm:ss"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            let operateDateString = dateFormatter.string(from: currentDate)
+
+            let response = try await NetworkManager.shared.getConcentrationStatistics(
+                period: "YEAR",
+                month: month,
+                year: year,
+                operateDate: operateDateString
+            )
+
+            responseData = response
+            focusData = responseData.data.durationByTag.map { (key, value) in
+                let color = categoryColors[key] ?? randomColor()
+                return FocusData(category: key, minutes: value, color: color)
+            }
+        } catch {
+            print("❌ 加载年数据失败: \(error)")
         }
     }
 
@@ -402,14 +514,12 @@ struct StatisticsView: View {
         let yAxisValues = (0...5).map { $0 * step }  // [0, step, 2step, ..., maxValue]
 
         return VStack(spacing: 0) {
-            // 显示当前周/月信息
-            if selectedPeriod == .week {
-                VStack(spacing: 4) {
-                    Text(formatWeekRange(currentDate))
-                        .font(.appBody(size: 18))
-                        .foregroundColor(AppColors.Text.secondary)
-                        .padding(.bottom, 10)
-                }
+            // 显示当前周/月/年信息
+            VStack(spacing: 4) {
+                Text(formatPeriodRange(currentDate, period: selectedPeriod))
+                    .font(.appBody(size: 18))
+                    .foregroundColor(AppColors.Text.secondary)
+                    .padding(.bottom, 10)
             }
             HStack(alignment: .bottom, spacing: 0) {
                 // 左侧刻度
@@ -505,6 +615,70 @@ struct StatisticsView: View {
         let midPoint = previousTotal + currentValue / 2
         return Angle(degrees: Double(midPoint) / Double(responseData.data.totalDuration) * 360 - 90)
     }
+
+    // 格式化时间周期范围显示
+    private func formatPeriodRange(_ date: Date, period: TimePeriod) -> String {
+        let calendar = Calendar.current
+        let now = Date()
+
+        switch period {
+        case .week:
+            // 获取该日期所在周的开始和结束日期
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: date) else {
+                return "This Week"
+            }
+
+            let startDate = weekInterval.start
+            let endDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
+
+            // 检查是否是当前周
+            if calendar.dateInterval(of: .weekOfYear, for: now) == weekInterval {
+                return "This Week"
+            }
+
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+
+            let startString = formatter.string(from: startDate)
+            let endString = formatter.string(from: endDate)
+
+            // 添加年份
+            let yearFormatter = DateFormatter()
+            yearFormatter.dateFormat = "yyyy"
+            let year = yearFormatter.string(from: endDate)
+
+            return "\(startString) - \(endString), \(year)"
+
+        case .month:
+            let currentMonth = calendar.component(.month, from: now)
+            let currentYear = calendar.component(.year, from: now)
+            let dateMonth = calendar.component(.month, from: date)
+            let dateYear = calendar.component(.year, from: date)
+
+            if currentMonth == dateMonth && currentYear == dateYear {
+                return "This Month"
+            }
+
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: date)
+
+        case .year:
+            let currentYear = calendar.component(.year, from: now)
+            let dateYear = calendar.component(.year, from: date)
+
+            if currentYear == dateYear {
+                return "This Year"
+            }
+
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy"
+            return formatter.string(from: date)
+
+        case .day:
+            return formatDate(date)
+        }
+    }
 }
 
 struct FocusData {
@@ -574,37 +748,7 @@ private func formatDate(_ date: Date) -> String {
     }
 }
 
-// 格式化周范围显示
-private func formatWeekRange(_ date: Date) -> String {
-    let calendar = Calendar.current
 
-    // 获取该日期所在周的开始和结束日期
-    guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: date) else {
-        return "This Week"
-    }
-
-    let startDate = weekInterval.start
-    let endDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
-
-    // 检查是否是当前周
-    let now = Date()
-    if calendar.dateInterval(of: .weekOfYear, for: now) == weekInterval {
-        return "This Week"
-    }
-
-    let formatter = DateFormatter()
-    formatter.dateFormat = "MMM d"
-
-    let startString = formatter.string(from: startDate)
-    let endString = formatter.string(from: endDate)
-
-    // 添加年份
-    let yearFormatter = DateFormatter()
-    yearFormatter.dateFormat = "yyyy"
-    let year = yearFormatter.string(from: endDate)
-
-    return "\(startString) - \(endString), \(year)"
-}
 
 struct PieChartView: View {
     let data: [FocusData]
