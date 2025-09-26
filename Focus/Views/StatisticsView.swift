@@ -81,8 +81,10 @@ struct StatisticsView: View {
                                 print("📊 专注统计返回: \(response)")
                                 responseData = response
 
-                                focusData = responseData.data.durationByTag.map { (key, value) in
-                                    let color = categoryColors[key] ?? randomColor()
+                                focusData = Array(responseData.data.durationByTag.enumerated()).map
+                                { (index: Int, element: (key: String, value: Int)) in
+                                    let (key, value) = element
+                                    let color = getColorForIndex(index)
                                     return FocusData(category: key, minutes: value, color: color)
                                 }
                             } catch {
@@ -123,8 +125,10 @@ struct StatisticsView: View {
                     print("📊 专注统计返回: \(response)")
                     responseData = response
 
-                    focusData = responseData.data.durationByTag.map { (key, value) in
-                        let color = categoryColors[key] ?? randomColor()
+                    focusData = Array(responseData.data.durationByTag.enumerated()).map {
+                        (index: Int, element: (key: String, value: Int)) in
+                        let (key, value) = element
+                        let color = getColorForIndex(index)
                         return FocusData(category: key, minutes: value, color: color)
                     }
                 } catch {
@@ -424,8 +428,10 @@ struct StatisticsView: View {
             )
 
             responseData = response
-            focusData = responseData.data.durationByTag.map { (key, value) in
-                let color = categoryColors[key] ?? randomColor()
+            focusData = Array(responseData.data.durationByTag.enumerated()).map {
+                (index: Int, element: (key: String, value: Int)) in
+                let (key, value) = element
+                let color = getColorForIndex(index)
                 return FocusData(category: key, minutes: value, color: color)
             }
         } catch {
@@ -451,8 +457,10 @@ struct StatisticsView: View {
             )
 
             responseData = response
-            focusData = responseData.data.durationByTag.map { (key, value) in
-                let color = categoryColors[key] ?? randomColor()
+            focusData = Array(responseData.data.durationByTag.enumerated()).map {
+                (index: Int, element: (key: String, value: Int)) in
+                let (key, value) = element
+                let color = getColorForIndex(index)
                 return FocusData(category: key, minutes: value, color: color)
             }
         } catch {
@@ -478,8 +486,10 @@ struct StatisticsView: View {
             )
 
             responseData = response
-            focusData = responseData.data.durationByTag.map { (key, value) in
-                let color = categoryColors[key] ?? randomColor()
+            focusData = Array(responseData.data.durationByTag.enumerated()).map {
+                (index: Int, element: (key: String, value: Int)) in
+                let (key, value) = element
+                let color = getColorForIndex(index)
                 return FocusData(category: key, minutes: value, color: color)
             }
         } catch {
@@ -505,8 +515,10 @@ struct StatisticsView: View {
             )
 
             responseData = response
-            focusData = responseData.data.durationByTag.map { (key, value) in
-                let color = categoryColors[key] ?? randomColor()
+            focusData = Array(responseData.data.durationByTag.enumerated()).map {
+                (index: Int, element: (key: String, value: Int)) in
+                let (key, value) = element
+                let color = getColorForIndex(index)
                 return FocusData(category: key, minutes: value, color: color)
             }
         } catch {
@@ -704,20 +716,31 @@ struct FocusData {
     let color: Color
 }
 
-// 固定颜色映射
-let categoryColors: [String: Color] = [
-    "Study": AppColors.Brand.primary,
-    "Work": AppColors.Semantic.lightGray,
-    "Read": AppColors.Semantic.beige,
+// 预定义颜色数组，按优先级顺序
+let predefinedColors: [Color] = [
+    Color(red: 0x6A / 255.0, green: 0x54 / 255.0, blue: 0x46 / 255.0),  // 1. #6A5446
+    Color(red: 0xF2 / 255.0, green: 0xE9 / 255.0, blue: 0xDA / 255.0),  // 2. #F2E9DA
+    Color(red: 0xA7 / 255.0, green: 0x84 / 255.0, blue: 0x72 / 255.0),  // 3. #A78472
+    Color(red: 0xE6 / 255.0, green: 0xDC / 255.0, blue: 0xC2 / 255.0),  // 4. #E6DCC2
+    Color(red: 0xC5 / 255.0, green: 0xC9 / 255.0, blue: 0xB2 / 255.0),  // 5. #C5C9B2
+    Color(red: 0xDA / 255.0, green: 0xB9 / 255.0, blue: 0x96 / 255.0),  // 6. #DAB996
+    Color(red: 0xC7 / 255.0, green: 0xD2 / 255.0, blue: 0xB8 / 255.0),  // 7. #C7D2B8
+    Color(red: 0xB6 / 255.0, green: 0xA8 / 255.0, blue: 0x92 / 255.0),  // 8. #B6A892
+    Color(red: 0xFC / 255.0, green: 0xF8 / 255.0, blue: 0xF3 / 255.0),  // 9. #FCF8F3
+    Color(red: 0xED / 255.0, green: 0xE3 / 255.0, blue: 0xD7 / 255.0),  // 10. #EDE3D7
 ]
 
-// 随机颜色生成函数
-func randomColor() -> Color {
-    return Color(
-        red: .random(in: 0...1),
-        green: .random(in: 0...1),
-        blue: .random(in: 0...1)
-    )
+// 获取颜色的函数 - 按索引优先使用预定义颜色，超出则随机
+func getColorForIndex(_ index: Int) -> Color {
+    if index < predefinedColors.count {
+        return predefinedColors[index]
+    } else {
+        return Color(
+            red: .random(in: 0...1),
+            green: .random(in: 0...1),
+            blue: .random(in: 0...1)
+        )
+    }
 }
 
 // 生成周数据的辅助函数
@@ -769,12 +792,21 @@ struct PieChartView: View {
 
     var body: some View {
         ZStack {
-            ForEach(Array(data.enumerated()), id: \.offset) { index, item in
+            if total == 0 || data.isEmpty {
+                // 当数据为空时显示灰色圆环
                 PieSlice(
-                    startAngle: startAngle(for: index),
-                    endAngle: endAngle(for: index),
-                    color: item.color
+                    startAngle: Angle(degrees: 0),
+                    endAngle: Angle(degrees: 360),
+                    color: Color.gray.opacity(0.3)
                 )
+            } else {
+                ForEach(Array(data.enumerated()), id: \.offset) { index, item in
+                    PieSlice(
+                        startAngle: startAngle(for: index),
+                        endAngle: endAngle(for: index),
+                        color: item.color
+                    )
+                }
             }
         }
     }
