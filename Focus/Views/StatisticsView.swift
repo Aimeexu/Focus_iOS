@@ -214,7 +214,7 @@ struct StatisticsView: View {
     private var weekMonthYearModeContent: some View {
         VStack(spacing: 0) {
             barChartSection
-                .padding(.top, 30)
+                .padding(.top, 10)
                 .offset(x: dragOffset)
                 .opacity(isLoading ? 0.5 : 1.0)
 
@@ -243,7 +243,7 @@ struct StatisticsView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: AppColors.Brand.primary))
                 }
             }
-            .padding(.top, 30)
+            .padding(.top, 10)
             .offset(x: dragOffset)
 
             Spacer()
@@ -798,6 +798,13 @@ struct PieChartView: View {
                     startAngle: Angle(degrees: 0),
                     endAngle: Angle(degrees: 360),
                     color: Color.gray.opacity(0.3)
+                )
+            } else if data.count == 1 {
+                // 当只有一项数据时显示完整的圆环
+                PieSlice(
+                    startAngle: Angle(degrees: 0),
+                    endAngle: Angle(degrees: 360),
+                    color: data[0].color
                 )
             } else {
                 ForEach(Array(data.enumerated()), id: \.offset) { index, item in
