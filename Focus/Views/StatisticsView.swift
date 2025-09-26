@@ -569,7 +569,7 @@ struct StatisticsView: View {
                             Spacer()
                             HStack(alignment: .bottom, spacing: selectedPeriod == .week ? 4 : 1) {
                                 ForEach(chartData, id: \.day) { data in
-                                    RoundedRectangle(cornerRadius: 6)
+                                    RoundedRectangle(cornerRadius: selectedPeriod == .week ? 12 : 6)
                                         .fill(AppColors.Brand.primary)
                                         .frame(
                                             width: selectedPeriod == .week ? 20 : 8,
