@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		F2044C2D2E72C84E0080EDD1 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F2044C2C2E72C84E0080EDD1 /* Kingfisher */; };
+		F23B15422E868CF900D96880 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = F23B15412E868CF900D96880 /* FacebookCore */; };
+		F23B15442E868D0100D96880 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = F23B15432E868D0100D96880 /* FacebookLogin */; };
+		F23B15462E868D0800D96880 /* FacebookShare in Frameworks */ = {isa = PBXBuildFile; productRef = F23B15452E868D0800D96880 /* FacebookShare */; };
 		F29E1FC82E811ECC0048E484 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F29E1FC72E811ECC0048E484 /* Alamofire */; };
 		F2DF94482E60538500AC8E67 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF94472E60538500AC8E67 /* Lottie */; };
 		F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF95252E69805D00AC8E67 /* SwiftyJSON */; };
@@ -63,19 +66,30 @@
 			buildActionMask = 2147483647;
 			files = (
 				F2044C2D2E72C84E0080EDD1 /* Kingfisher in Frameworks */,
+				F23B15422E868CF900D96880 /* FacebookCore in Frameworks */,
+				F23B15442E868D0100D96880 /* FacebookLogin in Frameworks */,
 				F29E1FC82E811ECC0048E484 /* Alamofire in Frameworks */,
 				F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */,
 				F2DF94482E60538500AC8E67 /* Lottie in Frameworks */,
+				F23B15462E868D0800D96880 /* FacebookShare in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F23B15402E868CF900D96880 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		F2B61A622E447C5000CC4F17 = {
 			isa = PBXGroup;
 			children = (
 				F2B61A6D2E447C5000CC4F17 /* Focus */,
+				F23B15402E868CF900D96880 /* Frameworks */,
 				F2B61A6C2E447C5000CC4F17 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +126,9 @@
 				F2DF95252E69805D00AC8E67 /* SwiftyJSON */,
 				F2044C2C2E72C84E0080EDD1 /* Kingfisher */,
 				F29E1FC72E811ECC0048E484 /* Alamofire */,
+				F23B15412E868CF900D96880 /* FacebookCore */,
+				F23B15432E868D0100D96880 /* FacebookLogin */,
+				F23B15452E868D0800D96880 /* FacebookShare */,
 			);
 			productName = Focus;
 			productReference = F2B61A6B2E447C5000CC4F17 /* Focus.app */;
@@ -146,6 +163,7 @@
 				F2DF95242E69805D00AC8E67 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				F2044C2B2E72C84E0080EDD1 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				F29E1FC62E811ECC0048E484 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				F23B153F2E868CDA00D96880 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2B61A6C2E447C5000CC4F17 /* Products */;
@@ -391,6 +409,14 @@
 				minimumVersion = 8.5.0;
 			};
 		};
+		F23B153F2E868CDA00D96880 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.1.0;
+			};
+		};
 		F29E1FC62E811ECC0048E484 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
@@ -422,6 +448,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F2044C2B2E72C84E0080EDD1 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		F23B15412E868CF900D96880 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F23B153F2E868CDA00D96880 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
+		};
+		F23B15432E868D0100D96880 /* FacebookLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F23B153F2E868CDA00D96880 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookLogin;
+		};
+		F23B15452E868D0800D96880 /* FacebookShare */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F23B153F2E868CDA00D96880 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookShare;
 		};
 		F29E1FC72E811ECC0048E484 /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
