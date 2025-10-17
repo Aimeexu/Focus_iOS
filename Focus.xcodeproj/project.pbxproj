@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		F2044C2D2E72C84E0080EDD1 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F2044C2C2E72C84E0080EDD1 /* Kingfisher */; };
+		F208BE2E2EA0E81D003604DD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F208BE2D2EA0E81D003604DD /* GoogleSignIn */; };
+		F208BE302EA0E81D003604DD /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F208BE2F2EA0E81D003604DD /* GoogleSignInSwift */; };
 		F23B15422E868CF900D96880 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = F23B15412E868CF900D96880 /* FacebookCore */; };
 		F23B15442E868D0100D96880 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = F23B15432E868D0100D96880 /* FacebookLogin */; };
 		F23B15462E868D0800D96880 /* FacebookShare in Frameworks */ = {isa = PBXBuildFile; productRef = F23B15452E868D0800D96880 /* FacebookShare */; };
@@ -65,7 +67,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F208BE302EA0E81D003604DD /* GoogleSignInSwift in Frameworks */,
 				F2044C2D2E72C84E0080EDD1 /* Kingfisher in Frameworks */,
+				F208BE2E2EA0E81D003604DD /* GoogleSignIn in Frameworks */,
 				F23B15422E868CF900D96880 /* FacebookCore in Frameworks */,
 				F23B15442E868D0100D96880 /* FacebookLogin in Frameworks */,
 				F29E1FC82E811ECC0048E484 /* Alamofire in Frameworks */,
@@ -129,6 +133,8 @@
 				F23B15412E868CF900D96880 /* FacebookCore */,
 				F23B15432E868D0100D96880 /* FacebookLogin */,
 				F23B15452E868D0800D96880 /* FacebookShare */,
+				F208BE2D2EA0E81D003604DD /* GoogleSignIn */,
+				F208BE2F2EA0E81D003604DD /* GoogleSignInSwift */,
 			);
 			productName = Focus;
 			productReference = F2B61A6B2E447C5000CC4F17 /* Focus.app */;
@@ -164,6 +170,7 @@
 				F2044C2B2E72C84E0080EDD1 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				F29E1FC62E811ECC0048E484 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				F23B153F2E868CDA00D96880 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
+				F208BE2C2EA0E81D003604DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2B61A6C2E447C5000CC4F17 /* Products */;
@@ -409,6 +416,14 @@
 				minimumVersion = 8.5.0;
 			};
 		};
+		F208BE2C2EA0E81D003604DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
 		F23B153F2E868CDA00D96880 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
@@ -448,6 +463,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F2044C2B2E72C84E0080EDD1 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		F208BE2D2EA0E81D003604DD /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F208BE2C2EA0E81D003604DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		F208BE2F2EA0E81D003604DD /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F208BE2C2EA0E81D003604DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 		F23B15412E868CF900D96880 /* FacebookCore */ = {
 			isa = XCSwiftPackageProductDependency;

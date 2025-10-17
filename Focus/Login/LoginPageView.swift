@@ -48,10 +48,12 @@ struct OwlLottieView: UIViewRepresentable {
 struct LoginPageView: View {
     @State private var isLoading = false
     @State private var isFacebookLoading = false
+    @State private var isGoogleLoading = false
     @State private var errorMessage: String?
     @State private var isLoggedIn = false
     @StateObject private var appleSignInService = AppleSignInService.shared
     @StateObject private var facebookSignInService = FacebookSignInService.shared
+    @StateObject private var googleSignInService = GoogleSignInService.shared
     
     var body: some View {
         ZStack {
@@ -112,15 +114,10 @@ struct LoginPageView: View {
                         )
                         
                         // Google按钮
-                        Button(action: {
-                            // Google登录逻辑
-                        }) {
-                            Image("google_logo")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 30, height: 30)
-                                .clipShape(Circle())
-                        }
+                        GoogleIconButton(
+                            action: signInWithGoogle,
+                            isLoading: isGoogleLoading
+                        )
                     }
                     }
                     .padding(32)
@@ -201,6 +198,39 @@ struct LoginPageView: View {
                     errorMessage = "Facebook登录错误: \(error.localizedDescription)"
                     print("❌ Facebook登录网络错误: \(error.localizedDescription)")
                     isFacebookLoading = false
+                }
+            }
+        }
+    }
+    
+    // MARK: - Google登录方法
+    private func signInWithGoogle() {
+        isGoogleLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                let response = try await GoogleSignInService.shared.signInWithGoogle()
+                
+                await MainActor.run {
+                    if response.success {
+                        isLoggedIn = true
+                        print("✅ Google登录成功: \(response.message)")
+                        
+                        // 登录状态已由 UserManager 自动处理
+                        // 发送登录成功通知
+                        NotificationCenter.default.post(name: .userDidLogin, object: nil)
+                    } else {
+                        errorMessage = response.message
+                        print("❌ Google登录失败: \(response.message)")
+                    }
+                    isGoogleLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Google登录错误: \(error.localizedDescription)"
+                    print("❌ Google登录网络错误: \(error.localizedDescription)")
+                    isGoogleLoading = false
                 }
             }
         }

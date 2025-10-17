@@ -276,6 +276,89 @@ class UserManager: ObservableObject {
         printSavedUserInfo()
     }
     
+    // MARK: - 保存Google登录信息
+    func saveGoogleLoginData(_ googleLoginData: AchievementLoginData, loginMethod: String = "google") {
+        let userDefaults = UserDefaults.standard
+        
+        // 保存认证信息
+        userDefaults.set(googleLoginData.accessToken, forKey: Keys.authToken)
+        userDefaults.set(googleLoginData.refreshToken, forKey: Keys.refreshToken)
+        userDefaults.set(googleLoginData.accessTokenName, forKey: Keys.accessTokenName)
+        
+        // 设置默认过期时间（1小时）
+        let expirationDate = Date().addingTimeInterval(3600)
+        userDefaults.set(expirationDate, forKey: Keys.tokenExpiration)
+        
+        // 保存用户基本信息
+        let user = googleLoginData.user
+        userDefaults.set(user.uuid, forKey: Keys.userUUID)
+        userDefaults.set(user.account, forKey: Keys.userAccount)
+        userDefaults.set(user.nickname ?? user.account, forKey: Keys.userNickname)
+        userDefaults.set(user.phone, forKey: Keys.userPhone)
+        userDefaults.set(user.createTime, forKey: Keys.userCreateTime)
+        
+        // 保存频道信息
+        userDefaults.set(user.channel.uuid, forKey: Keys.channelUUID)
+        userDefaults.set(user.channel.channelType, forKey: Keys.channelType)
+        userDefaults.set(user.channel.description, forKey: Keys.channelDescription)
+        
+        // 保存用户设置
+        userDefaults.set(user.userSettings.backgroundMusic, forKey: Keys.backgroundMusic)
+        
+        // 转换Google用户物品为标准格式并保存
+        let standardUserStuffs = user.userStuffs.allUserStuffs.map { googleStuff in
+            UserStuff(
+                amount: googleStuff.amount,
+                createTime: googleStuff.createTime,
+                updateTime: googleStuff.updateTime
+            )
+        }
+        
+        if let userStuffsData = try? JSONEncoder().encode(standardUserStuffs) {
+            userDefaults.set(userStuffsData, forKey: Keys.userStuffs)
+        }
+        
+        // 转换为标准UserInfo格式并保存
+        let standardUserInfo = UserInfo(
+            account: user.account,
+            phone: user.phone,
+            channel: Channel(
+                channelType: user.channel.channelType,
+                description: user.channel.description,
+                uuid: user.channel.uuid
+            ),
+            nickname: user.nickname ?? user.account,
+            userSettings: UserSettings(
+                backgroundMusic: user.userSettings.backgroundMusic
+            ),
+            uuid: user.uuid,
+            userStuffs: standardUserStuffs,
+            createTime: user.createTime
+        )
+        
+        if let userData = try? JSONEncoder().encode(standardUserInfo) {
+            userDefaults.set(userData, forKey: Keys.userInfo)
+        }
+
+        if let userAchievement = try? JSONEncoder().encode(user.userStuffs) {
+            userDefaults.set(userAchievement, forKey: Keys.userAchievement)
+        }
+
+        // 保存登录状态和方式
+        userDefaults.set(true, forKey: Keys.isLoggedIn)
+        userDefaults.set(Date(), forKey: Keys.lastLoginDate)
+        userDefaults.set(loginMethod, forKey: Keys.loginMethod)
+        
+        // 更新内存中的状态
+        DispatchQueue.main.async {
+            self.currentUser = standardUserInfo
+            self.isLoggedIn = true
+        }
+        
+        print("✅ Google登录信息已保存到 UserDefaults")
+        printSavedUserInfo()
+    }
+    
     // MARK: - 加载用户数据
     func loadUserData() {
         let userDefaults = UserDefaults.standard
