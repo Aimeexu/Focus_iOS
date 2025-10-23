@@ -105,22 +105,18 @@ struct OwlAnimationView: UIViewRepresentable {
 struct HomeView: View {
     @EnvironmentObject var userManager: UserManager
     @State private var focusTime = 25 * 60 // 25分钟
-    @State private var isTimerRunning = false
     @State private var selectedLocation = ""
-    @State private var timer: Timer?
     @State private var showLocationSelection = false
     @State private var showMusicSelection = false
     @State private var selectedMusic = ""
     @State private var showTimePicker = false
     @State private var selectedMinutes = 25
-    // 移除本地状态，直接使用ConcentrationService的状态
     @State private var isStartingTimer = false
 
     @StateObject private var audioManager = AudioManager.shared
-
-    // 新增的服务
     @StateObject private var concentrationService = ConcentrationService.shared
     @StateObject private var lottieAnimationManager = LottieAnimationManager.shared
+    @StateObject private var backgroundTimerManager = BackgroundTimerManager.shared
 
     var body: some View {
         GeometryReader { geometry in
@@ -140,7 +136,7 @@ struct HomeView: View {
                     .padding(.top, 84)
 
                     // 位置标签 - 只在未运行时显示
-                    if !isTimerRunning {
+                    if !backgroundTimerManager.isTimerRunning {
                         Button(action: {
                             showLocationSelection = true
                         }) {
@@ -167,14 +163,14 @@ struct HomeView: View {
                     }
 
                     // 计时器显示区域
-                    if isTimerRunning {
+                    if backgroundTimerManager.isTimerRunning {
                         VStack(spacing: 40) {
                             // 专注计时动画 - 显示从服务器获取的Lottie动画
                             ConcentrationAnimationView(size: CGSize(width: 200, height: 200))
                                 .padding(.top, 150)
                             
-                            // 运行时显示大号时间
-                            Text(timeString(from: focusTime))
+                            // 运行时显示大号时间 - 使用BackgroundTimerManager的时间
+                            Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
                                 .font(.appNumber(size: 24))
                                 .foregroundColor(AppColors.Semantic.darkBrown)
                         }
@@ -192,7 +188,7 @@ struct HomeView: View {
                                     .fill(AppColors.Semantic.beige)
                                     .frame(width: 210, height: 210)
 
-                                Text(timeString(from: focusTime))
+                                Text(backgroundTimerManager.timeString(from: focusTime))
                                     .font(.appNumber(size: 42))
                                     .foregroundColor(AppColors.Semantic.darkBrown)
                             }
@@ -201,7 +197,7 @@ struct HomeView: View {
                     }
 
                     // 按钮区域
-                    if isTimerRunning {
+                    if backgroundTimerManager.isTimerRunning {
                         // 运行时显示 Slide to Quit 按钮
                         SlideToQuitButton {
                             stopTimer()
@@ -244,6 +240,24 @@ struct HomeView: View {
         .background(AppColors.Background.primary)
         .ignoresSafeArea(.keyboard) // 忽略键盘安全区域
         .overlay(
+            // 计时完成消息
+            Group {
+                if backgroundTimerManager.showCompletionMessage {
+                    VStack {
+                        Text("专注时间已完成！")
+                            .font(.appButton(size: 18))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(AppColors.Brand.primary)
+                            .cornerRadius(20)
+                    }
+                    .transition(.opacity.combined(with: .scale))
+                    .animation(.easeInOut(duration: 0.3), value: backgroundTimerManager.showCompletionMessage)
+                }
+            }
+        )
+        .overlay(
             // 弹窗层
             Group {
                 // 标签选择弹窗
@@ -284,7 +298,7 @@ struct HomeView: View {
             }
         )
         .onDisappear {
-            timer?.invalidate()
+            // 不再需要手动管理timer
         }
         .onAppear {
             selectedMinutes = focusTime / 60
@@ -323,10 +337,14 @@ struct HomeView: View {
             selectedMinutes = userManager.getSelectedMinutes()
             focusTime = selectedMinutes * 60
         }
+        .onReceive(NotificationCenter.default.publisher(for: .timerCompletedInBackground)) { _ in
+            // 处理后台计时完成
+            handleBackgroundTimerCompletion()
+        }
     }
 
     private func toggleTimer() {
-        if isTimerRunning {
+        if backgroundTimerManager.isTimerRunning {
             stopTimer()
         } else {
             startTimer()
@@ -335,7 +353,7 @@ struct HomeView: View {
 
     private func startTimer() {
         // 检查用户是否已登录
-        guard AuthService.shared.isLoggedIn() else {
+        guard userManager.isLoggedIn else {
             print("❌ 用户未登录，无法开始专注计时")
             return
         }
@@ -360,22 +378,11 @@ struct HomeView: View {
                         }
                     }
                     
-                    // 开始本地计时器
-                    isTimerRunning = true
+                    // 使用BackgroundTimerManager开始计时
+                    let durationInSeconds = selectedMinutes * 60
+                    backgroundTimerManager.startTimer(duration: durationInSeconds)
+                    focusTime = durationInSeconds
                     isStartingTimer = false
-                    
-                    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-                        if focusTime > 0 {
-                            focusTime -= 1
-                        } else {
-                            // 计时自然结束，先切换到成体动画，然后调用结束接口
-                            concentrationService.switchToAdultAnimation()
-                            // 延迟3秒显示成体动画，然后结束计时
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                                naturalEndConcentrationSession()
-                            }
-                        }
-                    }
                     
                     print("✅ 专注计时开始成功")
                     print("   计划ID: \(plan.uuid)")
@@ -397,12 +404,9 @@ struct HomeView: View {
             }
         }
     }
-//    }
-
     private func stopTimer() {
-        timer?.invalidate()
-        timer = nil
-        isTimerRunning = false
+        // 停止BackgroundTimerManager的计时
+        backgroundTimerManager.stopTimer()
         
         // 手动停止时，只清理本地状态，不调用结束接口
         manualStopConcentration()
@@ -412,11 +416,6 @@ struct HomeView: View {
         // 手动停止专注计时，只清理本地状态，不调用服务器结束接口
         Task {
             await MainActor.run {
-                // 清理UI状态
-                timer?.invalidate()
-                timer = nil
-                isTimerRunning = false
-                
                 // 重置计时器时间
                 focusTime = selectedMinutes * 60
                 
@@ -442,11 +441,6 @@ struct HomeView: View {
             await concentrationService.safeEndConcentration()
             
             await MainActor.run {
-                // 清理UI状态
-                timer?.invalidate()
-                timer = nil
-                isTimerRunning = false
-                
                 // 重置计时器时间
                 focusTime = selectedMinutes * 60
                 
@@ -463,6 +457,16 @@ struct HomeView: View {
         naturalEndConcentrationSession()
     }
 
+    private func handleBackgroundTimerCompletion() {
+        // 后台计时完成，先切换到成体动画，然后调用结束接口
+        concentrationService.switchToAdultAnimation()
+        
+        // 延迟3秒显示成体动画，然后结束计时
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            naturalEndConcentrationSession()
+        }
+    }
+    
     private func timeString(from seconds: Int) -> String {
         let minutes = seconds / 60
         let remainingSeconds = seconds % 60
