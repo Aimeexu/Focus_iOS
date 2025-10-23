@@ -121,46 +121,6 @@ struct TimePickerView: View {
                     x: geometry.size.width * 0.5,
                     y: geometry.size.height * 0.5
                 )
-                .gesture(
-                    DragGesture()
-                        .onChanged { gesture in
-                            let translation = gesture.translation.height
-                            dragOffset = translation
-                            
-                            // 实时更新选中的时间
-                            let itemHeight: CGFloat = 80 // 每80点切换一个选项，降低敏感度
-                            let steps = Int(translation / itemHeight)
-                            
-                            // 计算新的索引
-                            let newIndex = max(0, min(timeOptions.count - 1, initialIndex - steps))
-                            
-                            // 更新选中的时间
-                            if newIndex != timeOptions.firstIndex(of: selectedMinutes) {
-                                let newMinutes = timeOptions[newIndex]
-                                if newMinutes != lastSelectedMinutes {
-                                    // 触发轻微震动
-                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                    impactFeedback.impactOccurred()
-                                    
-                                    // 根据拖动方向选择动画
-                                    let isUpward = newMinutes > lastSelectedMinutes
-                                    triggerDirectionalAnimation(isUpward: isUpward)
-                                    
-                                    selectedMinutes = newMinutes
-                                    lastSelectedMinutes = newMinutes
-                                }
-                            }
-                        }
-                        .onEnded { gesture in
-                            // 更新初始索引为当前选中的索引
-                            initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
-                            
-                            // 重置拖拽偏移
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                dragOffset = 0
-                            }
-                        }
-                )
                 .onAppear {
                     // 记录初始索引和初始选中值
                     initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
@@ -190,6 +150,46 @@ struct TimePickerView: View {
                     .padding(.bottom, 160)
                 }
             }
+            .gesture(
+                DragGesture()
+                    .onChanged { gesture in
+                        let translation = gesture.translation.height
+                        dragOffset = translation
+
+                        // 实时更新选中的时间
+                        let itemHeight: CGFloat = 80 // 每80点切换一个选项，降低敏感度
+                        let steps = Int(translation / itemHeight)
+
+                        // 计算新的索引
+                        let newIndex = max(0, min(timeOptions.count - 1, initialIndex - steps))
+
+                        // 更新选中的时间
+                        if newIndex != timeOptions.firstIndex(of: selectedMinutes) {
+                            let newMinutes = timeOptions[newIndex]
+                            if newMinutes != lastSelectedMinutes {
+                                // 触发轻微震动
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
+
+                                // 根据拖动方向选择动画
+                                let isUpward = newMinutes > lastSelectedMinutes
+                                triggerDirectionalAnimation(isUpward: isUpward)
+
+                                selectedMinutes = newMinutes
+                                lastSelectedMinutes = newMinutes
+                            }
+                        }
+                    }
+                    .onEnded { gesture in
+                        // 更新初始索引为当前选中的索引
+                        initialIndex = timeOptions.firstIndex(of: selectedMinutes) ?? 0
+
+                        // 重置拖拽偏移
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = 0
+                        }
+                    }
+            )
         }
     }
     
