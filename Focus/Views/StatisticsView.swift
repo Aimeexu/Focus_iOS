@@ -537,7 +537,10 @@ struct StatisticsView: View {
         let isAllZero = actualMaxValue == 0
         let maxValue = isAllZero ? 1 : actualMaxValue
         let totalFocus = chartData.reduce(0) { $0 + $1.value }
-        let dailyAverage = totalFocus / chartData.count
+        let dailyAverage = 0
+        if (chartData.count != 0) {
+            let dailyAverage = totalFocus / chartData.count
+        }
 
         let step = maxValue / 5
         let yAxisValues = (0...5).map { $0 * step }

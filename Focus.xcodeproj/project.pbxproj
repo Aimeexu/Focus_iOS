@@ -16,10 +16,18 @@
 		F29E1FC82E811ECC0048E484 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F29E1FC72E811ECC0048E484 /* Alamofire */; };
 		F2DF94482E60538500AC8E67 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF94472E60538500AC8E67 /* Lottie */; };
 		F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F2DF95252E69805D00AC8E67 /* SwiftyJSON */; };
+		F2F583002EA8E20700FBF6F7 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2F582FF2EA8E20700FBF6F7 /* SystemConfiguration.framework */; };
+		F2F583022EA8E21000FBF6F7 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2F583012EA8E21000FBF6F7 /* Security.framework */; };
+		F2F583052EA8E25D00FBF6F7 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F2F583042EA8E23700FBF6F7 /* libc++.tbd */; };
+		F2F583062EA8E26900FBF6F7 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F2F583032EA8E22600FBF6F7 /* libz.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		F2B61A6B2E447C5000CC4F17 /* Focus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Focus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2F582FF2EA8E20700FBF6F7 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		F2F583012EA8E21000FBF6F7 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		F2F583032EA8E22600FBF6F7 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		F2F583042EA8E23700FBF6F7 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -69,12 +77,16 @@
 			files = (
 				F208BE302EA0E81D003604DD /* GoogleSignInSwift in Frameworks */,
 				F2044C2D2E72C84E0080EDD1 /* Kingfisher in Frameworks */,
+				F2F583052EA8E25D00FBF6F7 /* libc++.tbd in Frameworks */,
 				F208BE2E2EA0E81D003604DD /* GoogleSignIn in Frameworks */,
 				F23B15422E868CF900D96880 /* FacebookCore in Frameworks */,
 				F23B15442E868D0100D96880 /* FacebookLogin in Frameworks */,
+				F2F583002EA8E20700FBF6F7 /* SystemConfiguration.framework in Frameworks */,
 				F29E1FC82E811ECC0048E484 /* Alamofire in Frameworks */,
+				F2F583062EA8E26900FBF6F7 /* libz.tbd in Frameworks */,
 				F2DF95262E69805D00AC8E67 /* SwiftyJSON in Frameworks */,
 				F2DF94482E60538500AC8E67 /* Lottie in Frameworks */,
+				F2F583022EA8E21000FBF6F7 /* Security.framework in Frameworks */,
 				F23B15462E868D0800D96880 /* FacebookShare in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -85,6 +97,10 @@
 		F23B15402E868CF900D96880 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F2F583042EA8E23700FBF6F7 /* libc++.tbd */,
+				F2F583032EA8E22600FBF6F7 /* libz.tbd */,
+				F2F583012EA8E21000FBF6F7 /* Security.framework */,
+				F2F582FF2EA8E20700FBF6F7 /* SystemConfiguration.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -334,6 +350,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = WZYWWGU4NH;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Focus",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Focus/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -364,6 +384,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = WZYWWGU4NH;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Focus",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Focus/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

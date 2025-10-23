@@ -8,17 +8,19 @@
 import SwiftUI
 import FBSDKCoreKit
 import GoogleSignIn
+import Bugly
 
 @main
 struct FocusApp: App {
-    @StateObject private var userManager = UserManager.shared
-    
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+        @StateObject private var userManager = UserManager.shared
+
     init() {
         // 初始化Facebook SDK
-        ApplicationDelegate.shared.application(
-            UIApplication.shared,
-            didFinishLaunchingWithOptions: nil
-        )
+//        ApplicationDelegate.shared.application(
+//            UIApplication.shared,
+//            didFinishLaunchingWithOptions: nil
+//        )
         
         // 初始化Google Sign-In
         configureGoogleSignIn()
@@ -80,5 +82,23 @@ struct FocusApp: App {
         let config = GIDConfiguration(clientID: validClientId)
         GIDSignIn.sharedInstance.configuration = config
         print("✅ Google Sign-In配置成功，客户端ID: \(validClientId.prefix(20))...")
+    }
+}
+
+// ✅ 把 Bugly 和 Facebook 的初始化放在 AppDelegate 里
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
+    ) -> Bool {
+
+        // 初始化 Facebook SDK
+        ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+        // 初始化 Bugly（尽量放最前）
+        BuglyLog.initLogger(BuglyLogLevel.info, consolePrint: true )
+        Bugly.start(withAppId: "f498a348d2")
+
+        return true
     }
 }
