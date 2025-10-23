@@ -72,6 +72,7 @@ struct LocationSelectionView: View {
                                     .onSubmit {
                                         addNewLocation()
                                     }
+                                    .foregroundColor(Color(AppColors.Text.primary))
 
                                 // OK按钮 - 从右侧滑入
                                 Button(action: {
