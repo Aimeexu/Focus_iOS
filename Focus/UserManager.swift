@@ -46,6 +46,7 @@ class UserManager: ObservableObject {
         static let selectedLocation = "selected_location"
         static let selectedMusic = "selected_music"
         static let selectedMinutes = "selected_minutes"
+        static let customLocations = "custom_locations"
         
         // 用户物品
         static let userStuffs = "user_stuffs"
@@ -477,6 +478,24 @@ class UserManager: ObservableObject {
         return UserDefaults.standard.object(forKey: Keys.selectedMinutes) as? Int ?? 25
     }
     
+    func getCustomLocations() -> [String] {
+        return UserDefaults.standard.stringArray(forKey: Keys.customLocations) ?? []
+    }
+    
+    func getAllLocations() -> [String] {
+        let defaultLocations = ["Read", "Study", "Work"]
+        let customLocations = getCustomLocations()
+        
+        // 合并默认和自定义位置，去重并保持自定义位置在前
+        var allLocations = customLocations
+        for defaultLocation in defaultLocations {
+            if !allLocations.contains(defaultLocation) {
+                allLocations.append(defaultLocation)
+            }
+        }
+        return allLocations
+    }
+    
     func getAuthToken() -> String? {
         return UserDefaults.standard.string(forKey: Keys.authToken)
     }
@@ -582,6 +601,38 @@ class UserManager: ObservableObject {
         UserDefaults.standard.set(minutes, forKey: Keys.selectedMinutes)
     }
     
+    func addCustomLocation(_ location: String) {
+        let trimmedLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedLocation.isEmpty else { return }
+        
+        var customLocations = getCustomLocations()
+        
+        // 如果已存在，先移除再添加到最前面
+        if let existingIndex = customLocations.firstIndex(of: trimmedLocation) {
+            customLocations.remove(at: existingIndex)
+        }
+        
+        // 添加到最前面
+        customLocations.insert(trimmedLocation, at: 0)
+        
+        // 限制最多保存10个自定义位置
+        if customLocations.count > 10 {
+            customLocations = Array(customLocations.prefix(10))
+        }
+        
+        UserDefaults.standard.set(customLocations, forKey: Keys.customLocations)
+        print("✅ 添加自定义位置: \(trimmedLocation)")
+    }
+    
+    func removeCustomLocation(_ location: String) {
+        var customLocations = getCustomLocations()
+        if let index = customLocations.firstIndex(of: location) {
+            customLocations.remove(at: index)
+            UserDefaults.standard.set(customLocations, forKey: Keys.customLocations)
+            print("✅ 移除自定义位置: \(location)")
+        }
+    }
+    
     func updateUserStuffs(_ stuffs: [UserStuff]) {
         if let userStuffsData = try? JSONEncoder().encode(stuffs) {
             UserDefaults.standard.set(userStuffsData, forKey: Keys.userStuffs)
@@ -620,7 +671,7 @@ class UserManager: ObservableObject {
             Keys.authToken, Keys.refreshToken, Keys.accessTokenName, Keys.tokenExpiration,
             Keys.userInfo, Keys.userUUID, Keys.userAccount, Keys.userNickname, Keys.userPhone, Keys.userCreateTime,
             Keys.channelUUID, Keys.channelType, Keys.channelDescription,
-            Keys.backgroundMusic, Keys.selectedLocation, Keys.selectedMusic, Keys.selectedMinutes, Keys.userStuffs,
+            Keys.backgroundMusic, Keys.selectedLocation, Keys.selectedMusic, Keys.selectedMinutes, Keys.customLocations, Keys.userStuffs,
             Keys.isLoggedIn, Keys.lastLoginDate, Keys.loginMethod
         ]
         
@@ -779,7 +830,7 @@ class UserManager: ObservableObject {
             Keys.authToken, Keys.refreshToken, Keys.accessTokenName, Keys.tokenExpiration,
             Keys.userInfo, Keys.userUUID, Keys.userAccount, Keys.userNickname, Keys.userPhone, Keys.userCreateTime,
             Keys.channelUUID, Keys.channelType, Keys.channelDescription,
-            Keys.backgroundMusic, Keys.selectedLocation, Keys.selectedMusic, Keys.selectedMinutes, Keys.userStuffs,
+            Keys.backgroundMusic, Keys.selectedLocation, Keys.selectedMusic, Keys.selectedMinutes, Keys.customLocations, Keys.userStuffs,
             Keys.isLoggedIn, Keys.lastLoginDate, Keys.loginMethod
         ]
         

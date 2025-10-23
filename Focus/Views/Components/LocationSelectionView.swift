@@ -23,8 +23,11 @@ struct LocationSelectionView: View {
     @FocusState private var isTextFieldFocused: Bool
     @State private var contentHeight: CGFloat = 0
     
-    @State private var locations = ["Read", "Study", "Work"]
+    @State private var locations: [String] = []
     @State private var keyboardHeight: CGFloat = 0
+    @State private var hideDeleteButtons = false
+    
+    private let userManager = UserManager.shared
     
     var body: some View {
 
@@ -44,9 +47,18 @@ struct LocationSelectionView: View {
                         ForEach(locations, id: \.self) { location in
                             LocationTagButton(
                                 title: location,
-                                isSelected: selectedLocation == location
+                                isSelected: selectedLocation == location,
+                                isCustom: userManager.getCustomLocations().contains(location),
+                                hideDeleteButton: hideDeleteButtons
                             ) {
                                 selectedLocation = location
+                                // 选择位置时隐藏所有删除按钮
+                                hideDeleteButtons = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    hideDeleteButtons = false
+                                }
+                            } onDelete: {
+                                deleteLocation(location)
                             }
                         }
 
@@ -146,13 +158,19 @@ struct LocationSelectionView: View {
             .padding(.vertical, 20)
             .offset(y: -keyboardHeight / 2) // 键盘弹起时向上移动
             .onTapGesture {
-                // 点击空白区域取消输入
+                // 点击空白区域取消输入并隐藏删除按钮
                 if isAddingNew {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         isAddingNew = false
                         isTextFieldFocused = false
                     }
                     newLocationText = ""
+                }
+                
+                // 隐藏所有删除按钮
+                hideDeleteButtons = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    hideDeleteButtons = false
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
@@ -167,14 +185,26 @@ struct LocationSelectionView: View {
                     keyboardHeight = 0
                 }
             }
+            .onAppear {
+                loadLocations()
+            }
         }
     }
 
+    private func loadLocations() {
+        locations = userManager.getAllLocations()
+    }
+    
     private func addNewLocation() {
         let trimmedText = newLocationText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedText.isEmpty && !locations.contains(trimmedText) {
-            // 插入到数组的第一个位置
-            locations.insert(trimmedText, at: 0)
+        if !trimmedText.isEmpty {
+            // 保存到UserManager
+            userManager.addCustomLocation(trimmedText)
+            
+            // 重新加载locations数组
+            loadLocations()
+            
+            // 设置为选中状态
             selectedLocation = trimmedText
         }
         
@@ -184,25 +214,138 @@ struct LocationSelectionView: View {
         }
         newLocationText = ""
     }
-        
+    
+    private func deleteLocation(_ location: String) {
+        let customLocations = userManager.getCustomLocations()
+
+        // 只能删除自定义位置
+        if customLocations.contains(location) {
+            userManager.removeCustomLocation(location)
+            
+            // 重新加载locations数组
+            loadLocations()
+
+            // 如果删除的是当前选中的位置，切换到默认位置
+            if selectedLocation == location {
+                selectedLocation = "Read"
+            }
+        } else {
+            print("❌ 不是自定义位置，无法删除")
+        }
+    }
 }
 
 struct LocationTagButton: View {
     let title: String
     let isSelected: Bool
+    let isCustom: Bool
+    let hideDeleteButton: Bool
     let action: () -> Void
+    let onDelete: () -> Void
+    
+    @State private var dragOffset: CGFloat = 0
+    @State private var showDeleteButton = false
+    
+    private let deleteButtonWidth: CGFloat = 80
     
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.appBody(size: 24))
-                .foregroundColor(isSelected ? AppColors.Text.inverse : AppColors.Text.primary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 60)
-                .background(isSelected ? AppColors.Brand.primary : AppColors.Background.primary)
-                .cornerRadius(14)
+        ZStack {
+            // 背景删除按钮（在主按钮下方）
+            if isCustom {
+                HStack {
+                    Spacer()
+                    
+                    Button(action: {
+                        print("🔴 删除按钮被点击: \(title)")
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = 0
+                            showDeleteButton = false
+                        }
+                        onDelete()
+                    }) {
+                        VStack {
+                            Image(systemName: "trash.fill")
+                                .font(.system(size: 20))
+                            Text("删除")
+                                .font(.caption)
+                        }
+                        .foregroundColor(.white)
+                        .frame(width: deleteButtonWidth, height: 60)
+                        .background(AppColors.Brand.primary)
+                        .cornerRadius(14)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .opacity(showDeleteButton ? 1 : 0)
+                    .scaleEffect(showDeleteButton ? 1 : 0.8)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showDeleteButton)
+                }
+            }
+            
+            // 主按钮内容（不使用Button，避免手势冲突）
+            HStack {
+                Text(title)
+                    .font(.appBody(size: 24))
+                    .foregroundColor(isSelected ? AppColors.Text.inverse : AppColors.Text.primary)
+                
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .padding(.horizontal, 20)
+            .background(isSelected ? AppColors.Brand.primary : AppColors.Background.primary)
+            .cornerRadius(14)
+            .offset(x: dragOffset)
+            .onTapGesture {
+                // 如果删除按钮显示中，先隐藏删除按钮
+                if showDeleteButton {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        dragOffset = 0
+                        showDeleteButton = false
+                    }
+                } else {
+                    action()
+                }
+            }
+            .gesture(
+                isCustom ? DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        let translation = value.translation.width
+                        
+                        // 只允许向左滑动
+                        if translation < 0 {
+                            dragOffset = max(translation, -deleteButtonWidth)
+                        } else if showDeleteButton {
+                            // 如果删除按钮已显示，允许向右滑动隐藏
+                            dragOffset = min(0, -deleteButtonWidth + translation)
+                        }
+                    }
+                    .onEnded { value in
+                        let translation = value.translation.width
+                        let velocity = value.velocity.width
+                        
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            if translation < -deleteButtonWidth/2 || velocity < -500 {
+                                // 显示删除按钮
+                                dragOffset = -deleteButtonWidth
+                                showDeleteButton = true
+                            } else {
+                                // 隐藏删除按钮
+                                dragOffset = 0
+                                showDeleteButton = false
+                            }
+                        }
+                    } : nil
+            )
         }
-        .buttonStyle(PlainButtonStyle())
+        .clipped()
+        .onChange(of: hideDeleteButton) { _, shouldHide in
+            if shouldHide && showDeleteButton {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    dragOffset = 0
+                    showDeleteButton = false
+                }
+            }
+        }
     }
 }
 
