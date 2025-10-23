@@ -115,7 +115,9 @@ struct HomeView: View {
     @State private var selectedMinutes = 25
     // 移除本地状态，直接使用ConcentrationService的状态
     @State private var isStartingTimer = false
-    
+
+    @StateObject private var audioManager = AudioManager.shared
+
     // 新增的服务
     @StateObject private var concentrationService = ConcentrationService.shared
     @StateObject private var lottieAnimationManager = LottieAnimationManager.shared
@@ -203,6 +205,7 @@ struct HomeView: View {
                         // 运行时显示 Slide to Quit 按钮
                         SlideToQuitButton {
                             stopTimer()
+                            audioManager.stopSound()
                         }
                         .padding(.horizontal, 60)
                         .padding(.top, 100)
