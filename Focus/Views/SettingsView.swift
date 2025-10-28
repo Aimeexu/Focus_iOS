@@ -28,12 +28,14 @@ struct SettingsView: View {
                         HStack {
                             // 头像
                             Circle()
-                                .fill(Color(red: 0.85, green: 0.85, blue: 0.85))
+                                .fill(Color.clear)
                                 .frame(width: 60, height: 60)
                                 .overlay(
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.gray)
+                                    Image("penguin")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 60, height: 60)
+                                        .clipShape(Circle())
                                 )
                             
                             VStack(alignment: .leading, spacing: 4) {
