@@ -120,4 +120,9 @@ extension Font {
     static func appEmphasis(size: CGFloat = 17) -> Font {
         return .shangguRoundBold(size: size)
     }
+
+    /// 应用副标题字体
+    static func appSubtitle(size: CGFloat) -> Font {
+        return .system(size: size, weight: .semibold)
+    }
 }

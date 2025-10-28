@@ -56,6 +56,9 @@ struct AppColors {
         
         /// 错误红色 - 用于错误提示
         static let error = Color(hex: "E2583F")
+
+        /// 卡片背景颜色
+        static let cardBg = Color(hex: "FEFCF8")
     }
     
     // MARK: - 功能色

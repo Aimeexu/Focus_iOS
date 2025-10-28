@@ -146,7 +146,7 @@ struct MusicSelectionView: View {
 
                 }
                 .padding(.horizontal, 20)
-                .background(Color(.systemGray6))
+                .background(AppColors.Semantic.cardBg)
 
                 // OK 按钮
                 Button(action: {
@@ -165,7 +165,7 @@ struct MusicSelectionView: View {
                 }
                 .padding(.top, 30)
             }
-            .background(Color(.systemGray6))
+            .background(AppColors.Semantic.cardBg)
             .cornerRadius(25)
             .overlay(
                 RoundedRectangle(cornerRadius: 25)
