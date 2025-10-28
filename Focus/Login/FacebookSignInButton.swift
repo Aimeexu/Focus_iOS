@@ -21,10 +21,10 @@ struct CustomFacebookSignInButton: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(0.8)
                 } else {
-                    Image("facebook_logo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 18, height: 18)
+                    // 使用SF Symbol作为Facebook图标
+                    Image(systemName: "f.circle.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
                 }
                 
                 Text(isLoading ? "登录中..." : "Continue with Facebook")
@@ -53,10 +53,10 @@ struct FacebookIconButton: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(0.6)
                 } else {
-                    Image("facebook_logo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 30, height: 30)
+                    // 使用SF Symbol作为Facebook图标
+                    Image(systemName: "f.circle.fill")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundColor(.white)
                 }
             }
             .frame(width: 50, height: 50)

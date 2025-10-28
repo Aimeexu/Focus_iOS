@@ -17,7 +17,7 @@ class AudioManager: ObservableObject {
     func playSound(fileName: String) {
         stopSound()
         
-        guard let url = Bundle.main.url(forResource: fileName, withExtension: "wav") else {
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: "mp3") else {
             print("找不到音频文件: \(fileName).wav")
             return
         }

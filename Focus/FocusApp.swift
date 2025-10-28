@@ -16,12 +16,6 @@ struct FocusApp: App {
         @StateObject private var userManager = UserManager.shared
 
     init() {
-        // 初始化Facebook SDK
-//        ApplicationDelegate.shared.application(
-//            UIApplication.shared,
-//            didFinishLaunchingWithOptions: nil
-//        )
-        
         // 初始化Google Sign-In
         configureGoogleSignIn()
     }
