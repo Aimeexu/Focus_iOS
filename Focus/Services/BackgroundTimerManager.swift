@@ -89,7 +89,10 @@ class BackgroundTimerManager: ObservableObject {
         showCompletionMessage = true
         
         print("✅ 计时完成")
-        
+
+        // 通知外部计时完成
+        NotificationCenter.default.post(name: .timerCompleted, object: nil)
+
         // 2秒后隐藏完成消息
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.showCompletionMessage = false
@@ -171,4 +174,5 @@ class BackgroundTimerManager: ObservableObject {
 // MARK: - 通知名称扩展
 extension Notification.Name {
     static let timerCompletedInBackground = Notification.Name("timerCompletedInBackground")
+    static let timerCompleted = Notification.Name("timerCompleted")
 }

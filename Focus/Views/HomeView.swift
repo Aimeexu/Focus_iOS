@@ -341,6 +341,10 @@ struct HomeView: View {
             // 处理后台计时完成
             handleBackgroundTimerCompletion()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .timerCompleted)) { _ in
+            // 处理后台计时完成
+            handleBackgroundTimerCompletion()
+        }
     }
 
     private func toggleTimer() {
@@ -451,16 +455,11 @@ struct HomeView: View {
             }
         }
     }
-    
-    private func endConcentrationSession() {
-        // 保留原方法以防其他地方调用
-        naturalEndConcentrationSession()
-    }
 
     private func handleBackgroundTimerCompletion() {
         // 后台计时完成，先切换到成体动画，然后调用结束接口
         concentrationService.switchToAdultAnimation()
-        
+
         // 延迟3秒显示成体动画，然后结束计时
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             naturalEndConcentrationSession()
