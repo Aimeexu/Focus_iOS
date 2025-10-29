@@ -135,8 +135,8 @@ struct HomeView: View {
                     }
                     .padding(.top, 84)
 
-                    // 位置标签 - 只在未运行时显示
-                    if !backgroundTimerManager.isTimerRunning {
+                    // 位置标签 - 只在未运行且没有专注计划时显示
+                    if !backgroundTimerManager.isTimerRunning && concentrationService.currentPlan == nil {
                         Button(action: {
                             showLocationSelection = true
                         }) {
@@ -163,16 +163,23 @@ struct HomeView: View {
                     }
 
                     // 计时器显示区域
-                    if backgroundTimerManager.isTimerRunning {
+                    if backgroundTimerManager.isTimerRunning || concentrationService.currentPlan != nil {
                         VStack(spacing: 40) {
                             // 专注计时动画 - 显示从服务器获取的Lottie动画
-                            ConcentrationAnimationView(size: CGSize(width: 200, height: 200))
+                            ConcentrationAnimationView(size: CGSize(width: 200, height: 200), showStateIndicator: false)
                                 .padding(.top, 150)
                             
                             // 运行时显示大号时间 - 使用BackgroundTimerManager的时间
-                            Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
-                                .font(.appNumber(size: 24))
-                                .foregroundColor(AppColors.Semantic.darkBrown)
+                            if backgroundTimerManager.isTimerRunning {
+                                Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
+                                    .font(.appNumber(size: 24))
+                                    .foregroundColor(AppColors.Semantic.darkBrown)
+                            } else {
+                                // 计时完成后显示完成状态
+                                Text("Focus Complete!")
+                                    .font(.appButton(size: 20))
+                                    .foregroundColor(AppColors.Brand.primary)
+                            }
                         }
                     } else {
                         // 未运行时显示圆形选择器
@@ -204,6 +211,22 @@ struct HomeView: View {
                             audioManager.stopSound()
                         }
                         .padding(.horizontal, 60)
+                        .padding(.top, 100)
+                    } else if concentrationService.currentPlan != nil {
+                        // 计时完成但还在显示奖励动画时，显示一个简单的完成按钮
+                        Button(action: {
+                            // 立即清除状态，结束奖励动画显示
+//                            concentrationService.clearState()
+                        }) {
+                            Text("Continue")
+                                .font(.appButton(size: 18))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(AppColors.Brand.primary)
+                                .cornerRadius(15)
+                        }
+                        .padding(.horizontal, 90)
                         .padding(.top, 100)
                     } else {
                         // 未运行时显示 Start to Focus 按钮
@@ -242,19 +265,19 @@ struct HomeView: View {
         .overlay(
             // 计时完成消息
             Group {
-                if backgroundTimerManager.showCompletionMessage {
-                    VStack {
-                        Text("专注时间已完成！")
-                            .font(.appButton(size: 18))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(AppColors.Brand.primary)
-                            .cornerRadius(20)
-                    }
-                    .transition(.opacity.combined(with: .scale))
-                    .animation(.easeInOut(duration: 0.3), value: backgroundTimerManager.showCompletionMessage)
-                }
+//                if backgroundTimerManager.showCompletionMessage {
+//                    VStack {
+//                        Text("专注时间已完成！")
+//                            .font(.appButton(size: 18))
+//                            .foregroundColor(.white)
+//                            .padding(.horizontal, 24)
+//                            .padding(.vertical, 12)
+//                            .background(AppColors.Brand.primary)
+//                            .cornerRadius(20)
+//                    }
+//                    .transition(.opacity.combined(with: .scale))
+//                    .animation(.easeInOut(duration: 0.3), value: backgroundTimerManager.showCompletionMessage)
+//                }
             }
         )
         .overlay(
@@ -441,27 +464,32 @@ struct HomeView: View {
         }
         
         Task {
-            // 使用安全的结束方法，不会抛出错误
-            await concentrationService.safeEndConcentration()
+            // 先调用结束接口，但不清除动画状态
+            await concentrationService.safeEndConcentrationWithoutClearingAnimation()
             
             await MainActor.run {
                 // 重置计时器时间
                 focusTime = selectedMinutes * 60
                 
-                // 清除动画
-                lottieAnimationManager.clearAnimation()
-                
                 print("✅ 专注计时自然结束，已获取奖励")
+                
+                // 延迟2秒后再清除动画，让用户有时间看到成年动画
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    self.concentrationService.clearState()
+                    print("🧹 延迟清除动画状态")
+                }
             }
         }
     }
 
     private func handleBackgroundTimerCompletion() {
         // 后台计时完成，先切换到成体动画，然后调用结束接口
+        print("🎯 计时完成，切换到成年动画")
         concentrationService.switchToAdultAnimation()
 
-        // 延迟3秒显示成体动画，然后结束计时
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+        // 延迟5秒显示成体动画，然后结束计时（给用户更多时间看到成年动画）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            print("🎯 成年动画显示完毕，结束专注计时")
             naturalEndConcentrationSession()
         }
     }

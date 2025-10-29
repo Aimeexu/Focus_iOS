@@ -20,9 +20,6 @@ struct NetworkLottieView: UIViewRepresentable {
         self.animationSpeed = animationSpeed
     }
     
-    // 用于跟踪当前加载的URL，避免重复加载
-    private static var currentLoadedURL: String = ""
-    
     func makeUIView(context: Context) -> UIView {
         let containerView = UIView()
         let animationView = LottieAnimationView()
@@ -51,8 +48,9 @@ struct NetworkLottieView: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         // 如果URL改变，重新加载动画
         if let animationView = uiView.subviews.first as? LottieAnimationView {
-            // 检查URL是否真的改变了，避免重复加载
-            if NetworkLottieView.currentLoadedURL != animationURL {
+            // 获取当前动画视图的URL标识
+            let currentURL = animationView.accessibilityIdentifier ?? ""
+            if currentURL != animationURL {
                 print("🔄 动画URL改变，重新加载: \(animationURL)")
                 loadNetworkAnimation(animationView: animationView, url: animationURL)
             }
@@ -88,8 +86,8 @@ struct NetworkLottieView: UIViewRepresentable {
                     let animation = try? LottieAnimation.from(data: data)
                     animationView.animation = animation
                     animationView.play()
-                    // 更新当前加载的URL
-                    NetworkLottieView.currentLoadedURL = url.absoluteString
+                    // 使用accessibilityIdentifier来标记当前加载的URL
+                    animationView.accessibilityIdentifier = url.absoluteString
                     print("✅ 网络动画加载成功: \(url.absoluteString)")
                 }
             } catch {
@@ -117,18 +115,19 @@ struct ConcentrationAnimationView: View {
                 VStack {
                     ProgressView()
                         .scaleEffect(1.5)
-                    Text("加载动画中...")
+                    Text("Loading...")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .padding(.top, 8)
                 }
             } else if let animationURL = concentrationService.currentLottieAnimationURL {
-                // 显示网络动画
+                // 显示网络动画 - 使用id来强制重新创建视图当URL改变时
                 NetworkLottieView(
                     animationURL: animationURL,
                     loopMode: .loop,
                     animationSpeed: 1.0
                 )
+                .id(animationURL) // 关键：当URL改变时强制重新创建视图
                 
                 // 状态切换指示器
 //                if concentrationService.isAnimationSwitching {
@@ -177,7 +176,7 @@ struct ConcentrationAnimationView: View {
                     Image(systemName: "pawprint.circle.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.gray.opacity(0.3))
-                    Text("暂无动画")
+                    Text("No Animation")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

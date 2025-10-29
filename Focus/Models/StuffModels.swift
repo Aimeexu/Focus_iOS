@@ -323,11 +323,11 @@ enum PetState: String, CaseIterable {
     var displayName: String {
         switch self {
         case .child:
-            return "幼体"
+            return "Child"
         case .adult:
-            return "成体"
+            return "Adult"
         case .sleep:
-            return "睡眠"
+            return "Sleep"
         }
     }
 }

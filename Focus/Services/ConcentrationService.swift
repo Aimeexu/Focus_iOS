@@ -85,6 +85,9 @@ class ConcentrationService: ObservableObject {
             return
         }
         
+        print("🎬 开始切换动画状态到: \(state.displayName)")
+        print("   - 当前附件数据: child=\(attachment.child != nil), adult=\(attachment.adult != nil), sleep=\(attachment.sleep != nil)")
+        
         isAnimationSwitching = true
         currentAnimationState = state
         
@@ -99,14 +102,17 @@ class ConcentrationService: ObservableObject {
         }
         
         if let url = animationURL {
+            let oldURL = currentLottieAnimationURL
             currentLottieAnimationURL = url
-            print("🎬 切换到\(state.displayName)动画: \(url)")
+            print("🎬 切换到\(state.displayName)动画成功")
+            print("   - 旧URL: \(oldURL ?? "nil")")
+            print("   - 新URL: \(url)")
         } else {
             // 如果没有对应动画，尝试使用其他动画
             let fallbackURL = attachment.child ?? attachment.adult ?? attachment.sleep
             if let fallbackURL = fallbackURL {
                 currentLottieAnimationURL = fallbackURL
-                print("⚠️ 没有\(state.displayName)动画，使用备用动画")
+                print("⚠️ 没有\(state.displayName)动画，使用备用动画: \(fallbackURL)")
             } else {
                 print("⚠️ 没有可用的动画")
             }
@@ -141,6 +147,37 @@ class ConcentrationService: ObservableObject {
         }
     }
     
+    // MARK: - 安全结束专注计时但不清除动画状态
+    func safeEndConcentrationWithoutClearingAnimation() async {
+        guard let planId = currentPlan?.uuid else {
+            print("⚠️ 没有正在进行的专注计时")
+            return
+        }
+        
+        do {
+            print("🏁 结束专注计时（保持动画），计划ID: \(planId)")
+            let response = try await NetworkManager.shared.endConcentration(id: planId)
+            
+            if response.status == "success" {
+                print("✅ 专注计时结束成功（动画保持）")
+                // 更新数据但不清除动画状态
+                if let userStuff = response.data?.userStuff {
+                    StuffManager.shared.updateLocalUserStuff(with: userStuff)
+                }
+                // 只清除计划状态，保留动画
+                currentPlan = nil
+                isLoading = false
+            } else {
+                print("⚠️ 结束专注计时API返回失败: \(response.message)")
+            }
+        } catch {
+            print("❌ 结束专注计时失败: \(error)")
+            // 即使失败也清除计划状态
+            currentPlan = nil
+            isLoading = false
+        }
+    }
+    
     // MARK: - 结束专注计时
     func endConcentration() async throws {
         guard let planId = currentPlan?.uuid else {
@@ -162,14 +199,10 @@ class ConcentrationService: ObservableObject {
                 if let userStuff = response.data?.userStuff {
                     StuffManager.shared.updateLocalUserStuff(with:userStuff)
                 }
+                self.clearState()
+                self.isLoading = false
             } else {
 //                print("⚠️ 结束专注计时API返回失败: \(response.message)")
-            }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
-                // 无论API调用成功与否，都清除本地状态
-                self?.clearState()
-                self?.isLoading = false
             }
         } catch {
             // 即使API调用失败，也要清除本地状态
