@@ -22,7 +22,7 @@ struct FocusApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashView()
                 .environmentObject(userManager)
                 .onAppear {
                     // 应用启动时加载用户数据
