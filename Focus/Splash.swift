@@ -41,15 +41,14 @@ struct SplashView: View {
                         .ignoresSafeArea()
 
                     LottieView(name: "loading", loopMode: .playOnce)
-                        .scaledToFill()
+                        .aspectRatio(contentMode: .fill)
                         .ignoresSafeArea()
+//                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .onAppear {
                     // 动画时长后切换主页面
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        withAnimation {
-                            isActive = true
-                        }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                        isActive = true
                     }
                 }
             }
