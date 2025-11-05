@@ -113,7 +113,7 @@ struct UserProfileView: View {
             .alert("确认登出", isPresented: $showingLogoutAlert) {
                 Button("取消", role: .cancel) { }
                 Button("登出", role: .destructive) {
-                    userManager.clearUserData()
+                    userManager.clearUserDataExceptSettings()
                 }
             } message: {
                 Text("登出后需要重新登录才能使用完整功能")

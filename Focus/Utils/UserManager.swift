@@ -387,11 +387,11 @@ class UserManager: ObservableObject {
                 reconstructUserInfo()
             }
         } else {
-            // 登录状态无效，清除数据
+            // 登录状态无效，清除数据但保留个人设置
             if !tokenValid {
                 print("⚠️ Token已过期，清除登录状态")
             }
-            clearUserData()
+            clearUserDataExceptSettings()
         }
     }
     
@@ -402,7 +402,7 @@ class UserManager: ObservableObject {
         guard let uuid = userDefaults.string(forKey: Keys.userUUID),
               let account = userDefaults.string(forKey: Keys.userAccount) else {
             print("❌ 无法重建用户信息，缺少必要字段")
-            clearUserData()
+            clearUserDataExceptSettings()
             return
         }
         
@@ -688,6 +688,34 @@ class UserManager: ObservableObject {
         print("✅ 用户数据已清除")
     }
     
+    // MARK: - 清除用户数据但保留个人设置
+    func clearUserDataExceptSettings() {
+        let userDefaults = UserDefaults.standard
+        
+        // 清除用户相关数据，但保留个人设置
+        let keysToRemove = [
+            Keys.authToken, Keys.refreshToken, Keys.accessTokenName, Keys.tokenExpiration,
+            Keys.userInfo, Keys.userUUID, Keys.userAccount, Keys.userNickname, Keys.userPhone, Keys.userCreateTime,
+            Keys.channelUUID, Keys.channelType, Keys.channelDescription,
+            Keys.backgroundMusic, Keys.userStuffs,
+            Keys.isLoggedIn, Keys.lastLoginDate, Keys.loginMethod
+        ]
+        
+        // 注意：不清除 Keys.selectedLocation, Keys.selectedMusic, Keys.selectedMinutes, Keys.customLocations
+        
+        for key in keysToRemove {
+            userDefaults.removeObject(forKey: key)
+        }
+        
+        // 更新内存中的状态
+        DispatchQueue.main.async {
+            self.currentUser = nil
+            self.isLoggedIn = false
+        }
+        
+        print("✅ 用户数据已清除（保留个人设置）")
+    }
+    
     // MARK: - 检查登录状态
     func checkLoginStatus() -> Bool {
         let userDefaults = UserDefaults.standard
@@ -866,7 +894,7 @@ extension AuthService {
     }
     
     func clearAuthData() {
-        UserManager.shared.clearUserData()
+        UserManager.shared.clearUserDataExceptSettings()
     }
     
     func getAuthCookie() -> (name: String, value: String)? {

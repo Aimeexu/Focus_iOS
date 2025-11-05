@@ -289,8 +289,8 @@ class AuthService {
             responseType: APIResponse<String>.self
         )
         
-        // 清除本地存储的认证信息
-        UserManager.shared.clearUserData()
+        // 清除本地存储的认证信息但保留个人设置
+        UserManager.shared.clearUserDataExceptSettings()
         
         return response
     }

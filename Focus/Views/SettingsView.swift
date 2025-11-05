@@ -211,12 +211,13 @@ struct SettingsView: View {
     
     private func clearCache() {
         // 清除缓存逻辑
+        userManager.clearUserData()
         print("缓存已清除")
     }
     
     private func logout() {
-        // 使用 UserManager 清除用户数据
-        userManager.clearUserData()
+        // 使用 UserManager 清除用户数据但保留个人设置
+        userManager.clearUserDataExceptSettings()
         
         print("用户已退出登录")
         

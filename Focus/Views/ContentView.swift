@@ -25,8 +25,8 @@ struct ContentView: View {
             userManager.loadUserData()
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
-            // 通知登出，清除用户数据
-            userManager.clearUserData()
+            // 通知登出，清除用户数据但保留个人设置
+            userManager.clearUserDataExceptSettings()
         }
     }
 }
