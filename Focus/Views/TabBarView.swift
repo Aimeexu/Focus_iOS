@@ -107,82 +107,86 @@ struct TabBarView: View {
     @State private var animatedPosition: Double = 1.0
 
     var body: some View {
-        VStack(spacing: 0) {
-            // 原有的TabBar内容 - 添加白色凹陷背景
-            ZStack {
-                // 底层白色背景
-                Rectangle()
-                    .fill(AppColors.Background.primary)
-                    .frame(height: 48)
-                
-                // 波浪形TabBar背景
-                WaveTabBarBackground(animatablePosition: animatedPosition)
-                    .fill(AppColors.Semantic.darkBrown)
-                    .frame(height: 48)
-                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
-
-                // Tab 按钮
-                HStack {
-                    tabButton(imageName: "home", tab: .home)
-                    Spacer()
-                    tabButton(imageName: "checkmark", tab: .tasks)
-                    Spacer()
-                    tabButton(imageName: "chart", tab: .chart)
-                    Spacer()
-                    tabButton(imageName: "setting", tab: .settings)
+        if #available(iOS 17.0, *) {
+            VStack(spacing: 0) {
+                // 原有的TabBar内容 - 添加白色凹陷背景
+                ZStack {
+                    // 底层白色背景
+                    Rectangle()
+                        .fill(AppColors.Background.primary)
+                        .frame(height: 48)
+                    
+                    // 波浪形TabBar背景
+                    WaveTabBarBackground(animatablePosition: animatedPosition)
+                        .fill(AppColors.Semantic.darkBrown)
+                        .frame(height: 48)
+                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: -3)
+                    
+                    // Tab 按钮
+                    HStack {
+                        tabButton(imageName: "home", tab: .home)
+                        Spacer()
+                        tabButton(imageName: "checkmark", tab: .tasks)
+                        Spacer()
+                        tabButton(imageName: "chart", tab: .chart)
+                        Spacer()
+                        tabButton(imageName: "setting", tab: .settings)
+                    }
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 0)
                 }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 0)
+                
+                // 底部安全区域高度的纯色占位
+                AppColors.Semantic.darkBrown
+                    .frame(height: 34) // 底部安全区域的典型高度
             }
-            
-            // 底部安全区域高度的纯色占位
-            AppColors.Semantic.darkBrown
-                .frame(height: 34) // 底部安全区域的典型高度
-        }
-        .ignoresSafeArea(.container, edges: .bottom) // 让整个TabBar从最底部开始
-        .onAppear {
-            animatedPosition = Double(selectedTab.rawValue)
-        }
-        .onChange(of: selectedTab) { oldTab, newTab in
-            // 计算动画时长和回弹参数
-            let steps = abs(newTab.rawValue - oldTab.rawValue)
-            
-            // 根据步数调整动画参数
-            let duration: Double
-            let dampingFraction: Double
-            let blendDuration: Double
-            
-            switch steps {
-            case 1:
-                // 相邻切换：轻微回弹
-                duration = 0.5
-                dampingFraction = 0.65
-                blendDuration = 0.1
-            case 2:
-                // 跨一个Tab：减小回弹效果
-                duration = 0.6
-                dampingFraction = 0.7  // 增加阻尼系数，减小回弹
-                blendDuration = 0.1
-            case 3:
-                // 跨两个Tab：使用类似1步的回弹效果
-                duration = 0.7
-                dampingFraction = 0.7  // 与1步相似的阻尼系数
-                blendDuration = 0.1    // 与1步相似的混合时间
-            default:
-                // 其他情况
-                duration = 0.5 + Double(steps - 1) * 0.1  // 减小时长增量
-                dampingFraction = 0.7                     // 与其他情况保持一致
-                blendDuration = 0.1                       // 与其他情况保持一致
+            .ignoresSafeArea(.container, edges: .bottom) // 让整个TabBar从最底部开始
+            .onAppear {
+                animatedPosition = Double(selectedTab.rawValue)
             }
-            
-            // 执行带回弹效果的滚动动画
-            withAnimation(.spring(
-                response: duration,
-                dampingFraction: dampingFraction,
-                blendDuration: blendDuration
-            )) {
-                animatedPosition = Double(newTab.rawValue)
+            .onChange(of: selectedTab) { oldTab, newTab in
+                // 计算动画时长和回弹参数
+                let steps = abs(newTab.rawValue - oldTab.rawValue)
+                
+                // 根据步数调整动画参数
+                let duration: Double
+                let dampingFraction: Double
+                let blendDuration: Double
+                
+                switch steps {
+                case 1:
+                    // 相邻切换：轻微回弹
+                    duration = 0.5
+                    dampingFraction = 0.65
+                    blendDuration = 0.1
+                case 2:
+                    // 跨一个Tab：减小回弹效果
+                    duration = 0.6
+                    dampingFraction = 0.7  // 增加阻尼系数，减小回弹
+                    blendDuration = 0.1
+                case 3:
+                    // 跨两个Tab：使用类似1步的回弹效果
+                    duration = 0.7
+                    dampingFraction = 0.7  // 与1步相似的阻尼系数
+                    blendDuration = 0.1    // 与1步相似的混合时间
+                default:
+                    // 其他情况
+                    duration = 0.5 + Double(steps - 1) * 0.1  // 减小时长增量
+                    dampingFraction = 0.7                     // 与其他情况保持一致
+                    blendDuration = 0.1                       // 与其他情况保持一致
+                }
+                
+                // 执行带回弹效果的滚动动画
+                withAnimation(.spring(
+                    response: duration,
+                    dampingFraction: dampingFraction,
+                    blendDuration: blendDuration
+                )) {
+                    animatedPosition = Double(newTab.rawValue)
+                }
             }
+        } else {
+            // Fallback on earlier versions
         }
     }
 

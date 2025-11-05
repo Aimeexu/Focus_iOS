@@ -150,6 +150,7 @@ struct StatisticsView: View {
                         .font(.appBody(size: 18))
                         .foregroundColor(AppColors.Text.secondary)
                 }
+                Spacer().frame(height: 8)
 
                 ZStack {
                     PieChartView(data: focusData, total: responseData.data.totalDuration)
