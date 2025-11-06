@@ -100,6 +100,9 @@ class UserManager: ObservableObject {
         userDefaults.set(Date(), forKey: Keys.lastLoginDate)
         userDefaults.set(loginMethod, forKey: Keys.loginMethod)
         
+        // 保存Token时间用于续期管理
+        TokenManager.shared.saveTokenTime()
+        
         // 更新内存中的状态
         DispatchQueue.main.async {
             self.currentUser = user
@@ -184,6 +187,9 @@ class UserManager: ObservableObject {
         userDefaults.set(Date(), forKey: Keys.lastLoginDate)
         userDefaults.set(loginMethod, forKey: Keys.loginMethod)
         
+        // 保存Token时间用于续期管理
+        TokenManager.shared.saveTokenTime()
+        
         // 更新内存中的状态
         DispatchQueue.main.async {
             self.currentUser = standardUserInfo
@@ -266,6 +272,9 @@ class UserManager: ObservableObject {
         userDefaults.set(true, forKey: Keys.isLoggedIn)
         userDefaults.set(Date(), forKey: Keys.lastLoginDate)
         userDefaults.set(loginMethod, forKey: Keys.loginMethod)
+        
+        // 保存Token时间用于续期管理
+        TokenManager.shared.saveTokenTime()
         
         // 更新内存中的状态
         DispatchQueue.main.async {
@@ -350,6 +359,9 @@ class UserManager: ObservableObject {
         userDefaults.set(Date(), forKey: Keys.lastLoginDate)
         userDefaults.set(loginMethod, forKey: Keys.loginMethod)
         
+        // 保存Token时间用于续期管理
+        TokenManager.shared.saveTokenTime()
+        
         // 更新内存中的状态
         DispatchQueue.main.async {
             self.currentUser = standardUserInfo
@@ -373,24 +385,40 @@ class UserManager: ObservableObject {
             tokenValid = Date() < expirationDate
         }
         
-        // 如果已登录且token有效，加载用户信息
-        if savedIsLoggedIn && tokenValid {
-            if let userData = userDefaults.data(forKey: Keys.userInfo),
-               let user = try? JSONDecoder().decode(UserInfo.self, from: userData) {
-                DispatchQueue.main.async {
-                    self.currentUser = user
-                    self.isLoggedIn = true
+        // 如果已登录
+        if savedIsLoggedIn {
+            if tokenValid {
+                // Token有效，直接加载用户信息
+                if let userData = userDefaults.data(forKey: Keys.userInfo),
+                   let user = try? JSONDecoder().decode(UserInfo.self, from: userData) {
+                    DispatchQueue.main.async {
+                        self.currentUser = user
+                        self.isLoggedIn = true
+                    }
+                    print("✅ 从 UserDefaults 加载用户信息成功")
+                } else {
+                    // 如果无法加载完整用户信息，尝试从单独字段重建
+                    reconstructUserInfo()
                 }
-                print("✅ 从 UserDefaults 加载用户信息成功")
             } else {
-                // 如果无法加载完整用户信息，尝试从单独字段重建
-                reconstructUserInfo()
+                // Token过期，但用户已登录，尝试续期而不是直接清除
+                print("⚠️ Token已过期，但用户已登录，将在应用启动时尝试续期")
+                
+                // 先加载用户信息（如果存在）
+                if let userData = userDefaults.data(forKey: Keys.userInfo),
+                   let user = try? JSONDecoder().decode(UserInfo.self, from: userData) {
+                    DispatchQueue.main.async {
+                        self.currentUser = user
+                        self.isLoggedIn = true
+                    }
+                    print("✅ 加载用户信息成功，等待Token续期")
+                } else {
+                    reconstructUserInfo()
+                }
             }
         } else {
-            // 登录状态无效，清除数据但保留个人设置
-            if !tokenValid {
-                print("⚠️ Token已过期，清除登录状态")
-            }
+            // 用户未登录，清除数据但保留个人设置
+            print("ℹ️ 用户未登录")
             clearUserDataExceptSettings()
         }
     }
@@ -679,6 +707,9 @@ class UserManager: ObservableObject {
             userDefaults.removeObject(forKey: key)
         }
         
+        // 清除Token时间记录
+        TokenManager.shared.clearTokenTimes()
+        
         // 更新内存中的状态
         DispatchQueue.main.async {
             self.currentUser = nil
@@ -706,6 +737,9 @@ class UserManager: ObservableObject {
         for key in keysToRemove {
             userDefaults.removeObject(forKey: key)
         }
+        
+        // 清除Token时间记录
+        TokenManager.shared.clearTokenTimes()
         
         // 更新内存中的状态
         DispatchQueue.main.async {

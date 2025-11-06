@@ -27,6 +27,11 @@ struct FocusApp: App {
                 .onAppear {
                     // 应用启动时加载用户数据
                     userManager.loadUserData()
+                    
+                    // 应用启动时检查Token状态
+                    Task {
+                        await TokenManager.shared.checkTokenOnAppLaunch()
+                    }
                 }
                 .onOpenURL { url in
                     // 处理Facebook登录回调

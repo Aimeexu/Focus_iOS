@@ -27,7 +27,7 @@ struct CustomFacebookSignInButton: View {
                         .foregroundColor(.white)
                 }
                 
-                Text(isLoading ? "登录中..." : "Continue with Facebook")
+                Text(isLoading ? "loading..." : "Continue with Facebook")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
             }

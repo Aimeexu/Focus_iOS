@@ -811,7 +811,7 @@ class NetworkManager {
     func getStuffList() async throws -> StuffListResponse {
         let baseURL = "http://ds2.tapgame.cn"
 
-        return try await post(
+        return try await postWithAutoRefresh(
             url: "\(baseURL)/app/user/stuff/base/list",
             parameters: ["body" : "{}"],
             headers: getAuthHeaders(),
@@ -881,7 +881,7 @@ extension NetworkManager {
             cookies[authCookie.name] = authCookie.value
         }
 
-        return try await post(
+        return try await postWithAutoRefresh(
             url: url,
             parameters: parameters,
             headers: headers,
@@ -926,7 +926,7 @@ extension NetworkManager {
             cookies[authCookie.name] = authCookie.value
         }
 
-        return try await post(
+        return try await postWithAutoRefresh(
             url: url,
             parameters: parameters,
             headers: headers,

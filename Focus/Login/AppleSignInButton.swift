@@ -80,7 +80,7 @@ struct CustomAppleSignInButton: View {
                         .foregroundColor(.white)
                 }
                 
-                Text(isLoading ? "登录中..." : "Continue with Apple")
+                Text(isLoading ? "loading..." : "Continue with Apple")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
             }

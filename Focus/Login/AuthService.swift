@@ -188,6 +188,9 @@ class AuthService {
                 // 保存用户信息
                 UserManager.shared.saveLoginData(authData, loginMethod: "email")
                 
+                // 保存Token时间用于续期管理
+                TokenManager.shared.saveTokenTime()
+                
                 // refreshToken 和 accessTokenName 已由 UserManager 自动保存
                 
             } else {
@@ -242,6 +245,9 @@ class AuthService {
                 
                 // 保存用户信息
                 UserManager.shared.saveLoginData(authData, loginMethod: "email")
+                
+                // 保存Token时间用于续期管理
+                TokenManager.shared.saveTokenTime()
                 
                 return authResponse
             } else {

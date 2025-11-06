@@ -27,7 +27,7 @@ struct GoogleSignInButton: View {
                         .frame(width: 18, height: 18)
                 }
                 
-                Text(isLoading ? "登录中..." : "Continue with Google")
+                Text(isLoading ? "loading..." : "Continue with Google")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
             }
