@@ -184,8 +184,22 @@ class TokenManager {
         let hasLoginRecord = userDefaults.bool(forKey: UserManager.Keys.isLoggedIn)
         let hasTokens = UserManager.shared.getAuthToken() != nil && UserManager.shared.getRefreshToken() != nil
         
+        // 详细输出当前状态用于调试
+        print("📊 登录状态检查:")
+        print("   登录记录: \(hasLoginRecord ? "✅ 存在" : "❌ 不存在")")
+        print("   AccessToken: \(UserManager.shared.getAuthToken() != nil ? "✅ 存在" : "❌ 不存在")")
+        print("   RefreshToken: \(UserManager.shared.getRefreshToken() != nil ? "✅ 存在" : "❌ 不存在")")
+        
         guard hasLoginRecord && hasTokens else {
             print("ℹ️ 用户未登录或缺少Token，跳过Token检查")
+            
+            // 检查是否有残留的用户信息，如果有，说明可能是Token被意外清除
+            if let userData = userDefaults.data(forKey: UserManager.Keys.userInfo),
+               let user = try? JSONDecoder().decode(UserInfo.self, from: userData) {
+                print("⚠️ 发现用户信息但缺少Token，可能需要重新登录")
+                print("   用户账号: \(user.account)")
+                print("   建议: 请重新登录以获取新的Token")
+            }
             return
         }
         
@@ -241,17 +255,18 @@ class TokenManager {
     
     // MARK: - 处理Token续期失败
     private func handleTokenRefreshFailure() {
-        print("⚠️ Token续期失败，清除登录状态")
+        print("⚠️ Token续期失败，但保持登录状态，等待用户手动处理")
         
-        // 清除登录状态但保留个人设置
-        UserManager.shared.clearUserDataExceptSettings()
+        // ❌ 不再自动清除登录状态，让用户决定是否重新登录
+        // UserManager.shared.clearUserDataExceptSettings()
         
-        // 发送通知让UI更新
+        // 发送通知让UI更新，提示用户需要重新登录
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .tokenRefreshFailed, object: nil)
         }
         
-        print("📢 已发送Token续期失败通知，UI应该引导用户重新登录")
+        print("📢 已发送Token续期失败通知，UI应该提示用户重新登录")
+        print("💡 用户登录状态保持不变，只有手动退出登录才会清除")
     }
     
     // MARK: - 获取最后续期时间

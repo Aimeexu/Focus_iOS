@@ -216,7 +216,7 @@ struct HomeView: View {
                         // 计时完成但还在显示奖励动画时，显示一个简单的完成按钮
                         Button(action: {
                             // 立即清除状态，结束奖励动画显示
-//                            concentrationService.clearState()
+                            naturalEndConcentrationSession()
                         }) {
                             Text("Continue")
                                 .font(.appButton(size: 18))

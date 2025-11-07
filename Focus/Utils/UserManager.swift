@@ -429,8 +429,10 @@ class UserManager: ObservableObject {
         
         guard let uuid = userDefaults.string(forKey: Keys.userUUID),
               let account = userDefaults.string(forKey: Keys.userAccount) else {
-            print("❌ 无法重建用户信息，缺少必要字段")
-            clearUserDataExceptSettings()
+            print("❌ 无法重建用户信息，缺少必要字段，但保持登录状态")
+            print("💡 用户需要重新登录以获取完整信息，但不自动清除登录状态")
+            // ❌ 不再自动清除登录状态
+            // clearUserDataExceptSettings()
             return
         }
         
