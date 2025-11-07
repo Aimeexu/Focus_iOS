@@ -321,10 +321,33 @@ extension NetworkManager {
                     responseType: responseType
                 )
                 
+            } catch let error as TokenExpiredError {
+                // 捕获业务层面的Token过期错误（code=501）
+                if currentRetries < maxRetries {
+                    print("🔄 检测到业务Token过期错误(code=501)，尝试续期...")
+                    
+                    do {
+                        let refreshSuccess = try await TokenManager.shared.handleTokenExpiredError()
+                        if refreshSuccess {
+                            print("✅ Token续期成功，重试请求...")
+                            currentRetries += 1
+                            continue // 重试请求
+                        } else {
+                            print("❌ Token续期失败")
+                            throw error
+                        }
+                    } catch {
+                        print("❌ Token续期异常: \(error)")
+                        throw error
+                    }
+                } else {
+                    throw error
+                }
+                
             } catch NetworkError.serverError(let statusCode) {
                 // 检查是否是Token过期错误（通常是401或403）
                 if (statusCode == 401 || statusCode == 403) && currentRetries < maxRetries {
-                    print("🔄 检测到Token过期错误(状态码: \(statusCode))，尝试续期...")
+                    print("🔄 检测到HTTP Token过期错误(状态码: \(statusCode))，尝试续期...")
                     
                     do {
                         let refreshSuccess = try await TokenManager.shared.handleTokenExpiredError()

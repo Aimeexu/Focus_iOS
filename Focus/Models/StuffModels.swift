@@ -141,7 +141,12 @@ struct ConcentrationStartResponse: Codable {
     let data: ConcentrationStartData?
     let code: String
     let message: String
-    let errors: String?
+    // 忽略errors字段，避免类型不匹配问题
+    
+    enum CodingKeys: String, CodingKey {
+        case status, data, code, message
+        // 不包含errors，这样就会忽略这个字段
+    }
 }
 
 struct ConcentrationStartData: Codable {
@@ -213,7 +218,12 @@ struct ConcentrationEndResponse: Codable {
     let data: ConcentrationEndData?
     let code: String
     let message: String
-    let errors: String?
+    // 忽略errors字段，避免类型不匹配问题
+    
+    enum CodingKeys: String, CodingKey {
+        case status, data, code, message
+        // 不包含errors，这样就会忽略这个字段
+    }
 }
 
 struct ConcentrationEndData: Codable {
@@ -226,7 +236,12 @@ struct StuffListResponse: Codable {
     let data: StuffListData?
     let code: String
     let message: String
-    let errors: String?
+    // 忽略errors字段，避免类型不匹配问题
+    
+    enum CodingKeys: String, CodingKey {
+        case status, data, code, message
+        // 不包含errors，这样就会忽略这个字段
+    }
 }
 
 // 物品列表数据容器
@@ -520,6 +535,8 @@ class StuffManager: ObservableObject {
         let userDefaults = UserDefaults.standard
         if let userAchievement = try? JSONEncoder().encode(localStuffs) {
             userDefaults.set(userAchievement, forKey: UserManager.Keys.userAchievement)
+            userDefaults.synchronize()
+            NotificationCenter.default.post(name:Notification.Name.didUpdateAchievement, object: nil)
             print("本地成就数据已更新 ✅")
         }
     }

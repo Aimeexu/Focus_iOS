@@ -33,6 +33,9 @@ enum NetworkError: Error, LocalizedError {
     }
 }
 
+// MARK: - Token过期错误
+struct TokenExpiredError: Error {}
+
 // MARK: - HTTP方法
 enum HTTPMethod: String {
     case GET = "GET"
@@ -137,12 +140,29 @@ class NetworkManager {
                             print("📋 Content-Type: \(contentType)")
 
                             // 尝试多种解析策略
-                            let result = try self.parseResponseData(data: data, targetType: T.self, contentType: contentType)
-                            continuation.resume(returning: result)
+                            do {
+                                let result = try self.parseResponseData(
+                                    data: data,
+                                    targetType: T.self,
+                                    contentType: contentType
+                                )
+
+                                continuation.resume(returning: result)
+                            } catch let error as TokenExpiredError {
+                                // 捕获自己定义的错误类型
+                                print("业务错误：\(error)")
+                                continuation.resume(throwing: error)
+                            }
 
                         } catch {
                             print("❌ 所有解析方法都失败: \(error)")
-                            continuation.resume(throwing: NetworkError.decodingError)
+                            
+                            // 如果是TokenExpiredError，直接传递
+                            if error is TokenExpiredError {
+                                continuation.resume(throwing: error)
+                            } else {
+                                continuation.resume(throwing: NetworkError.decodingError)
+                            }
                         }
 
                     } else {
@@ -370,6 +390,12 @@ class NetworkManager {
                     print("📄 返回JSON字符串")
                     return jsonString as! T
                 }
+            }
+
+            // 🔧 先检查是否是token过期响应（code=501）
+            if json["code"].stringValue == "501" {
+                print("🔄 检测到code=501，token过期，抛出401错误")
+                throw TokenExpiredError()
             }
 
             // 尝试直接从原始数据解码
