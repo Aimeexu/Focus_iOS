@@ -775,6 +775,21 @@ class UserManager: ObservableObject {
         return (name: tokenName, value: tokenValue)
     }
     
+    // MARK: - 用户登出
+    func logout() {
+        print("🔄 用户主动登出或Token续期失败，清除用户数据...")
+        
+        // 清除用户数据但保留个人设置
+        clearUserDataExceptSettings()
+        
+        // 发送登出通知
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .userDidLogout, object: nil)
+        }
+        
+        print("✅ 用户登出完成")
+    }
+    
     // MARK: - 处理成就系统的登录数据
     func saveAchievementLoginData(_ loginJsonString: String) {
         guard let data = loginJsonString.data(using: .utf8) else {

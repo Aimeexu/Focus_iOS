@@ -54,79 +54,98 @@ struct LoginPageView: View {
     @StateObject private var appleSignInService = AppleSignInService.shared
     @StateObject private var facebookSignInService = FacebookSignInService.shared
     @StateObject private var googleSignInService = GoogleSignInService.shared
-    
+
+    @State private var isActive = false
+
     var body: some View {
         ZStack {
-            // 背景图片
-            Image("login_background") // 替换成你的背景图片名称
+            Image("launch")
                 .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            LottieView(name: "loading", loopMode: .playOnce)
                 .aspectRatio(contentMode: .fill)
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer()
+            if isActive {
                 
-                // 白色卡片容器和猫头鹰的组合
-                ZStack {
-                    // 猫头鹰动画 - 位于白色卡片右上方，图层在后面
-                    OwlLottieView(animationName: "owl")
-                        .frame(width: 160, height: 160)
-                        .offset(x: 88, y: -100) // 向右上方移动更多
-
-                    // 白色卡片容器
-                    VStack(spacing: 24) {
-                    // Continue with Apple 按钮
-                    CustomAppleSignInButton(
-                        action: signInWithApple,
-                        isLoading: isLoading
-                    )
+                VStack(spacing: 0) {
+                    Spacer()
                     
-                    // 错误信息显示
-                    if let errorMessage = errorMessage {
-                        Text(errorMessage)
-                            .font(.appBody(size: 14))
-                            .foregroundColor(AppColors.Semantic.error)
-                            .multilineTextAlignment(.center)
-                    }
-                    
-                    // 分隔线和"or"文字
-                    HStack {
-                        Rectangle()
-                            .fill(AppColors.Brand.primary)
-                            .frame(height: 1)
+                    // 白色卡片容器和猫头鹰的组合
+                    ZStack {
+                        // 猫头鹰动画 - 位于白色卡片右上方，图层在后面
+                        OwlLottieView(animationName: "owl")
+                            .frame(width: 160, height: 160)
+                            .offset(x: 88, y: -100) // 向右上方移动更多
                         
-                        Text("or")
-                            .font(.appBody(size: 14))
-                            .foregroundColor(AppColors.Brand.primary)
-                            .padding(.horizontal, 4)
-                        
-                        Rectangle()
-                            .fill(AppColors.Brand.primary)
-                            .frame(height: 1)
+                        // 白色卡片容器
+                        VStack(spacing: 24) {
+                            // Continue with Apple 按钮
+                            CustomAppleSignInButton(
+                                action: signInWithApple,
+                                isLoading: isLoading
+                            )
+                            
+                            // 错误信息显示
+                            if let errorMessage = errorMessage {
+                                Text(errorMessage)
+                                    .font(.appBody(size: 14))
+                                    .foregroundColor(AppColors.Semantic.error)
+                                    .multilineTextAlignment(.center)
+                            }
+                            
+                            // 分隔线和"or"文字
+                            HStack {
+                                Rectangle()
+                                    .fill(AppColors.Brand.primary)
+                                    .frame(height: 1)
+                                
+                                Text("or")
+                                    .font(.appBody(size: 14))
+                                    .foregroundColor(AppColors.Brand.primary)
+                                    .padding(.horizontal, 4)
+                                
+                                Rectangle()
+                                    .fill(AppColors.Brand.primary)
+                                    .frame(height: 1)
+                            }
+                            
+                            // 社交登录按钮
+                            HStack(spacing: 50) {
+                                // Facebook按钮
+                                FacebookIconButton(
+                                    action: signInWithFacebook,
+                                    isLoading: isFacebookLoading
+                                )
+                                
+                                // Google按钮
+                                GoogleIconButton(
+                                    action: signInWithGoogle,
+                                    isLoading: isGoogleLoading
+                                )
+                            }
+                        }
+                        .padding(32)
+                        .background(AppColors.Background.card)
+                        .cornerRadius(25)
+                        .shadow(color: AppColors.Neutral.black.opacity(0.1), radius: 10, x: 0, y: 5)
                     }
-                    
-                    // 社交登录按钮
-                    HStack(spacing: 50) {
-                        // Facebook按钮
-                        FacebookIconButton(
-                            action: signInWithFacebook,
-                            isLoading: isFacebookLoading
-                        )
-                        
-                        // Google按钮
-                        GoogleIconButton(
-                            action: signInWithGoogle,
-                            isLoading: isGoogleLoading
-                        )
-                    }
-                    }
-                    .padding(32)
-                    .background(AppColors.Background.card)
-                    .cornerRadius(25)
-                    .shadow(color: AppColors.Neutral.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 80) // 给底部留出安全区域空间
                 }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 80) // 给底部留出安全区域空间
+                .transition(.opacity)
+
+            }
+        }
+        .onAppear() {
+            // 动画时长后切换主页面
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                // 页面加载完后，让它淡入
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) {
+                    isActive = true
+                }
             }
         }
         .onChange(of: isLoggedIn) { _, newValue in

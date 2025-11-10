@@ -13,7 +13,7 @@ import Bugly
 @main
 struct FocusApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-        @StateObject private var userManager = UserManager.shared
+    @StateObject private var userManager = UserManager.shared
 
     init() {
         // 初始化Google Sign-In
@@ -22,7 +22,7 @@ struct FocusApp: App {
     
     var body: some Scene {
         WindowGroup {
-            SplashView()
+            ContentView()
                 .environmentObject(userManager)
                 .onAppear {
                     // 应用启动时加载用户数据

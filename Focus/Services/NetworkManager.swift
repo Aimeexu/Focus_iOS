@@ -434,10 +434,12 @@ class NetworkManager {
                 }
             }
 
+        } catch let error as TokenExpiredError {
+            throw error
         } catch {
-            print("⚠️ SwiftyJSON解析失败: \(error)")
+            print("⚠️ 解析错误: \(error)")
+            throw error
         }
-
         // 策略2: 处理不同的Content-Type
         if contentType.contains("text/") {
             return try parseTextResponse(data: data, targetType: targetType)
