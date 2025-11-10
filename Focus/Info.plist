@@ -64,13 +64,7 @@
 		<string>ShangguRound-Normal.ttf</string>
 		<string>ShangguRound-Regular.ttf</string>
 	</array>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UILaunchScreen</key>
-		<dict>
-			<key>Launch screen interface file base name</key>
-			<string>LaunchScreen</string>
-		</dict>
-	</dict>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
 </dict>
 </plist>
