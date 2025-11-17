@@ -320,14 +320,6 @@ struct HomeView: View {
                 }
             }
         )
-        .onDisappear {
-            // 不再需要手动管理timer
-        }
-        .onAppear {
-            selectedMinutes = focusTime / 60
-            // 恢复播放之前选择的音乐
-            restoreBackgroundMusic()
-        }
         .onChange(of: showTimePicker) { _, isShowing in
             if !isShowing {
                 // 时间选择器关闭时，更新focusTime
