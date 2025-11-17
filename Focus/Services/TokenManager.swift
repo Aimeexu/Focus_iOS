@@ -35,7 +35,7 @@ class TokenManager {
     }
     
     // 24小时的时间间隔（秒）
-    private let tokenRefreshInterval: TimeInterval = 24 * 60 * 60
+    private let tokenRefreshInterval: TimeInterval = 5 * 60
 
     // MARK: - 保存Token时间
     func saveTokenTime() {

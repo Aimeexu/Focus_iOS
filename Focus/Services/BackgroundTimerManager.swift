@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import AVFoundation
 
 // MARK: - 后台计时管理器
 @MainActor
@@ -89,6 +90,12 @@ class BackgroundTimerManager: ObservableObject {
         showCompletionMessage = true
         
         print("✅ 计时完成")
+        
+        // 触发声音反馈（如果设置已启用）
+        playCompletionSound()
+        
+        // 触发震动反馈（如果设置已启用）
+        triggerHapticFeedback()
 
         // 通知外部计时完成
         NotificationCenter.default.post(name: .timerCompleted, object: nil)
@@ -96,6 +103,32 @@ class BackgroundTimerManager: ObservableObject {
         // 2秒后隐藏完成消息
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.showCompletionMessage = false
+        }
+    }
+    
+    // MARK: - 播放完成声音
+    private func playCompletionSound() {
+        let isSoundEnabled = UserDefaults.standard.bool(forKey: "endOfFocusSounds")
+        
+        if isSoundEnabled {
+            // 使用系统声音 - 1057 是一个清脆的完成提示音
+            AudioServicesPlaySystemSound(1057)
+            print("🔔 播放完成提示音")
+        } else {
+            print("🔇 声音反馈已禁用")
+        }
+    }
+    
+    // MARK: - 触发震动反馈
+    private func triggerHapticFeedback() {
+        let isHapticsEnabled = UserDefaults.standard.bool(forKey: "endOfFocusHaptics")
+        
+        if isHapticsEnabled {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+            print("📳 触发震动反馈")
+        } else {
+            print("🔇 震动反馈已禁用")
         }
     }
     
@@ -131,6 +164,12 @@ class BackgroundTimerManager: ObservableObject {
             showCompletionMessage = true
             
             print("⏰ 计时在后台已完成，显示完成消息")
+            
+            // 触发声音反馈（如果设置已启用）
+            playCompletionSound()
+            
+            // 触发震动反馈（如果设置已启用）
+            triggerHapticFeedback()
             
             // 2秒后隐藏完成消息并执行完成逻辑
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {

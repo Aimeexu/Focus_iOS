@@ -9,13 +9,10 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var showLogoutAlert = false
-    @State private var showThemeSelector = false
     @State private var showClearCacheAlert = false
-    @State private var focusMode = true
-    @State private var keepScreenOn = true
-    @State private var soundsAndHaptics = true
-    @State private var cloudSync = true
-    @State private var selectedTheme = "Follow System"
+    @State private var keepScreenOn = UserDefaults.standard.bool(forKey: "keepScreenOn")
+    @State private var endOfFocusSounds = UserDefaults.standard.bool(forKey: "endOfFocusSounds")
+    @State private var endOfFocusHaptics = UserDefaults.standard.bool(forKey: "endOfFocusHaptics")
     @EnvironmentObject var userManager: UserManager
     
     var body: some View {
@@ -57,31 +54,22 @@ struct SettingsView: View {
                     // General 部分
                     SettingsSectionView(title: "General") {
                         VStack(spacing: 0) {
-                            // Theme
-                            SettingsRowCardWithValue(
-                                title: "Theme",
-                                value: selectedTheme,
-                                action: {
-                                    showThemeSelector = true
-                                }
-                            )
-                            
-                            // Focus Mode
-                            SettingsToggleRowCard(
-                                title: "Focus Mode",
-                                isOn: $focusMode
-                            )
-                            
                             // Keep Screen On
                             SettingsToggleRowCard(
                                 title: "Keep Screen On",
                                 isOn: $keepScreenOn
                             )
                             
-                            // Sounds & Haptics
+                            // End-of-Focus Sounds
                             SettingsToggleRowCard(
-                                title: "Sounds & Haptics",
-                                isOn: $soundsAndHaptics
+                                title: "End-of-Focus Sounds",
+                                isOn: $endOfFocusSounds
+                            )
+                            
+                            // End-of-Focus Haptics
+                            SettingsToggleRowCard(
+                                title: "End-of-Focus Haptics",
+                                isOn: $endOfFocusHaptics
                             )
                         }
                     }
@@ -89,12 +77,6 @@ struct SettingsView: View {
                     // Account & Data 部分
                     SettingsSectionView(title: "Account & Data") {
                         VStack(spacing: 0) {
-                            // Cloud Sync
-                            SettingsToggleRowCard(
-                                title: "Cloud Sync",
-                                isOn: $cloudSync
-                            )
-                            
                             // Clear Cache
                             Button(action: {
                                 showClearCacheAlert = true
@@ -185,13 +167,6 @@ struct SettingsView: View {
                 Color.clear.frame(height: 82)
             }
             .overlay(
-                showThemeSelector ? 
-                ThemeSelectorAlertView(
-                    isPresented: $showThemeSelector,
-                    selectedTheme: $selectedTheme
-                ) : nil
-            )
-            .overlay(
                 showClearCacheAlert ? 
                 ClearCacheAlertView(
                     isPresented: $showClearCacheAlert,
@@ -205,6 +180,23 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("Are you sure you want to log out?")
+            }
+            .onAppear {
+                // 应用保存的屏幕常亮设置
+                UIApplication.shared.isIdleTimerDisabled = keepScreenOn
+            }
+            .onChange(of: keepScreenOn) { newValue in
+                // 当开关变化时，更新屏幕常亮状态并保存设置
+                UIApplication.shared.isIdleTimerDisabled = newValue
+                UserDefaults.standard.set(newValue, forKey: "keepScreenOn")
+            }
+            .onChange(of: endOfFocusSounds) { newValue in
+                // 保存声音设置
+                UserDefaults.standard.set(newValue, forKey: "endOfFocusSounds")
+            }
+            .onChange(of: endOfFocusHaptics) { newValue in
+                // 保存震动设置
+                UserDefaults.standard.set(newValue, forKey: "endOfFocusHaptics")
             }
         }
     }
@@ -379,92 +371,6 @@ struct SettingsToggleRow: View {
         .padding(.vertical, 4)
     }
 }
-
-struct ThemeSelectorAlertView: View {
-    @Binding var isPresented: Bool
-    @Binding var selectedTheme: String
-    
-    let themes = ["Follow System", "Light", "Dark"]
-    
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.3)
-                .ignoresSafeArea()
-            
-            VStack(spacing: 30) {
-                // 主题选择选项 - 三个选项作为整体有粉色圆角背景
-                VStack(spacing: 0) {
-                    ForEach(themes, id: \.self) { theme in
-                        HStack {
-                            // 选中状态指示器 - 红色圆形带白色勾选标记
-                            ZStack {
-                                Circle()
-                                    .fill(selectedTheme == theme ? Color.red : Color.clear)
-                                    .frame(width: 20, height: 20)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                    )
-                                
-                                if selectedTheme == theme {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            
-                            Text(theme)
-                                .font(.appBody(size: 16))
-                                .foregroundColor(AppColors.Text.primary)
-                            
-                            Spacer()
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedTheme = theme
-                        }
-                    }
-                }
-                .background(Color(red: 0.98, green: 0.94, blue: 0.94)) // 整体粉红色背景
-                .cornerRadius(12)
-                .padding(.horizontal, 50)
-                .padding(.top, 130)
-
-                Spacer()
-
-                // 按钮区域
-                HStack(spacing: 12) {
-                    Button(action: {
-                        isPresented = false
-                    }) {
-                        Text("Confirm")
-                            .font(.appBody(size: 16))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 44)
-                            .background(AppColors.Brand.primary)
-                            .cornerRadius(22)
-                    }
-
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 50)
-            }
-            .background(AppColors.Semantic.cardBg)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.black, lineWidth: 2)
-            )
-            .padding(.horizontal, 40)
-            .padding(.top, 50)
-            .padding(.bottom, 130)
-        }
-    }
-}
-
 
 struct ClearCacheAlertView: View {
     @Binding var isPresented: Bool

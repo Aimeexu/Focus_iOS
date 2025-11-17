@@ -395,6 +395,9 @@ class NetworkManager {
             // 🔧 先检查是否是token过期响应（code=501）
             if json["code"].stringValue == "501" {
                 print("🔄 检测到code=501，token过期，抛出401错误")
+                // 发送退出登录通知
+                NotificationCenter.default.post(name: .userDidLogout, object: nil)
+
                 throw TokenExpiredError()
             }
 
