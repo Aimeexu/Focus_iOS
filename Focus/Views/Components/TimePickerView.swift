@@ -157,7 +157,7 @@ struct TimePickerView: View {
                         dragOffset = translation
 
                         // 实时更新选中的时间
-                        let itemHeight: CGFloat = 80 // 每80点切换一个选项，降低敏感度
+                        let itemHeight: CGFloat = 40 // 每40点切换一个选项，提高敏感度
                         let steps = Int(translation / itemHeight)
 
                         // 计算新的索引
