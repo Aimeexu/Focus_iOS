@@ -92,6 +92,8 @@ struct SettingsView: View {
                                         .font(.system(size: 12))
                                         .foregroundColor(AppColors.Text.tertiary)
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
                                 .padding(.vertical, 12)
                                 .padding(.horizontal, 16)
                             }
@@ -150,6 +152,8 @@ struct SettingsView: View {
                                 
                                 Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                             .padding(.vertical, 12)
                             .padding(.horizontal, 16)
                         }
@@ -273,6 +277,8 @@ struct SettingsRowCard: View {
                     .font(.system(size: 12))
                     .foregroundColor(AppColors.Text.tertiary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
         }
