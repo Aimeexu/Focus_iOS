@@ -20,13 +20,12 @@ struct AchievementsView: View {
 
     enum AchievementTab: String, CaseIterable {
         case friends = "Friends"
-        case posting = "Posting"
     }
     
     var body: some View {
         VStack(spacing: 0) {
             userInfoHeader
-            contentView
+            achievementsContent
         }
         .background(AppColors.Background.primary)
         .overlay(shareOverlay)
@@ -48,7 +47,6 @@ struct AchievementsView: View {
         .onReceive(NotificationCenter.default.publisher(for: .didUpdateAchievement)) { notification in
             // 收到通知后刷新数据
             loadAchievementsFromUserData()
-            selectedTab = .posting
         }
     }
     
@@ -59,7 +57,7 @@ struct AchievementsView: View {
             userProfileSection
             tabSwitcher
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 40)
         .padding(.top, 60)
     }
     
@@ -118,7 +116,7 @@ struct AchievementsView: View {
             }
         }
     }
-    
+
     private var achievementsContent: some View {
         Group {
             if achievementManager.isLoading {
@@ -296,7 +294,7 @@ struct AchievementSection: View {
                 }
                 .frame(minWidth: 46, maxWidth: 46, minHeight: 100, maxHeight: 120)
                 .clipped()
-                .cornerRadius(12)
+                .cornerRadius(18)
 
                 // NEW 标签 - 绝对定位在右上角
                 if category == .calmFields && canExchange {
@@ -341,39 +339,32 @@ struct AchievementCard: View {
     var body: some View {
         ZStack {
             // 主卡片 - 使用背景图片
-            Image("achieve_bg")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 146, height: 160)
-                .clipped()
-                .cornerRadius(16)
-                .overlay(
-                    VStack {
-                        if achievement.isUnlocked {
-                            // 解锁的成就显示图片
-                            if achievement.isRemoteImage {
-                                KFImage(URL(string: achievement.image))
-                                    .placeholder {
-                                        ProgressView()
-                                            .frame(width: 96, height: 100)
-                                    }
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 96, height: 100)
-                                    .offset(x: 16, y: 24)
-                            } else {
-                                // 显示本地图片
-                                Image(achievement.image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 96, height: 100)
-                                    .offset(x: 16, y: 24)
-                            }
-                        } else {
+            if achievement.isUnlocked {
+                // 解锁的成就显示图片
+                if achievement.isRemoteImage {
+                    KFImage(URL(string: achievement.image))
+                        .placeholder {
+                            ProgressView()
+                                .frame(width: 156, height: 172)
                         }
-                    }
-                )
-            
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 156, height: 172)
+                } else {
+                    // 显示本地图片
+                    Image(achievement.image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 156, height: 172)
+                }
+            } else {
+                Image("achieve_bg")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 156, height: 172)
+                    .clipped()
+                    .cornerRadius(16)
+            }
             // 徽章数字（左上角）
             if let badgeNumber = achievement.badgeNumber {
                 VStack {
@@ -386,7 +377,7 @@ struct AchievementCard: View {
                                     .font(.appButton(size: 14))
                                     .foregroundColor(AppColors.Text.inverse)
                             )
-                            .offset(x: 22, y: 14)
+                            .offset(x: 26, y: 14)
                         Spacer()
                     }
                     Spacer()
