@@ -30,163 +30,173 @@ struct LocationSelectionView: View {
     private let userManager = UserManager.shared
     
     var body: some View {
+        GeometryReader { geometry in
+            let modalWidth = geometry.size.width * 0.811
+            let modalHeight = geometry.size.height * 0.653
 
-        ZStack {
-            // 背景
-            AppColors.Background.primary
-                .ignoresSafeArea()
+            ZStack {
+                // 背景
+                AppColors.Background.primary
+                    .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // 标签列表区域 - 自适应高度
-                let itemCount = locations.count + 1 // 包括添加按钮
-                let calculatedHeight = CGFloat(itemCount - 1) * 70 + 60 + 60 // (n-1)个item*70 + 最后一个item60 + 顶部padding60
-                let finalHeight = min(calculatedHeight, 400) // 最大400高度
+                VStack(spacing: 0) {
 
-                ScrollView(.vertical, showsIndicators: finalHeight >= 400) {
-                    VStack(spacing: 10) {
-                        ForEach(locations, id: \.self) { location in
-                            LocationTagButton(
-                                title: location,
-                                isSelected: selectedLocation == location,
-                                isCustom: userManager.getCustomLocations().contains(location),
-                                hideDeleteButton: hideDeleteButtons
-                            ) {
-                                selectedLocation = location
-                                // 选择位置时隐藏所有删除按钮
-                                hideDeleteButtons = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    hideDeleteButtons = false
-                                }
-                            } onDelete: {
-                                deleteLocation(location)
-                            }
-                        }
+                    Spacer()
+                    
+                    // 标签列表区域 - 自适应高度
+                    let itemCount = locations.count + 1 // 包括添加按钮
+                    let calculatedHeight = CGFloat(itemCount - 1) * 70 + 60 + 60 // (n-1)个item*70 + 最后一个item60 + 顶部padding60
+                    let maxScrollHeight = modalHeight - 60 - 120 // 减去顶部padding和Done按钮高度
+                    let finalHeight = min(calculatedHeight, maxScrollHeight)
 
-                        // 添加新标签按钮或输入框
-                        if isAddingNew {
-                            HStack(spacing: 0) {
-                                TextField("输入新标签", text: $newLocationText)
-                                    .font(.appBody(size: 24))
-                                    .textFieldStyle(PlainTextFieldStyle())
-                                    .frame(height: 60)
-                                    .padding(.horizontal, 20)
-                                    .background(AppColors.Background.primary)
-                                    .clipShape(
-                                        .rect(
-                                            topLeadingRadius: 12,
-                                            bottomLeadingRadius: 12,
-                                            bottomTrailingRadius: 0,
-                                            topTrailingRadius: 0
-                                        )
-                                    )
-                                    .focused($isTextFieldFocused)
-                                    .submitLabel(.done)
-                                    .onSubmit {
-                                        addNewLocation()
+                    ScrollView(.vertical, showsIndicators: finalHeight >= maxScrollHeight) {
+                        VStack(spacing: 10) {
+                            ForEach(locations, id: \.self) { location in
+                                LocationTagButton(
+                                    title: location,
+                                    isSelected: selectedLocation == location,
+                                    isCustom: userManager.getCustomLocations().contains(location),
+                                    hideDeleteButton: hideDeleteButtons
+                                ) {
+                                    selectedLocation = location
+                                    // 选择位置时隐藏所有删除按钮
+                                    hideDeleteButtons = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        hideDeleteButtons = false
                                     }
-                                    .foregroundColor(Color(AppColors.Text.primary))
+                                } onDelete: {
+                                    deleteLocation(location)
+                                }
+                            }
 
-                                // OK按钮 - 从右侧滑入
-                                Button(action: {
-                                    addNewLocation()
-                                }) {
-                                    Text("OK")
-                                        .font(.appButton(size: 24))
-                                        .foregroundColor(AppColors.Text.inverse)
-                                        .frame(width: 50, height: 60)
-                                        .background(AppColors.Brand.primary)
+                            // 添加新标签按钮或输入框
+                            if isAddingNew {
+                                HStack(spacing: 0) {
+                                    TextField("输入新标签", text: $newLocationText)
+                                        .font(.appBody(size: 24))
+                                        .textFieldStyle(PlainTextFieldStyle())
+                                        .frame(height: 60)
+                                        .padding(.horizontal, 20)
+                                        .background(AppColors.Background.primary)
                                         .clipShape(
                                             .rect(
-                                                topLeadingRadius: 0,
-                                                bottomLeadingRadius: 0,
-                                                bottomTrailingRadius: 12,
-                                                topTrailingRadius: 12
+                                                topLeadingRadius: 12,
+                                                bottomLeadingRadius: 12,
+                                                bottomTrailingRadius: 0,
+                                                topTrailingRadius: 0
                                             )
                                         )
+                                        .focused($isTextFieldFocused)
+                                        .submitLabel(.done)
+                                        .onSubmit {
+                                            addNewLocation()
+                                        }
+                                        .foregroundColor(Color(AppColors.Text.primary))
+
+                                    // OK按钮 - 从右侧滑入
+                                    Button(action: {
+                                        addNewLocation()
+                                    }) {
+                                        Text("OK")
+                                            .font(.appButton(size: 24))
+                                            .foregroundColor(AppColors.Text.inverse)
+                                            .frame(width: 50, height: 60)
+                                            .background(AppColors.Brand.primary)
+                                            .clipShape(
+                                                .rect(
+                                                    topLeadingRadius: 0,
+                                                    bottomLeadingRadius: 0,
+                                                    bottomTrailingRadius: 12,
+                                                    topTrailingRadius: 12
+                                                )
+                                            )
+                                    }
+                                    .transition(.move(edge: .trailing).combined(with: .opacity))
                                 }
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                                .transition(.opacity)
+                            } else {
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        isAddingNew = true
+                                        newLocationText = ""
+                                    }
+                                    // 延迟一点让动画完成后再聚焦
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        isTextFieldFocused = true
+                                    }
+                                }) {
+                                    Image(systemName: "plus")
+                                        .font(.appBody(size: 24))
+                                        .foregroundColor(AppColors.Brand.primary)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 60)
+                                        .background(AppColors.Background.primary)
+                                        .cornerRadius(12)
+                                }
+                                .transition(.opacity)
                             }
-                            .transition(.opacity)
-                        } else {
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    isAddingNew = true
-                                    newLocationText = ""
-                                }
-                                // 延迟一点让动画完成后再聚焦
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    isTextFieldFocused = true
-                                }
-                            }) {
-                                Image(systemName: "plus")
-                                    .font(.appBody(size: 24))
-                                    .foregroundColor(AppColors.Brand.primary)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 60)
-                                    .background(AppColors.Background.primary)
-                                    .cornerRadius(12)
-                            }
-                            .transition(.opacity)
+                        }
+                        .padding(.horizontal, 40)
+                    }
+                    .frame(height: finalHeight)
+                    .padding(.top, 60)
+                    .padding(.bottom, 0)
+                    .background(Color.clear)
+
+                    Spacer()
+
+                    // Done 按钮
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Text("Done")
+                            .font(.appButton(size: 24))
+                            .foregroundColor(AppColors.Text.inverse)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 60)
+                            .background(AppColors.Semantic.darkBrown)
+                    }
+                }
+                .frame(width: modalWidth, height: modalHeight)
+                .background(AppColors.Semantic.lightGray)
+                .cornerRadius(25)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 25)
+                        .stroke(AppColors.Semantic.darkBrown, lineWidth: 3)
+                )
+                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                .offset(y: -keyboardHeight / 2) // 键盘弹起时向上移动
+                .onTapGesture {
+                    // 点击空白区域取消输入并隐藏删除按钮
+                    if isAddingNew {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isAddingNew = false
+                            isTextFieldFocused = false
+                        }
+                        newLocationText = ""
+                    }
+
+                    // 隐藏所有删除按钮
+                    hideDeleteButtons = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        hideDeleteButtons = false
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+                    if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            keyboardHeight = keyboardFrame.height
                         }
                     }
-                    .padding(.horizontal, 20)
                 }
-                .frame(height: finalHeight)
-                .padding(.top, 60)
-                .padding(.bottom, 0)
-                .background(AppColors.Semantic.beige)
-
-                // Done 按钮
-                Button(action: {
-                    isPresented = false
-                }) {
-                    Text("Done")
-                        .font(.appButton(size: 24))
-                        .foregroundColor(AppColors.Text.inverse)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(AppColors.Semantic.darkBrown)
-                }
-            }
-            .background(AppColors.Semantic.beige)
-            .cornerRadius(25)
-            .overlay(
-                RoundedRectangle(cornerRadius: 25)
-                    .stroke(AppColors.Semantic.darkBrown, lineWidth: 3)
-            )
-            .padding(.horizontal, 38)
-            .padding(.vertical, 20)
-            .offset(y: -keyboardHeight / 2) // 键盘弹起时向上移动
-            .onTapGesture {
-                // 点击空白区域取消输入并隐藏删除按钮
-                if isAddingNew {
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
                     withAnimation(.easeInOut(duration: 0.3)) {
-                        isAddingNew = false
-                        isTextFieldFocused = false
-                    }
-                    newLocationText = ""
-                }
-                
-                // 隐藏所有删除按钮
-                hideDeleteButtons = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    hideDeleteButtons = false
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
-                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        keyboardHeight = keyboardFrame.height
+                        keyboardHeight = 0
                     }
                 }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    keyboardHeight = 0
+                .onAppear {
+                    loadLocations()
                 }
-            }
-            .onAppear {
-                loadLocations()
             }
         }
     }
@@ -286,7 +296,9 @@ struct LocationTagButton: View {
                 Text(title)
                     .font(.appBody(size: 24))
                     .foregroundColor(isSelected ? AppColors.Text.inverse : AppColors.Text.primary)
-                
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
+
                 Spacer()
             }
             .frame(maxWidth: .infinity)

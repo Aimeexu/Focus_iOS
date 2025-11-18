@@ -13,15 +13,15 @@ import Lottie
 struct ControllableLottieView: UIViewRepresentable {
     let animationName: String
     let isPlaying: Bool
-    
+
     func makeUIView(context: Context) -> UIView {
         let containerView = UIView()
         let animationView = LottieAnimationView(name: animationName)
-        
+
         animationView.contentMode = .scaleAspectFit
         animationView.loopMode = .loop
         animationView.animationSpeed = 1.0
-        
+
         containerView.addSubview(animationView)
         animationView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -30,10 +30,10 @@ struct ControllableLottieView: UIViewRepresentable {
             animationView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
             animationView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
         ])
-        
+
         return containerView
     }
-    
+
     func updateUIView(_ uiView: UIView, context: Context) {
         if let animationView = uiView.subviews.first as? LottieAnimationView {
             if isPlaying {
@@ -52,10 +52,10 @@ struct MusicSelectionView: View {
     @Binding var selectedMusic: String
     @State private var selectedSound: SoundType = .silence
     @StateObject private var audioManager = AudioManager.shared
-    
+
     enum SoundType: CaseIterable {
         case rain, wave, forest, wind, silence
-        
+
         var icon: String {
             switch self {
             case .rain:
@@ -70,7 +70,7 @@ struct MusicSelectionView: View {
                 return "silent"
             }
         }
-        
+
         var audioFileName: String? {
             switch self {
             case .rain:
@@ -86,101 +86,103 @@ struct MusicSelectionView: View {
             }
         }
     }
-    
+
     var body: some View {
-        ZStack {
-            // 背景
-            AppColors.Background.primary
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            let modalWidth = geometry.size.width * 0.811
+            let modalHeight = geometry.size.height * 0.653
 
-            VStack(spacing: 20) {
-                // 主内容区域
-                VStack(spacing: 0) {
+            ZStack {
+                // 背景
+                AppColors.Background.primary
+                    .ignoresSafeArea()
 
-                    // 音量控制条
+                VStack(spacing: 20) {
+                    // 主内容区域
                     VStack(spacing: 0) {
 
+                        // 音量控制条
                         ControllableLottieView(
                             animationName: "wave",
                             isPlaying: selectedSound != .silence
                         )
                         .frame(width: 300, height: 180)
-                        .padding(.top, 80)
+                        .padding(.top, 50)
 
                         // 分隔线
                         Rectangle()
                             .fill(AppColors.Semantic.darkBrown)
                             .frame(height: 2)
                             .frame(maxWidth: 180)
-                            .padding(.vertical, 56)
-                    }
-                    .padding(.top, 30)
+                            .padding(.vertical, 40)
 
-                    // 声音选择网格
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 56) {
-                        ForEach(SoundType.allCases.prefix(3), id: \.self) { soundType in
-                            SoundButton(
-                                soundType: soundType,
-                                isSelected: selectedSound == soundType
-                            ) {
-                                selectedSound = soundType
-                                playSound(for: soundType)
+                        // 声音选择网格
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 56) {
+                            ForEach(SoundType.allCases.prefix(3), id: \.self) { soundType in
+                                SoundButton(
+                                    soundType: soundType,
+                                    isSelected: selectedSound == soundType
+                                ) {
+                                    selectedSound = soundType
+                                    playSound(for: soundType)
+                                }
                             }
-                        }
 
-                        ForEach(SoundType.allCases.suffix(2), id: \.self) { soundType in
-                            SoundButton(
-                                soundType: soundType,
-                                isSelected: selectedSound == soundType
-                            ) {
-                                selectedSound = soundType
-                                playSound(for: soundType)
+                            ForEach(SoundType.allCases.suffix(2), id: \.self) { soundType in
+                                SoundButton(
+                                    soundType: soundType,
+                                    isSelected: selectedSound == soundType
+                                ) {
+                                    selectedSound = soundType
+                                    playSound(for: soundType)
+                                }
                             }
+
+                            // 空白占位，保持布局对称
+                            Color.clear
+                                .frame(width: 48, height: 48)
                         }
+                        .padding(.horizontal, 10)
 
-                        // 空白占位，保持布局对称
-                        Color.clear
-                            .frame(width: 48, height: 48)
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 20)
+                    .background(Color.clear)
 
-                }
-                .padding(.horizontal, 20)
-                .background(AppColors.Semantic.cardBg)
+                    Spacer()
 
-                // OK 按钮
-                Button(action: {
-                    // 更新选中的音乐图标
-                    selectedMusic = selectedSound.icon
-                    // 开始播放选中的音乐
-                    playSound(for: selectedSound)
-                    isPresented = false
-                }) {
-                    Text("OK")
-                        .font(.appButton(size: 24))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(AppColors.Semantic.darkBrown)
+                    // OK 按钮
+                    Button(action: {
+                        // 更新选中的音乐图标
+                        selectedMusic = selectedSound.icon
+                        // 开始播放选中的音乐
+                        playSound(for: selectedSound)
+                        isPresented = false
+                    }) {
+                        Text("OK")
+                            .font(.appButton(size: 24))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 60)
+                            .background(AppColors.Semantic.darkBrown)
+                    }
+                    .padding(.bottom, 0)
                 }
-                .padding(.top, 30)
+                .frame(width: modalWidth, height: modalHeight)
+                .background(AppColors.Semantic.lightGray)
+                .cornerRadius(25)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 25)
+                        .stroke(AppColors.Semantic.darkBrown, lineWidth: 3)
+                )
+                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             }
-            .background(AppColors.Semantic.cardBg)
-            .cornerRadius(25)
-            .overlay(
-                RoundedRectangle(cornerRadius: 25)
-                    .stroke(AppColors.Semantic.darkBrown, lineWidth: 3)
-            )
-            .padding(.horizontal, 40)
-            .padding(.vertical, 30)
+            .onAppear {
+                // 根据当前选中的音乐图标设置selectedSound
+                selectedSound = SoundType.allCases.first { $0.icon == selectedMusic } ?? .silence
+            }
         }
-        .onAppear {
-            // 根据当前选中的音乐图标设置selectedSound
-            selectedSound = SoundType.allCases.first { $0.icon == selectedMusic } ?? .silence
-        }
-
     }
-    
+
     // 播放音频
     private func playSound(for soundType: SoundType) {
         // 如果是静音，停止播放
@@ -188,11 +190,11 @@ struct MusicSelectionView: View {
             audioManager.stopSound()
             return
         }
-        
+
         // 播放对应的音频文件
         audioManager.playSound(fileName: fileName)
     }
-    
+
     private func getBarWidth(for index: Int) -> CGFloat {
         switch index {
         case 0, 4: return 20
@@ -201,7 +203,7 @@ struct MusicSelectionView: View {
         default: return 20
         }
     }
-    
+
     private func getBarHeight(for index: Int) -> CGFloat {
         switch index {
         case 0, 4: return 40
@@ -216,7 +218,7 @@ struct SoundButton: View {
     let soundType: MusicSelectionView.SoundType
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
