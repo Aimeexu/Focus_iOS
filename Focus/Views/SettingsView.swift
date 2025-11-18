@@ -377,66 +377,67 @@ struct ClearCacheAlertView: View {
     let onConfirm: () -> Void
     
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.3)
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            let modalWidth = geometry.size.width * 0.811
+            let modalHeight = geometry.size.height * 0.686
             
-            VStack(spacing: 20) {
-                VStack(spacing: 16) {
-                    Text("Free up space by removing temporary files.")
-                        .font(.appBody(size: 16))
-                        .foregroundColor(AppColors.Brand.primary)
-                        .multilineTextAlignment(.center)
-                    
-                    Text("Your progress and data are safe.")
-                        .font(.appBody(size: 16))
-                        .foregroundColor(AppColors.Brand.primary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 200)
-
-                Spacer()
-
-                HStack(spacing: 12) {
-                    Button(action: {
-                        onConfirm()
-                        isPresented = false
-                    }) {
-                        Text("Confirm")
-                            .font(.appBody(size: 16))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 44)
-                            .background(AppColors.Brand.primary)
-                            .cornerRadius(22)
+            ZStack {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Text("Free up space by removing temporary files.")
+                            .font(.appBody(size: 20))
+                            .foregroundColor(AppColors.Brand.primary)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Your progress and data are safe.")
+                            .font(.appBody(size: 20))
+                            .foregroundColor(AppColors.Brand.primary)
+                            .multilineTextAlignment(.center)
                     }
-                    
-                    Button(action: {
-                        isPresented = false
-                    }) {
-                        Text("Cancel")
-                            .font(.appBody(size: 16))
-                            .foregroundColor(AppColors.Text.primary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 44)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(22)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 60)
+                    .padding(.bottom, 30)
+
+                    Spacer()
+
+                    HStack(spacing: 0) {
+                        Button(action: {
+                            isPresented = false
+                        }) {
+                            Text("Cancel")
+                                .font(.appButton(size: 24))
+                                .foregroundColor(AppColors.Text.inverse)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 60)
+                                .background(AppColors.Semantic.darkBrown)
+                        }
+                        
+                        Button(action: {
+                            onConfirm()
+                            isPresented = false
+                        }) {
+                            Text("Confirm")
+                                .font(.appButton(size: 24))
+                                .foregroundColor(AppColors.Text.inverse)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 60)
+                                .background(AppColors.Brand.primary)
+                        }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 50)
-
+                .frame(width: modalWidth, height: modalHeight)
+                .background(AppColors.Semantic.beige)
+                .cornerRadius(25)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 25)
+                        .stroke(AppColors.Semantic.darkBrown, lineWidth: 3)
+                )
+                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             }
-            .background(AppColors.Semantic.cardBg)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.black, lineWidth: 2)
-            )
-            .padding(.horizontal, 40)
-            .padding(.top, 50)
-            .padding(.bottom, 130)
         }
     }
 }
