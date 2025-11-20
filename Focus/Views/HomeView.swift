@@ -120,166 +120,104 @@ struct HomeView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                VStack(spacing: 0) {
 
-                    // 顶部音乐图标
-                    Button(action: {
-                        showMusicSelection = true
-                    }) {
-                        Image(selectedMusic)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 42, height: 42)
-                            .foregroundColor(AppColors.Semantic.darkBrown)
-                    }
-                    .padding(.top, 84)
+            // 计时器显示区域
+            if backgroundTimerManager.isTimerRunning || concentrationService.currentPlan != nil {
+                VStack(spacing: 40) {
+                    // 专注计时动画 - 显示从服务器获取的Lottie动画
+                    ConcentrationAnimationView(size: CGSize(width: 280, height: 280), showStateIndicator: false)
 
-                    // 位置标签 - 只在未运行且没有专注计划时显示
-                    if !backgroundTimerManager.isTimerRunning && concentrationService.currentPlan == nil {
-                        Button(action: {
-                            showLocationSelection = true
-                        }) {
-                            HStack(spacing: 4) {
-                                Image("home_label")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 36, height: 36)
-
-                                Text(selectedLocation)
-                                    .font(.appButton(size: 20))
-                                    .foregroundColor(AppColors.Semantic.darkBrown)
-
-                                Image("home_arrow")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 24, height: 24)
-                                    .padding(.leading, -8)
-                            }
-                            .padding(.horizontal, 0)
-                            .padding(.vertical, 8)
-                        }
-                        .padding(.top, 120)
-                    }
-
-                    // 计时器显示区域
-                    if backgroundTimerManager.isTimerRunning || concentrationService.currentPlan != nil {
-                        VStack(spacing: 40) {
-                            // 专注计时动画 - 显示从服务器获取的Lottie动画
-                            ConcentrationAnimationView(size: CGSize(width: 200, height: 200), showStateIndicator: false)
-                                .padding(.top, 150)
-                            
-                            // 运行时显示大号时间 - 使用BackgroundTimerManager的时间
-                            if backgroundTimerManager.isTimerRunning {
-                                Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
-                                    .font(.appNumber(size: 24))
-                                    .foregroundColor(AppColors.Semantic.darkBrown)
-                            } else {
-                                // 计时完成后显示完成状态
-                                Text("Focus Complete!")
-                                    .font(.appButton(size: 20))
-                                    .foregroundColor(AppColors.Brand.primary)
-                            }
-                        }
-                    } else {
-                        // 未运行时显示圆形选择器
-                        Button(action: {
-                            showTimePicker = true
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .fill(AppColors.Semantic.lightGray)
-                                    .frame(width: 230, height: 230)
-
-                                Circle()
-                                    .fill(AppColors.Semantic.beige)
-                                    .frame(width: 210, height: 210)
-
-                                Text(backgroundTimerManager.timeString(from: focusTime))
-                                    .font(.appNumber(size: 42))
-                                    .foregroundColor(AppColors.Semantic.darkBrown)
-                            }
-                        }
-                        .padding(.top, 32)
-                    }
-
-                    // 按钮区域
+                    // 运行时显示大号时间 - 使用BackgroundTimerManager的时间
                     if backgroundTimerManager.isTimerRunning {
-                        // 运行时显示 Slide to Quit 按钮
-                        SlideToQuitButton {
-                            stopTimer()
-                            audioManager.stopSound()
-                        }
-                        .padding(.horizontal, 60)
-                        .padding(.top, 100)
-                    } else if concentrationService.currentPlan != nil {
-                        // 计时完成但还在显示奖励动画时，显示一个简单的完成按钮
-                        Button(action: {
-                            // 立即清除状态，结束奖励动画显示
-                            naturalEndConcentrationSession()
-                        }) {
-                            Text("Continue")
-                                .font(.appButton(size: 18))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(AppColors.Brand.primary)
-                                .cornerRadius(15)
-                        }
-                        .padding(.horizontal, 90)
-                        .padding(.top, 100)
+                        Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
+                            .font(.appNumber(size: 24))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
                     } else {
-                        // 未运行时显示 Start to Focus 按钮
+                        // 计时完成后显示完成状态
+                        Text("Focus Complete!")
+                            .font(.appButton(size: 20))
+                            .foregroundColor(AppColors.Brand.primary)
+                    }
+                }
+            } else {
+                ZStack {
+                    VStack {
+                        // 未运行时显示大圆形Start按钮
                         Button(action: {
                             toggleTimer()
                         }) {
-                            HStack {
-                                if isStartingTimer {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Text("Start to Focus")
-                                        .font(.appButton(size: 20))
-                                }
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 66)
-                            .background(AppColors.Brand.primary)
-                            .cornerRadius(20)
+                            LottieView(name: "start", loopMode: .loop)
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 160, height: 160)
+                                .position(x: geometry.size.width / 2,   // 水平方向居中
+                                          y: geometry.size.height / 2 - 40) // 距离中心向下 100pt
                         }
                         .disabled(isStartingTimer)
-                        .padding(.horizontal, 90)
-                        .padding(.top, 72)
                     }
 
-                    // 增大底部空白
-                    Spacer(minLength: 125)
-                }
-                .frame(maxWidth: .infinity)
+                    HStack(spacing: 60) {
+                        // 时间选择
+                        Button(action: {
+                            showTimePicker = true
+                        }) {
+                            VStack(spacing: 8) {
+                                Image("home_time")
+                                    .font(.system(size: 36))
+
+                                Text(backgroundTimerManager.timeString(from: focusTime))
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(AppColors.Semantic.darkBrown)
+                            }
+                        }
+
+                        // 位置选择
+                        Button(action: {
+                            showLocationSelection = true
+                        }) {
+                            VStack(spacing: 8) {
+                                Image("home_label")
+                                    .font(.system(size: 36))
+
+                                Text(selectedLocation.isEmpty ? "Location" : selectedLocation)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(AppColors.Semantic.darkBrown)
+                            }
+                        }
+
+                        // 音乐选择
+                        Button(action: {
+                            showMusicSelection = true
+                        }) {
+                            VStack(spacing: 8) {
+                                ZStack {
+                                    Image("home_noise")
+                                        .font(.system(size: 36))
+
+                                    if selectedMusic == "silent" || selectedMusic.isEmpty {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(AppColors.Semantic.darkBrown)
+                                            .offset(x: 12, y: -12)
+                                    }
+                                }
+
+                                Text(selectedMusic == "silent" || selectedMusic.isEmpty ? "off" : "on")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(AppColors.Semantic.darkBrown)
+                            }
+                        }
+                    }
+                    .position(x: geometry.size.width / 2,   // 水平方向居中
+                              y: geometry.size.height / 2 + 120) // 距离中心向下 100pt
+                    .disabled(isStartingTimer)
+
+                }.frame(maxWidth: .infinity, maxHeight: .infinity)
+
             }
+
         }
         .background(AppColors.Background.primary)
         .ignoresSafeArea(.keyboard) // 忽略键盘安全区域
-        .overlay(
-            // 计时完成消息
-            Group {
-//                if backgroundTimerManager.showCompletionMessage {
-//                    VStack {
-//                        Text("专注时间已完成！")
-//                            .font(.appButton(size: 18))
-//                            .foregroundColor(.white)
-//                            .padding(.horizontal, 24)
-//                            .padding(.vertical, 12)
-//                            .background(AppColors.Brand.primary)
-//                            .cornerRadius(20)
-//                    }
-//                    .transition(.opacity.combined(with: .scale))
-//                    .animation(.easeInOut(duration: 0.3), value: backgroundTimerManager.showCompletionMessage)
-//                }
-            }
-        )
         .overlay(
             // 弹窗层
             Group {
