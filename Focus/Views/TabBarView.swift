@@ -1,8 +1,23 @@
 import SwiftUI
 
+// PreferenceKey 用于子视图向父视图传递隐藏 TabBar 的信息
+struct HideTabBarPreferenceKey: PreferenceKey {
+    static var defaultValue: Bool = false
+    
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = nextValue()
+    }
+}
+
+// 用于在 HomeView 和 CustomTabBarView 之间共享 TabBar 隐藏状态的环境对象
+class TabBarVisibility: ObservableObject {
+    @Published var isHidden: Bool = false
+}
+
 struct CustomTabBarView: View {
     @State private var selectedTab: Tab = .home
     @State private var previousTab: Tab = .home
+    @StateObject private var tabBarVisibility = TabBarVisibility()
 
     enum Tab: Int, CaseIterable {
         case home = 1, tasks = 2, chart = 3, settings = 4
@@ -39,6 +54,7 @@ struct CustomTabBarView: View {
                 switch selectedTab {
                 case .home:
                     HomeView()
+                        .environmentObject(tabBarVisibility)
                 case .tasks:
                     AchievementsView()
                 case .chart:
@@ -55,9 +71,12 @@ struct CustomTabBarView: View {
                 previousTab: previousTab,
                 onTabChange: performTabTransition
             )
+            .opacity(tabBarVisibility.isHidden ? 0 : 1)
+            .offset(y: tabBarVisibility.isHidden ? 100 : 0)
         }
         .ignoresSafeArea(.container, edges: .bottom) // 让整个视图忽略底部安全区域
         .ignoresSafeArea(.keyboard) // 忽略键盘，防止TabBar被推上去
+        .animation(.easeInOut(duration: 0.4), value: tabBarVisibility.isHidden)
     }
     
     // 执行智能Tab切换

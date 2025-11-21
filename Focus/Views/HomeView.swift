@@ -104,6 +104,7 @@ struct OwlAnimationView: UIViewRepresentable {
 
 struct HomeView: View {
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var tabBarVisibility: TabBarVisibility
     @State private var focusTime = 25 * 60 // 25分钟
     @State private var selectedLocation = ""
     @State private var showLocationSelection = false
@@ -118,202 +119,190 @@ struct HomeView: View {
     @StateObject private var lottieAnimationManager = LottieAnimationManager.shared
     @StateObject private var backgroundTimerManager = BackgroundTimerManager.shared
     @State private var step: Int = -1
-
-    var body: some View {
+    
+    @ViewBuilder
+    private var mainContent: some View {
         GeometryReader { geometry in
-
-            // 计时器显示区域
             if step == 0 {
                 VStack(spacing: 40) {
                     LottieView(name: "switch", loopMode: .playOnce, speed: 0.6) {
                         step = 1
                     }
-                        .aspectRatio(contentMode: .fill)
+                    .aspectRatio(contentMode: .fill)
                 }
             } else if step == 1 {
-                ZStack() {
-                    LottieView(name: "prepare", loopMode: .loop) {
-                    }
-                    .frame(width: 220, height: 220)
-                    .position(
-                        x: geometry.size.width / 2,
-                        y: geometry.size.height * 0.45
-                    )
+                ZStack {
+                    LottieView(name: "prepare", loopMode: .loop) {}
+                        .frame(width: 220, height: 220)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height * 0.45)
+                    
                     LottieView(name: "take_breath", loopMode: .playOnce) {
-                         step = 2    // 播完 B，进入 C
+                        step = 2
                     }
                     .frame(width: 200, height: 200)
-                    .position(
-                        x: geometry.size.width / 2,
-                        y: geometry.size.height * 0.7
-                    )
+                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.7)
                 }
-
             } else if step == 2 {
-                LottieView(name: "switch", loopMode: .playOnce , speed: 0.6) {
+                LottieView(name: "switch", loopMode: .playOnce, speed: 0.6) {
                     step = 3
                 }
             } else if step == 3 {
-                toggleTimer()
-                // 显示小动物
-                ConcentrationAnimationView(size: CGSize(width: geometry.size.width, height: geometry.size.height), showStateIndicator: false)
-                if backgroundTimerManager.isTimerRunning {
-                    Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
-                        .font(.appNumber(size: 24))
-                        .foregroundColor(AppColors.Semantic.darkBrown)
-                }
+                timerRunningView(geometry: geometry)
+                    .onAppear {
+                        toggleTimer()
+                    }
             } else {
-                ZStack {
-                    VStack {
-                        // 未运行时显示大圆形Start按钮
-                        Button(action: {
-                            step = 0
-                        }) {
-                            LottieView(name: "start", loopMode: .loop)
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 160, height: 160)
-                                .position(x: geometry.size.width / 2,   // 水平方向居中
-                                          y: geometry.size.height / 2 - 40) // 距离中心向下 100pt
-                        }
-                        .disabled(isStartingTimer)
-                    }
-
-                    HStack(spacing: 60) {
-                        // 时间选择
-                        Button(action: {
-                            showTimePicker = true
-                        }) {
-                            VStack(spacing: 8) {
-                                Image("home_time")
-                                    .font(.system(size: 36))
-
-                                Text(backgroundTimerManager.timeString(from: focusTime))
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(AppColors.Semantic.darkBrown)
-                            }
-                        }
-
-                        // 位置选择
-                        Button(action: {
-                            showLocationSelection = true
-                        }) {
-                            VStack(spacing: 8) {
-                                Image("home_label")
-                                    .font(.system(size: 36))
-
-                                Text(selectedLocation.isEmpty ? "Location" : selectedLocation)
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(AppColors.Semantic.darkBrown)
-                            }
-                        }
-
-                        // 音乐选择
-                        Button(action: {
-                            showMusicSelection = true
-                        }) {
-                            VStack(spacing: 8) {
-                                Image("home_noise")
-                                    .font(.system(size: 36))
-
-                                Text(selectedMusic == "silent" || selectedMusic.isEmpty ? "off" : "on")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(AppColors.Semantic.darkBrown)
-                            }
-                        }
-                    }
-                    .position(x: geometry.size.width / 2,   // 水平方向居中
-                              y: geometry.size.height / 2 + 120) // 距离中心向下 100pt
-                    .disabled(isStartingTimer)
-
-                }.frame(maxWidth: .infinity, maxHeight: .infinity)
-
+                idleView(geometry: geometry)
             }
-
         }
-        .background(AppColors.Background.primary)
-        .ignoresSafeArea(.keyboard) // 忽略键盘安全区域
-        .overlay(
-            // 弹窗层
-            Group {
-                // 标签选择弹窗
-                if showLocationSelection {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            showLocationSelection = false
-                        }
-                    
-                    LocationSelectionView(
-                        selectedLocation: $selectedLocation,
-                        isPresented: $showLocationSelection
-                    )
-                }
-                
-                // 音乐选择弹窗
-                if showMusicSelection {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            showMusicSelection = false
-                        }
-                    
-                    MusicSelectionView(
-                        isPresented: $showMusicSelection,
-                        selectedMusic: $selectedMusic
-                    )
-                }
-                
-                // 时间选择弹窗
-                if showTimePicker {
-                    TimePickerView(
-                        selectedMinutes: $selectedMinutes,
-                        isPresented: $showTimePicker
-                    )
-                }
-            }
+    }
+    
+    @ViewBuilder
+    private func timerRunningView(geometry: GeometryProxy) -> some View {
+        ConcentrationAnimationView(
+            size: CGSize(width: geometry.size.width, height: geometry.size.height),
+            showStateIndicator: false
         )
-        .onChange(of: showTimePicker) { _, isShowing in
-            if !isShowing {
-                // 时间选择器关闭时，更新focusTime
-                focusTime = selectedMinutes * 60
+        if backgroundTimerManager.isTimerRunning {
+            Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
+                .font(.appNumber(size: 24))
+                .foregroundColor(AppColors.Semantic.darkBrown)
+        }
+    }
+    
+    @ViewBuilder
+    private func idleView(geometry: GeometryProxy) -> some View {
+        ZStack {
+            VStack {
+                Button(action: { step = 0 }) {
+                    LottieView(name: "start", loopMode: .loop)
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 160, height: 160)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2 - 40)
+                }
+                .disabled(isStartingTimer)
             }
-        }
-        .onChange(of: selectedMusic) { _, newMusic in
-            // 使用 UserManager 保存选中的音乐
-            userManager.updateSelectedMusic(newMusic)
-            // 立即播放新选择的音乐
-            let audioManager = AudioManager.shared
-            if let fileName = getAudioFileName(for: newMusic) {
-                audioManager.playSound(fileName: fileName)
-            } else {
-                audioManager.stopSound() // 如果选择静音，停止播放
+            
+            HStack(spacing: 60) {
+                Button(action: { showTimePicker = true }) {
+                    VStack(spacing: 8) {
+                        Image("home_time").font(.system(size: 36))
+                        Text(backgroundTimerManager.timeString(from: focusTime))
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
+                    }
+                }
+                
+                Button(action: { showLocationSelection = true }) {
+                    VStack(spacing: 8) {
+                        Image("home_label").font(.system(size: 36))
+                        Text(selectedLocation.isEmpty ? "Location" : selectedLocation)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
+                    }
+                }
+                
+                Button(action: { showMusicSelection = true }) {
+                    VStack(spacing: 8) {
+                        Image("home_noise").font(.system(size: 36))
+                        Text(selectedMusic == "silent" || selectedMusic.isEmpty ? "off" : "on")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
+                    }
+                }
             }
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + 120)
+            .disabled(isStartingTimer)
         }
-        .onChange(of: selectedLocation) { _, newLocation in
-            // 使用 UserManager 保存选中的位置
-            userManager.updateSelectedLocation(newLocation)
-        }
-        .onChange(of: selectedMinutes) { _, newMinutes in
-            // 使用 UserManager 保存选中的时间
-            userManager.updateSelectedMinutes(newMinutes)
-        }
-        .onAppear {
-            // 从 UserManager 加载用户偏好设置
-            selectedLocation = userManager.getSelectedLocation()
-            selectedMusic = userManager.getSelectedMusic()
-            selectedMinutes = userManager.getSelectedMinutes()
-            focusTime = selectedMinutes * 60
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .timerCompletedInBackground)) { _ in
-            // 处理后台计时完成
-            handleBackgroundTimerCompletion()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .timerCompleted)) { _ in
-            // 处理后台计时完成
-            handleBackgroundTimerCompletion()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    @ViewBuilder
+    private var overlayContent: some View {
+        Group {
+            if showLocationSelection {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture { showLocationSelection = false }
+                
+                LocationSelectionView(
+                    selectedLocation: $selectedLocation,
+                    isPresented: $showLocationSelection
+                )
+            }
+            
+            if showMusicSelection {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture { showMusicSelection = false }
+                
+                MusicSelectionView(
+                    isPresented: $showMusicSelection,
+                    selectedMusic: $selectedMusic
+                )
+            }
+            
+            if showTimePicker {
+                TimePickerView(
+                    selectedMinutes: $selectedMinutes,
+                    isPresented: $showTimePicker
+                )
+            }
         }
     }
 
+    var body: some View {
+        mainContent
+            .background(AppColors.Background.primary)
+            .ignoresSafeArea(.keyboard)
+            .overlay(overlayContent)
+            .onChange(of: showTimePicker) { _, isShowing in
+                if !isShowing {
+                    focusTime = selectedMinutes * 60
+                }
+            }
+            .onChange(of: selectedMusic) { _, newMusic in
+                handleMusicChange(newMusic)
+            }
+            .onChange(of: selectedLocation) { _, newLocation in
+                userManager.updateSelectedLocation(newLocation)
+            }
+            .onChange(of: selectedMinutes) { _, newMinutes in
+                userManager.updateSelectedMinutes(newMinutes)
+            }
+            .onChange(of: step) { _, newStep in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    tabBarVisibility.isHidden = (newStep == 3)
+                }
+            }
+            .onAppear {
+                loadUserPreferences()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .timerCompletedInBackground)) { _ in
+                handleBackgroundTimerCompletion()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .timerCompleted)) { _ in
+                handleBackgroundTimerCompletion()
+            }
+    }
+
+    private func loadUserPreferences() {
+        selectedLocation = userManager.getSelectedLocation()
+        selectedMusic = userManager.getSelectedMusic()
+        selectedMinutes = userManager.getSelectedMinutes()
+        focusTime = selectedMinutes * 60
+    }
+    
+    private func handleMusicChange(_ newMusic: String) {
+        userManager.updateSelectedMusic(newMusic)
+        let audioManager = AudioManager.shared
+        if let fileName = getAudioFileName(for: newMusic) {
+            audioManager.playSound(fileName: fileName)
+        } else {
+            audioManager.stopSound()
+        }
+    }
+    
     private func toggleTimer() {
         if backgroundTimerManager.isTimerRunning {
             stopTimer()
