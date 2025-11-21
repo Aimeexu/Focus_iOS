@@ -117,34 +117,57 @@ struct HomeView: View {
     @StateObject private var concentrationService = ConcentrationService.shared
     @StateObject private var lottieAnimationManager = LottieAnimationManager.shared
     @StateObject private var backgroundTimerManager = BackgroundTimerManager.shared
+    @State private var step: Int = -1
 
     var body: some View {
         GeometryReader { geometry in
 
             // 计时器显示区域
-            if backgroundTimerManager.isTimerRunning || concentrationService.currentPlan != nil {
+            if step == 0 {
                 VStack(spacing: 40) {
-                    // 专注计时动画 - 显示从服务器获取的Lottie动画
-                    ConcentrationAnimationView(size: CGSize(width: 280, height: 280), showStateIndicator: false)
-
-                    // 运行时显示大号时间 - 使用BackgroundTimerManager的时间
-                    if backgroundTimerManager.isTimerRunning {
-                        Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
-                            .font(.appNumber(size: 24))
-                            .foregroundColor(AppColors.Semantic.darkBrown)
-                    } else {
-                        // 计时完成后显示完成状态
-                        Text("Focus Complete!")
-                            .font(.appButton(size: 20))
-                            .foregroundColor(AppColors.Brand.primary)
+                    LottieView(name: "switch", loopMode: .playOnce, speed: 0.6) {
+                        step = 1
                     }
+                        .aspectRatio(contentMode: .fill)
+                }
+            } else if step == 1 {
+                ZStack() {
+                    LottieView(name: "prepare", loopMode: .loop) {
+                    }
+                    .frame(width: 220, height: 220)
+                    .position(
+                        x: geometry.size.width / 2,
+                        y: geometry.size.height * 0.45
+                    )
+                    LottieView(name: "take_breath", loopMode: .playOnce) {
+                         step = 2    // 播完 B，进入 C
+                    }
+                    .frame(width: 200, height: 200)
+                    .position(
+                        x: geometry.size.width / 2,
+                        y: geometry.size.height * 0.7
+                    )
+                }
+
+            } else if step == 2 {
+                LottieView(name: "switch", loopMode: .playOnce , speed: 0.6) {
+                    step = 3
+                }
+            } else if step == 3 {
+                toggleTimer()
+                // 显示小动物
+                ConcentrationAnimationView(size: CGSize(width: geometry.size.width, height: geometry.size.height), showStateIndicator: false)
+                if backgroundTimerManager.isTimerRunning {
+                    Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
+                        .font(.appNumber(size: 24))
+                        .foregroundColor(AppColors.Semantic.darkBrown)
                 }
             } else {
                 ZStack {
                     VStack {
                         // 未运行时显示大圆形Start按钮
                         Button(action: {
-                            toggleTimer()
+                            step = 0
                         }) {
                             LottieView(name: "start", loopMode: .loop)
                                 .aspectRatio(contentMode: .fill)
@@ -189,17 +212,8 @@ struct HomeView: View {
                             showMusicSelection = true
                         }) {
                             VStack(spacing: 8) {
-                                ZStack {
-                                    Image("home_noise")
-                                        .font(.system(size: 36))
-
-                                    if selectedMusic == "silent" || selectedMusic.isEmpty {
-                                        Image(systemName: "xmark")
-                                            .font(.system(size: 16, weight: .bold))
-                                            .foregroundColor(AppColors.Semantic.darkBrown)
-                                            .offset(x: 12, y: -12)
-                                    }
-                                }
+                                Image("home_noise")
+                                    .font(.system(size: 36))
 
                                 Text(selectedMusic == "silent" || selectedMusic.isEmpty ? "off" : "on")
                                     .font(.system(size: 18, weight: .semibold))

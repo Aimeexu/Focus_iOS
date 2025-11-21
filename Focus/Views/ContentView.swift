@@ -11,16 +11,22 @@ import Lottie
 struct LottieView: UIViewRepresentable {
     let name: String
     let loopMode: LottieLoopMode
+    var speed: CGFloat = 1.0   // 加这个
+    var onComplete: (() -> Void)?
 
     func makeUIView(context: Context) -> LottieAnimationView {
-        let view = LottieAnimationView(name: name)
-        view.contentMode = .scaleAspectFit
-        view.loopMode = loopMode
-        view.play()
-        return view
+        let animationView = LottieAnimationView(name: name)
+        animationView.loopMode = loopMode
+        animationView.animationSpeed = speed   // 设置速度
+
+        animationView.play { finished in
+            if finished { onComplete?() }
+        }
+
+        return animationView
     }
 
-    func updateUIView(_ uiView: LottieAnimationView, context: Context) {}
+    func updateUIView(_ uiView: LottieAnimationView, context: Context) { }
 }
 
 struct ContentView: View {
