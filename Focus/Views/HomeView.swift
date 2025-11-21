@@ -148,9 +148,6 @@ struct HomeView: View {
                 }
             } else if step == 3 {
                 timerRunningView(geometry: geometry)
-                    .onAppear {
-                        toggleTimer()
-                    }
             } else {
                 idleView(geometry: geometry)
             }
@@ -159,14 +156,51 @@ struct HomeView: View {
     
     @ViewBuilder
     private func timerRunningView(geometry: GeometryProxy) -> some View {
-        ConcentrationAnimationView(
-            size: CGSize(width: geometry.size.width, height: geometry.size.height),
-            showStateIndicator: false
-        )
-        if backgroundTimerManager.isTimerRunning {
-            Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
-                .font(.appNumber(size: 24))
-                .foregroundColor(AppColors.Semantic.darkBrown)
+        ZStack {
+            // 背景动画
+            ConcentrationAnimationView(
+                size: CGSize(width: geometry.size.width, height: geometry.size.height),
+                showStateIndicator: false
+            )
+            
+            // 顶部导航栏
+            VStack {
+                HStack {
+                    // 左上角：声音设置按钮
+                    Button(action: {
+                        showMusicSelection = true
+                    }) {
+                        Image(selectedMusic.isEmpty ? "home_noise" : selectedMusic)
+                            .font(.system(size: 24))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
+                            .frame(width: 44, height: 44)
+                    }
+                    
+                    Spacer()
+                    
+                    // 中间：倒计时显示
+                    Text(backgroundTimerManager.timeString(from: backgroundTimerManager.remainingTime))
+                        .font(.appNumber(size: 32))
+                        .foregroundColor(AppColors.Semantic.darkBrown)
+                    
+                    Spacer()
+                    
+                    // 右上角：退出按钮
+                    Button(action: {
+                        stopTimer()
+                        step = -1
+                    }) {
+                        Image("EXIT")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
+                            .frame(width: 44, height: 44)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, geometry.safeAreaInsets.top + 80)
+
+                Spacer()
+            }
         }
     }
     
@@ -270,9 +304,18 @@ struct HomeView: View {
             .onChange(of: selectedMinutes) { _, newMinutes in
                 userManager.updateSelectedMinutes(newMinutes)
             }
-            .onChange(of: step) { _, newStep in
+            .onChange(of: step) { oldStep, newStep in
                 withAnimation(.easeInOut(duration: 0.3)) {
                     tabBarVisibility.isHidden = (newStep == 3)
+                }
+                
+                // 当从 step 2 进入 step 3 时，启动计时器
+                if oldStep == 2 && newStep == 3 {
+                    print("🎬 进入 step 3，检查计时器状态: \(backgroundTimerManager.isTimerRunning)")
+                    if !backgroundTimerManager.isTimerRunning {
+                        print("🎬 启动计时器")
+                        startTimer()
+                    }
                 }
             }
             .onAppear {
