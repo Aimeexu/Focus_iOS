@@ -119,6 +119,8 @@ struct HomeView: View {
     @StateObject private var lottieAnimationManager = LottieAnimationManager.shared
     @StateObject private var backgroundTimerManager = BackgroundTimerManager.shared
     @State private var step: Int = -1
+    @State private var showExitHint: Bool = false
+    @State private var showExitConfirmation: Bool = false
     
     @ViewBuilder
     private var mainContent: some View {
@@ -157,11 +159,15 @@ struct HomeView: View {
     @ViewBuilder
     private func timerRunningView(geometry: GeometryProxy) -> some View {
         ZStack {
-            // 背景动画
+            // 背景动画（添加长按手势）
             ConcentrationAnimationView(
                 size: CGSize(width: geometry.size.width, height: geometry.size.height),
                 showStateIndicator: false
             )
+            .contentShape(Rectangle())
+            .onLongPressGesture(minimumDuration: 1.0) {
+                showExitConfirmation = true
+            }
             
             // 顶部导航栏
             VStack {
@@ -187,8 +193,7 @@ struct HomeView: View {
                     
                     // 右上角：退出按钮
                     Button(action: {
-                        stopTimer()
-                        step = -1
+                        showExitHint = true
                     }) {
                         Image("EXIT")
                             .font(.system(size: 24, weight: .medium))
@@ -200,6 +205,71 @@ struct HomeView: View {
                 .padding(.top, geometry.safeAreaInsets.top + 80)
 
                 Spacer()
+            }
+            
+            // 退出提示动画（屏幕中下方）
+            if showExitHint {
+                VStack {
+                    Spacer()
+                    LottieView(name: "press_and_hold", loopMode: .playOnce) {
+                        showExitHint = false
+                    }
+                    .frame(width: 200, height: 200)
+                    .padding(.bottom, 100)
+                }
+            }
+            
+            // 退出确认对话框
+            if showExitConfirmation {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showExitConfirmation = false
+                    }
+                
+                VStack(spacing: 20) {
+                    Text("确定要退出吗？")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(AppColors.Semantic.darkBrown)
+                    
+                    Text("退出后将不会获得奖励")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.Semantic.darkBrown.opacity(0.7))
+                    
+                    HStack(spacing: 20) {
+                        Button(action: {
+                            showExitConfirmation = false
+                        }) {
+                            Text("取消")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(AppColors.Semantic.darkBrown)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(AppColors.Background.primary)
+                                .cornerRadius(25)
+                        }
+                        
+                        Button(action: {
+                            showExitConfirmation = false
+                            showExitHint = false
+                            stopTimer()
+                            step = -1
+                        }) {
+                            Text("确定")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(AppColors.Brand.primary)
+                                .cornerRadius(25)
+                        }
+                    }
+                }
+                .padding(30)
+                .background(AppColors.Background.primary)
+                .cornerRadius(20)
+                .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
+                .padding(.horizontal, 40)
             }
         }
     }
