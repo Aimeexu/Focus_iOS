@@ -127,7 +127,7 @@ struct HomeView: View {
         GeometryReader { geometry in
             if step == 0 {
                 VStack(spacing: 40) {
-                    LottieView(name: "switch", loopMode: .playOnce, speed: 0.6) {
+                    LottieView(name: "switch", loopMode: .playOnce, speed: 1) {
                         step = 1
                     }
                     .aspectRatio(contentMode: .fill)
@@ -135,17 +135,17 @@ struct HomeView: View {
             } else if step == 1 {
                 ZStack {
                     LottieView(name: "prepare", loopMode: .loop) {}
-                        .frame(width: 220, height: 220)
+                        .frame(width: 260, height: 260)
                         .position(x: geometry.size.width / 2, y: geometry.size.height * 0.45)
                     
-                    LottieView(name: "take_breath", loopMode: .playOnce) {
+                    LottieView(name: "take_breath", loopMode: .playOnce, speed: 1.5) {
                         step = 2
                     }
-                    .frame(width: 200, height: 200)
+                    .frame(width: 230, height: 230)
                     .position(x: geometry.size.width / 2, y: geometry.size.height * 0.7)
                 }
             } else if step == 2 {
-                LottieView(name: "switch", loopMode: .playOnce, speed: 0.6) {
+                LottieView(name: "switch", loopMode: .playOnce, speed: 1) {
                     step = 3
                 }
             } else if step == 3 {
@@ -186,9 +186,10 @@ struct HomeView: View {
                     Button(action: {
                         showMusicSelection = true
                     }) {
-                        Image(selectedMusic.isEmpty ? "home_noise" : selectedMusic)
-                            .font(.system(size: 24))
-                            .frame(width: 44, height: 44)
+                        Image(selectedMusic.isEmpty ? "home_noise_fill" : selectedMusic + "_fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 36, height: 36)
                     }
                     
                     Spacer()
@@ -204,14 +205,14 @@ struct HomeView: View {
                     Button(action: {
                         showExitHint = true
                     }) {
-                        Image("EXIT")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(AppColors.Semantic.darkBrown)
-                            .frame(width: 44, height: 44)
+                        Image("EXIT") // 确保图像资源名正确
+                            .resizable()  // 设置可调整大小
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 36, height: 36)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, geometry.safeAreaInsets.top + 80)
+                .padding(.horizontal, 30)
+                .padding(.top, geometry.safeAreaInsets.top + 50)
 
                 Spacer()
             }
