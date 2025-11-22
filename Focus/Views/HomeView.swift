@@ -300,7 +300,10 @@ struct HomeView: View {
             HStack(spacing: 60) {
                 Button(action: { showTimePicker = true }) {
                     VStack(spacing: 8) {
-                        Image("home_time").font(.system(size: 36))
+                        Image("home_time")
+                            .resizable()
+                            .frame(width: 36, height: 36)
+                            .aspectRatio(contentMode: .fit)
                         Text(backgroundTimerManager.timeString(from: focusTime))
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(AppColors.Semantic.darkBrown)
@@ -309,7 +312,10 @@ struct HomeView: View {
                 
                 Button(action: { showLocationSelection = true }) {
                     VStack(spacing: 8) {
-                        Image("home_label").font(.system(size: 36))
+                        Image("home_label")
+                            .resizable()
+                            .frame(width: 36, height: 36)
+                            .aspectRatio(contentMode: .fit)
                         Text(selectedLocation.isEmpty ? "Location" : selectedLocation)
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(AppColors.Semantic.darkBrown)
@@ -318,13 +324,18 @@ struct HomeView: View {
                 
                 Button(action: { showMusicSelection = true }) {
                     VStack(spacing: 8) {
-                        Image("home_noise").font(.system(size: 36))
+                        Image(selectedMusic.isEmpty ? "home_noise_fill" : selectedMusic + "_fill")
+                            .resizable()
+                            .frame(width: 36, height: 36)
+                            .aspectRatio(contentMode: .fit)
+                            
                         Text(selectedMusic == "silent" || selectedMusic.isEmpty ? "off" : "on")
                             .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(AppColors.Semantic.darkBrown)
                     }
                 }
             }
-            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + 120)
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + 200)
             .disabled(isStartingTimer)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
