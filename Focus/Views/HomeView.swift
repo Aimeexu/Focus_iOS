@@ -362,7 +362,8 @@ struct HomeView: View {
                 
                 MusicSelectionView(
                     isPresented: $showMusicSelection,
-                    selectedMusic: $selectedMusic
+                    selectedMusic: $selectedMusic,
+                    isTimerRunning: step == 3
                 )
             }
             
@@ -386,7 +387,8 @@ struct HomeView: View {
                 }
             }
             .onChange(of: selectedMusic) { _, newMusic in
-                handleMusicChange(newMusic)
+                // 只保存选择，不立即播放
+                userManager.updateSelectedMusic(newMusic)
             }
             .onChange(of: selectedLocation) { _, newLocation in
                 userManager.updateSelectedLocation(newLocation)
@@ -399,13 +401,22 @@ struct HomeView: View {
                     tabBarVisibility.isHidden = (newStep >= 0)
                 }
                 
-                // 当从 step 2 进入 step 3 时，启动计时器
+                // 当从 step 2 进入 step 3 时，启动计时器并播放音乐
                 if oldStep == 2 && newStep == 3 {
                     print("🎬 进入 step 3，检查计时器状态: \(backgroundTimerManager.isTimerRunning)")
                     if !backgroundTimerManager.isTimerRunning {
                         print("🎬 启动计时器")
                         startTimer()
                     }
+                    // 开始播放选中的音乐
+                    if let fileName = getAudioFileName(for: selectedMusic) {
+                        audioManager.playSound(fileName: fileName)
+                    }
+                }
+                
+                // 当从 step 3 退出时，停止音乐
+                if oldStep == 3 && newStep != 3 {
+                    audioManager.stopSound()
                 }
             }
             .onAppear {
@@ -501,6 +512,9 @@ struct HomeView: View {
         // 停止BackgroundTimerManager的计时
         backgroundTimerManager.stopTimer()
         
+        // 停止音乐播放
+        audioManager.stopSound()
+        
         // 手动停止时，只清理本地状态，不调用结束接口
         manualStopConcentration()
     }
@@ -549,8 +563,9 @@ struct HomeView: View {
     }
 
     private func handleBackgroundTimerCompletion() {
-        // 后台计时完成，先切换到成体动画，然后调用结束接口
-        print("🎯 计时完成，切换到成年动画")
+        // 后台计时完成，停止音乐，切换到成体动画，然后调用结束接口
+        print("🎯 计时完成，停止音乐并切换到成年动画")
+        audioManager.stopSound()
         concentrationService.switchToAdultAnimation()
 
         // 延迟5秒显示成体动画，然后结束计时（给用户更多时间看到成年动画）

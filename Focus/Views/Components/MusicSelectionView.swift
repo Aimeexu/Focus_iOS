@@ -50,6 +50,7 @@ struct ControllableLottieView: UIViewRepresentable {
 struct MusicSelectionView: View {
     @Binding var isPresented: Bool
     @Binding var selectedMusic: String
+    var isTimerRunning: Bool = false
     @State private var selectedSound: SoundType = .silence
     @StateObject private var audioManager = AudioManager.shared
 
@@ -154,8 +155,14 @@ struct MusicSelectionView: View {
                     Button(action: {
                         // 更新选中的音乐图标
                         selectedMusic = selectedSound.icon
-                        // 开始播放选中的音乐
-                        playSound(for: selectedSound)
+                        
+                        // 如果正在倒计时，继续播放选中的音乐；否则停止播放
+                        if isTimerRunning {
+                            playSound(for: selectedSound)
+                        } else {
+                            audioManager.stopSound()
+                        }
+                        
                         isPresented = false
                     }) {
                         Text("OK")

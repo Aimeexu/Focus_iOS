@@ -11,6 +11,7 @@ import AVFoundation
 class AudioManager: ObservableObject {
     static let shared = AudioManager()
     private var audioPlayer: AVAudioPlayer?
+    private var soundEffectPlayer: AVAudioPlayer?
     
     private init() {}
     
@@ -47,5 +48,27 @@ class AudioManager: ObservableObject {
     
     var isPlaying: Bool {
         return audioPlayer?.isPlaying ?? false
+    }
+    
+    // 播放单次音效（不循环）
+    func playSoundEffect(fileName: String) {
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: "mp3") else {
+            print("找不到音效文件: \(fileName).mp3")
+            return
+        }
+        
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+            
+            soundEffectPlayer = try AVAudioPlayer(contentsOf: url)
+            soundEffectPlayer?.numberOfLoops = 0 // 只播放一次
+            soundEffectPlayer?.volume = 1.0 // 音效使用100%音量
+            soundEffectPlayer?.play()
+            
+            print("🔔 播放音效: \(fileName)")
+        } catch {
+            print("播放音效失败: \(error.localizedDescription)")
+        }
     }
 }

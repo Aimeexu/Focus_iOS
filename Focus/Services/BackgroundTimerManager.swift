@@ -111,8 +111,8 @@ class BackgroundTimerManager: ObservableObject {
         let isSoundEnabled = UserDefaults.standard.bool(forKey: "endOfFocusSounds")
         
         if isSoundEnabled {
-            // 使用系统声音 - 1057 是一个清脆的完成提示音
-            AudioServicesPlaySystemSound(1057)
+            // 播放本地音效文件 success.mp3
+            AudioManager.shared.playSoundEffect(fileName: "success")
             print("🔔 播放完成提示音")
         } else {
             print("🔇 声音反馈已禁用")
