@@ -41,7 +41,7 @@ struct BarChartView: View {
     }
     
     var totalSessions: Int {
-        60 // 示例数据
+        7 // 示例数据：一周7天的专注次数
     }
     
     var body: some View {

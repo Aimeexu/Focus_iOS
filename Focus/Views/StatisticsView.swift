@@ -199,7 +199,7 @@ struct StatisticsView: View {
                         Text("Focus Sessions")
                             .font(.appBody(size: 18))
                             .foregroundColor(AppColors.Text.secondary)
-                        Text("60")
+                        Text("\(responseData.data.totalSession)")
                             .font(.appNumber(size: 24))
                             .foregroundColor(AppColors.Text.primary)
                     }
@@ -633,7 +633,7 @@ struct StatisticsView: View {
                     Text("Focus Sessions")
                         .font(.appBody(size: 14))
                         .foregroundColor(AppColors.Text.secondary)
-                    Text("60")
+                    Text("\(responseData.data.totalSession)")
                         .font(.appNumber(size: 18))
                         .foregroundColor(AppColors.Text.primary)
                 }
