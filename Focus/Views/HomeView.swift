@@ -188,7 +188,6 @@ struct HomeView: View {
                     }) {
                         Image(selectedMusic.isEmpty ? "home_noise" : selectedMusic)
                             .font(.system(size: 24))
-                            .foregroundColor(AppColors.Semantic.darkBrown)
                             .frame(width: 44, height: 44)
                     }
                     
@@ -321,7 +320,6 @@ struct HomeView: View {
                         Image("home_noise").font(.system(size: 36))
                         Text(selectedMusic == "silent" || selectedMusic.isEmpty ? "off" : "on")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(AppColors.Semantic.darkBrown)
                     }
                 }
             }

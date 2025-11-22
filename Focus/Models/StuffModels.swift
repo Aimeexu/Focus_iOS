@@ -508,52 +508,139 @@ class StuffManager: ObservableObject {
     
     // 更新本地数据
     func updateLocalUserStuff(with newStuff: AchievementUserStuff) {
-
+        print("🔄 开始更新本地成就数据")
+        print("   物品名称: \(newStuff.userStuffBase.name)")
+        print("   物品类型: \(newStuff.userStuffBase.userStuffType)")
+        print("   物品场景: \(newStuff.userStuffBase.userStuffScene)")
+        print("   物品数量: \(newStuff.amount)")
+        print("   物品UUID: \(newStuff.userStuffBase.uuid)")
+        
         // 取出本地数据
-        guard var localStuffs = UserManager.shared.getUserAchievement() else { return }
+        guard var localStuffs = UserManager.shared.getUserAchievement() else {
+            print("❌ 无法获取本地成就数据")
+            return
+        }
+        
+        let stuffType = newStuff.userStuffBase.userStuffType
+        let stuffScene = newStuff.userStuffBase.userStuffScene
         var updated = false
-
-        // 更新宠物
-        if var petStuffs = localStuffs.pet {
-            updated = updateStuff(in: &petStuffs.tropicalWilds, with: newStuff)
-            || updateStuff(in: &petStuffs.calmFields, with: newStuff)
-            || updateStuff(in: &petStuffs.iceSands, with: newStuff)
-
+        
+        // 根据物品类型更新对应的数据
+        if stuffType == "PET" {
+            var petStuffs = localStuffs.pet ?? AchievementPetStuffs()
+            updated = updateStuffInScene(
+                petStuffs: &petStuffs,
+                scene: stuffScene,
+                newStuff: newStuff
+            )
             localStuffs = AchievementUserStuffs(pet: petStuffs, poster: localStuffs.poster)
-        }
-
-        // 更新海报
-        if !updated, var posterStuffs = localStuffs.poster {
-            updated = updateStuff(in: &posterStuffs.tropicalWilds, with: newStuff)
-            || updateStuff(in: &posterStuffs.calmFields, with: newStuff)
-            || updateStuff(in: &posterStuffs.iceSands, with: newStuff)
-
+            print("   更新宠物数据: \(updated ? "成功" : "失败")")
+        } else if stuffType == "POSTER" {
+            var posterStuffs = localStuffs.poster ?? AchievementPosterStuffs()
+            updated = updateStuffInScene(
+                posterStuffs: &posterStuffs,
+                scene: stuffScene,
+                newStuff: newStuff
+            )
             localStuffs = AchievementUserStuffs(pet: localStuffs.pet, poster: posterStuffs)
+            print("   更新海报数据: \(updated ? "成功" : "失败")")
         }
-
+        
+        if !updated {
+            print("⚠️ 未找到匹配的场景或物品类型")
+            return
+        }
+        
         // 保存回本地
         let userDefaults = UserDefaults.standard
         if let userAchievement = try? JSONEncoder().encode(localStuffs) {
             userDefaults.set(userAchievement, forKey: UserManager.Keys.userAchievement)
             userDefaults.synchronize()
-            NotificationCenter.default.post(name:Notification.Name.didUpdateAchievement, object: nil)
-            print("本地成就数据已更新 ✅")
+            NotificationCenter.default.post(name: Notification.Name.didUpdateAchievement, object: nil)
+            print("✅ 本地成就数据已更新并保存")
+        } else {
+            print("❌ 编码本地成就数据失败")
         }
     }
-
-    // 更新数组里的某个元素
-    private func updateStuff(in array: inout [AchievementUserStuff?]?, with newStuff: AchievementUserStuff) -> Bool {
+    
+    // 根据场景更新宠物数据
+    private func updateStuffInScene(
+        petStuffs: inout AchievementPetStuffs,
+        scene: String,
+        newStuff: AchievementUserStuff
+    ) -> Bool {
+        switch scene {
+        case "TropicalWilds":
+            return updateOrAddStuff(in: &petStuffs.tropicalWilds, with: newStuff)
+        case "CalmFields":
+            return updateOrAddStuff(in: &petStuffs.calmFields, with: newStuff)
+        case "IceSands":
+            return updateOrAddStuff(in: &petStuffs.iceSands, with: newStuff)
+        default:
+            print("⚠️ 未知的宠物场景: \(scene)")
+            return false
+        }
+    }
+    
+    // 根据场景更新海报数据
+    private func updateStuffInScene(
+        posterStuffs: inout AchievementPosterStuffs,
+        scene: String,
+        newStuff: AchievementUserStuff
+    ) -> Bool {
+        switch scene {
+        case "TropicalWilds":
+            return updateOrAddStuff(in: &posterStuffs.tropicalWilds, with: newStuff)
+        case "CalmFields":
+            return updateOrAddStuff(in: &posterStuffs.calmFields, with: newStuff)
+        case "IceSands":
+            return updateOrAddStuff(in: &posterStuffs.iceSands, with: newStuff)
+        default:
+            print("⚠️ 未知的海报场景: \(scene)")
+            return false
+        }
+    }
+    
+    // 更新或添加物品到数组
+    private func updateOrAddStuff(
+        in array: inout [AchievementUserStuff?]?,
+        with newStuff: AchievementUserStuff
+    ) -> Bool {
+        // 如果数组不存在，创建新数组
+        if array == nil {
+            array = [newStuff]
+            print("   创建新数组并添加物品")
+            return true
+        }
+        
         guard var arr = array else { return false }
-
+        
+        // 查找是否已存在该物品
+        var foundIndex: Int?
         for i in 0..<arr.count {
-            if let oldStuff = arr[i], oldStuff.userStuffBase.uuid == newStuff.userStuffBase.uuid {
-                arr[i] = newStuff   // ✅ 替换成最新数据
-                array = arr
-                return true
+            if let existingStuff = arr[i],
+               existingStuff.userStuffBase.uuid == newStuff.userStuffBase.uuid {
+                foundIndex = i
+                break
             }
         }
-        return false
+        
+        if let index = foundIndex {
+            // 更新已存在的物品
+            let oldAmount = arr[index]?.amount ?? 0
+            arr[index] = newStuff
+            print("   更新已存在物品，数量: \(oldAmount) -> \(newStuff.amount)")
+        } else {
+            // 添加新物品
+            arr.append(newStuff)
+            print("   添加新物品到数组")
+        }
+        
+        array = arr
+        return true
     }
+
+
 }
 
 // MARK: - 物品列表测试视图
