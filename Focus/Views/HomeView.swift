@@ -396,7 +396,7 @@ struct HomeView: View {
             }
             .onChange(of: step) { oldStep, newStep in
                 withAnimation(.easeInOut(duration: 0.3)) {
-                    tabBarVisibility.isHidden = (newStep == 3)
+                    tabBarVisibility.isHidden = (newStep >= 0)
                 }
                 
                 // 当从 step 2 进入 step 3 时，启动计时器
