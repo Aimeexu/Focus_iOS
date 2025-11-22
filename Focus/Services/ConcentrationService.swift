@@ -20,6 +20,7 @@ class ConcentrationService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isAnimationSwitching = false
+    @Published var currentStuffScene: String?
     
     // 缓存当前物品的所有动画URL
     var currentStuffAttachment: StuffAttachment?
@@ -54,8 +55,12 @@ class ConcentrationService: ObservableObject {
             currentPlan = plan
             currentAnimationState = .child
             currentLottieAnimationURL = data.currentDropStuff.attachment?.child
+            currentStuffScene = data.currentDropStuff.userStuffScene
             isLoading = false
             currentStuffAttachment = data.currentDropStuff.attachment
+            
+            print("🎨 场景信息: \(currentStuffScene ?? "无")")
+            
             return (plan, currentLottieAnimationURL)
 
         } catch {
@@ -224,6 +229,7 @@ class ConcentrationService: ObservableObject {
         currentStuffAttachment = nil
         currentAnimationState = .child
         isAnimationSwitching = false
+        currentStuffScene = nil
         errorMessage = nil
         print("🧹 专注计时状态已清除")
     }

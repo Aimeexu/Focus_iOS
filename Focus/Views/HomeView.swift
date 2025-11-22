@@ -159,6 +159,16 @@ struct HomeView: View {
     @ViewBuilder
     private func timerRunningView(geometry: GeometryProxy) -> some View {
         ZStack {
+            // 场景背景图片
+            if let sceneBackground = getSceneBackgroundImage() {
+                Image(sceneBackground)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .ignoresSafeArea()
+            }
+            
             // 背景动画（添加长按手势）
             ConcentrationAnimationView(
                 size: CGSize(width: geometry.size.width, height: geometry.size.height),
@@ -574,6 +584,13 @@ struct HomeView: View {
         default:
             return nil
         }
+    }
+    
+    // 获取场景背景图片名称
+    private func getSceneBackgroundImage() -> String? {
+        // 从 ConcentrationService 获取当前专注计划的场景信息
+        // 场景名称应该与本地图片资源名称一致：CalmFields, TropicalWilds, IceSands
+        return concentrationService.currentStuffScene
     }
 }
 
