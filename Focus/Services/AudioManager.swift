@@ -37,6 +37,16 @@ class AudioManager: ObservableObject {
         }
     }
     
+    func pauseSound() {
+        audioPlayer?.pause()
+        print("⏸️ 音乐已暂停")
+    }
+    
+    func resumeSound() {
+        audioPlayer?.play()
+        print("▶️ 音乐已恢复")
+    }
+    
     func stopSound() {
         audioPlayer?.stop()
         audioPlayer = nil

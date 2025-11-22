@@ -121,6 +121,7 @@ struct HomeView: View {
     @State private var step: Int = -1
     @State private var showExitHint: Bool = false
     @State private var showExitConfirmation: Bool = false
+    @State private var animationStateBeforePause: PetState = .child
     
     @ViewBuilder
     private var mainContent: some View {
@@ -150,6 +151,10 @@ struct HomeView: View {
                 }
             } else if step == 3 {
                 timerRunningView(geometry: geometry)
+                    .transition(.opacity)
+            } else if step == 4 {
+                pausedView(geometry: geometry)
+                    .transition(.opacity)
             } else {
                 idleView(geometry: geometry)
             }
@@ -167,14 +172,22 @@ struct HomeView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
                     .ignoresSafeArea()
+                    .transition(.opacity)
             }
             
-            // 背景动画（添加长按手势）
+            // 背景动画（添加单击和长按手势）
             ConcentrationAnimationView(
                 size: CGSize(width: geometry.size.width, height: geometry.size.height),
                 showStateIndicator: false
             )
             .contentShape(Rectangle())
+            .onTapGesture {
+                // 单击进入暂停状态，使用动画
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    pauseTimer()
+                    step = 4
+                }
+            }
             .onLongPressGesture(minimumDuration: 1.0) {
                 showExitConfirmation = true
             }
@@ -280,6 +293,29 @@ struct HomeView: View {
                 .cornerRadius(20)
                 .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
                 .padding(.horizontal, 40)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func pausedView(geometry: GeometryProxy) -> some View {
+        ZStack {
+            // 纯色背景
+            AppColors.Background.primary
+                .ignoresSafeArea()
+            
+            // 显示睡眠动画
+            ConcentrationAnimationView(
+                size: CGSize(width: geometry.size.width, height: geometry.size.height),
+                showStateIndicator: false
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // 点击继续，回到 step 3，使用动画
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    resumeTimer()
+                    step = 3
+                }
             }
         }
     }
@@ -414,12 +450,20 @@ struct HomeView: View {
                     }
                 }
                 
-                // 当从 step 3 退出时，停止音乐并清除动画状态
-                if oldStep == 3 && newStep != 3 {
+                // 当从 step 3 退出时（但不是进入 step 4 暂停），停止音乐并清除动画状态
+                if oldStep == 3 && newStep != 3 && newStep != 4 {
                     audioManager.stopSound()
                     concentrationService.clearState()
                     lottieAnimationManager.clearAnimation()
                     print("🧹 退出 step 3，清除动画状态")
+                }
+                
+                // 当从 step 4 退出时（但不是回到 step 3），停止音乐并清除动画状态
+                if oldStep == 4 && newStep != 3 && newStep != 4 {
+                    audioManager.stopSound()
+                    concentrationService.clearState()
+                    lottieAnimationManager.clearAnimation()
+                    print("🧹 退出 step 4，清除动画状态")
                 }
             }
             .onAppear {
@@ -511,6 +555,41 @@ struct HomeView: View {
             }
         }
     }
+    private func pauseTimer() {
+        // 保存当前动画状态
+        animationStateBeforePause = concentrationService.currentAnimationState
+        
+        // 暂停计时器
+        backgroundTimerManager.pauseTimer()
+        
+        // 暂停音乐播放
+        audioManager.pauseSound()
+        
+        // 切换到睡眠动画
+        concentrationService.switchToSleepAnimation()
+        
+        print("⏸️ 计时器已暂停，切换到睡眠动画")
+    }
+    
+    private func resumeTimer() {
+        // 恢复计时器
+        backgroundTimerManager.resumeTimer()
+        
+        // 恢复音乐播放
+        if let fileName = getAudioFileName(for: selectedMusic) {
+            audioManager.resumeSound()
+        }
+        
+        // 恢复到暂停前的动画状态
+        if animationStateBeforePause == .adult {
+            concentrationService.switchToAdultAnimation()
+        } else {
+            concentrationService.switchToChildAnimation()
+        }
+        
+        print("▶️ 计时器已恢复，恢复到\(animationStateBeforePause.displayName)动画")
+    }
+    
     private func stopTimer() {
         // 停止BackgroundTimerManager的计时
         backgroundTimerManager.stopTimer()

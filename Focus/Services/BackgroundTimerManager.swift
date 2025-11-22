@@ -15,6 +15,7 @@ class BackgroundTimerManager: ObservableObject {
     static let shared = BackgroundTimerManager()
     
     @Published var isTimerRunning = false
+    @Published var isPaused = false
     @Published var remainingTime: Int = 0
     @Published var showCompletionMessage = false
     
@@ -54,9 +55,29 @@ class BackgroundTimerManager: ObservableObject {
         print("⏰ 开始计时，时长: \(duration) 秒")
     }
     
+    // MARK: - 暂停计时
+    func pauseTimer() {
+        guard isTimerRunning && !isPaused else { return }
+        
+        isPaused = true
+        timer?.invalidate()
+        timer = nil
+        print("⏸️ 计时已暂停，剩余时间: \(remainingTime) 秒")
+    }
+    
+    // MARK: - 恢复计时
+    func resumeTimer() {
+        guard isTimerRunning && isPaused else { return }
+        
+        isPaused = false
+        startLocalTimer()
+        print("▶️ 计时已恢复，剩余时间: \(remainingTime) 秒")
+    }
+    
     // MARK: - 停止计时
     func stopTimer() {
         isTimerRunning = false
+        isPaused = false
         remainingTime = 0
         backgroundTime = nil
         timer?.invalidate()
