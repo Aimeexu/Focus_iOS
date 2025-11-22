@@ -645,10 +645,19 @@ struct StatisticsView: View {
     }
 
     private func labelAngle(for index: Int) -> Angle {
+        let gapDegrees: Double = 3
         let previousTotal = focusData.prefix(index).reduce(0) { $0 + $1.minutes }
         let currentValue = focusData[index].minutes
-        let midPoint = previousTotal + currentValue / 2
-        return Angle(degrees: Double(midPoint) / Double(responseData.data.totalDuration) * 360 - 90)
+        
+        // 计算扇形的起始和结束角度（考虑间隙）
+        let totalDataCount = focusData.count
+        let effectiveDegrees = 360 - Double(totalDataCount) * gapDegrees
+        
+        let startAngle = Double(previousTotal) / Double(responseData.data.totalDuration) * effectiveDegrees + Double(index) * gapDegrees - 90
+        let endAngle = Double(previousTotal + currentValue) / Double(responseData.data.totalDuration) * effectiveDegrees + Double(index) * gapDegrees - 90
+        
+        // 返回扇形的中点角度
+        return Angle(degrees: (startAngle + endAngle) / 2)
     }
 
     // 格式化时间周期范围显示
