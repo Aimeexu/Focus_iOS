@@ -36,6 +36,11 @@ struct FocusApp: App {
                     // 应用启动时应用屏幕常亮设置
                     let keepScreenOn = UserDefaults.standard.bool(forKey: "keepScreenOn")
                     UIApplication.shared.isIdleTimerDisabled = keepScreenOn
+                    
+                    // 请求通知权限
+                    Task {
+                        await NotificationManager.shared.requestAuthorization()
+                    }
                 }
                 .onOpenURL { url in
                     // 处理Facebook登录回调

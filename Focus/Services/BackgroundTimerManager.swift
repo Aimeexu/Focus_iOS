@@ -96,6 +96,9 @@ class BackgroundTimerManager: ObservableObject {
         
         // 触发震动反馈（如果设置已启用）
         triggerHapticFeedback()
+        
+        // 发送本地通知
+        NotificationManager.shared.sendFocusCompletionNotification()
 
         // 通知外部计时完成
         NotificationCenter.default.post(name: .timerCompleted, object: nil)
@@ -170,6 +173,9 @@ class BackgroundTimerManager: ObservableObject {
             
             // 触发震动反馈（如果设置已启用）
             triggerHapticFeedback()
+            
+            // 发送本地通知
+            NotificationManager.shared.sendFocusCompletionNotification()
             
             // 2秒后隐藏完成消息并执行完成逻辑
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
