@@ -414,9 +414,12 @@ struct HomeView: View {
                     }
                 }
                 
-                // 当从 step 3 退出时，停止音乐
+                // 当从 step 3 退出时，停止音乐并清除动画状态
                 if oldStep == 3 && newStep != 3 {
                     audioManager.stopSound()
+                    concentrationService.clearState()
+                    lottieAnimationManager.clearAnimation()
+                    print("🧹 退出 step 3，清除动画状态")
                 }
             }
             .onAppear {
@@ -553,11 +556,8 @@ struct HomeView: View {
                 
                 print("✅ 专注计时自然结束，已获取奖励")
                 
-                // 延迟2秒后再清除动画，让用户有时间看到成年动画
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    self.concentrationService.clearState()
-                    print("🧹 延迟清除动画状态")
-                }
+                // 不自动清除动画，让成年动画一直播放直到用户退出 step=3
+                // 动画会在用户退出 step=3 时通过 onChange(of: step) 清除
             }
         }
     }
@@ -568,11 +568,8 @@ struct HomeView: View {
         audioManager.stopSound()
         concentrationService.switchToAdultAnimation()
 
-        // 延迟5秒显示成体动画，然后结束计时（给用户更多时间看到成年动画）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            print("🎯 成年动画显示完毕，结束专注计时")
-            naturalEndConcentrationSession()
-        }
+        // 立即调用结束接口获取奖励，但保持成年动画播放
+        naturalEndConcentrationSession()
     }
     
     private func timeString(from seconds: Int) -> String {
