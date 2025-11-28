@@ -14,6 +14,7 @@ import Bugly
 struct FocusApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var userManager = UserManager.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // 初始化Google Sign-In
@@ -59,6 +60,32 @@ struct FocusApp: App {
                         print("⚠️ URL未被任何登录服务处理: \(url)")
                     }
                 }
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            handleScenePhaseChange(from: oldPhase, to: newPhase)
+        }
+    }
+    
+    // MARK: - 处理场景阶段变化
+    private func handleScenePhaseChange(from oldPhase: ScenePhase, to newPhase: ScenePhase) {
+        switch newPhase {
+        case .active:
+            // App从后台进入前台
+            if oldPhase == .background || oldPhase == .inactive {
+                print("🔄 App进入前台，检查Token状态...")
+                Task {
+                    await TokenManager.shared.checkTokenOnAppLaunch()
+                }
+            }
+            
+        case .background:
+            print("📱 App进入后台")
+            
+        case .inactive:
+            print("📱 App进入非活跃状态")
+            
+        @unknown default:
+            break
         }
     }
     

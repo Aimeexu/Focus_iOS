@@ -52,18 +52,16 @@ struct StatisticsView: View {
                                 let month = Calendar.current.component(.month, from: currentDate)
                                 let year = Calendar.current.component(.year, from: currentDate)
 
+                                let dateFormatter = DateFormatter()
+                                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                                let operateDateString = dateFormatter.string(from: currentDate)
+
                                 let response: ConcentrationStatisticsResponse
 
-                                if selectedPeriod == .week || selectedPeriod == .month
-                                    || selectedPeriod == .year
-                                {
-                                    let dateFormatter = DateFormatter()
-                                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                                    let operateDateString = dateFormatter.string(from: currentDate)
-
+                                if selectedPeriod == .day {
                                     response = try await NetworkManager.shared
                                         .getConcentrationStatistics(
-                                            period: selectedPeriod.rawValue,
+                                            period: "DAY",
                                             month: month,
                                             year: year,
                                             operateDate: operateDateString
@@ -71,10 +69,10 @@ struct StatisticsView: View {
                                 } else {
                                     response = try await NetworkManager.shared
                                         .getConcentrationStatistics(
-                                            period: selectedPeriod.rawValue == "DAY"
-                                                ? "TODAY" : selectedPeriod.rawValue,
+                                            period: selectedPeriod.rawValue,
                                             month: month,
-                                            year: year
+                                            year: year,
+                                            operateDate: operateDateString
                                         )
                                 }
 
@@ -529,22 +527,26 @@ struct StatisticsView: View {
 
     // 条形图部分
     private var barChartSection: some View {
-        let chartData =
-            selectedPeriod == .week
-            ? generateWeeklyData(from: responseData.data.dataByDate)
-            : generateMonthlyData(from: responseData.data.dataByDate)
+        let chartData: [BarData]
+        switch selectedPeriod {
+        case .week:
+            chartData = generateWeeklyData(from: responseData.data.dataByDate)
+        case .month:
+            chartData = generateMonthlyData(from: responseData.data.dataByDate)
+        case .year:
+            chartData = generateYearlyData(from: responseData.data.dataByDate)
+        default:
+            chartData = []
+        }
 
         let actualMaxValue = chartData.map { $0.value }.max() ?? 0
         let isAllZero = actualMaxValue == 0
         let maxValue = isAllZero ? 1 : actualMaxValue
         let totalFocus = chartData.reduce(0) { $0 + $1.value }
-        let dailyAverage = 0
-        if (chartData.count != 0) {
-            let dailyAverage = totalFocus / chartData.count
-        }
+        let dailyAverage = responseData.data.dailyFocusTime
 
         let step = maxValue / 5
-        let yAxisValues = (0...5).map { $0 * step }
+        let yAxisValues = isAllZero ? [0] : (0...5).map { $0 * step }
 
         return VStack(spacing: 0) {
             // 显示当前周/月/年信息
@@ -557,14 +559,21 @@ struct StatisticsView: View {
 
             HStack(alignment: .bottom, spacing: 0) {
                 VStack(alignment: .trailing, spacing: 0) {
-                    ForEach(yAxisValues.reversed(), id: \.self) { value in
-                        Text("\(value)")
+                    if isAllZero {
+                        Spacer()
+                        Text("0")
                             .font(.appNumber(size: 12))
                             .foregroundColor(AppColors.Text.secondary)
-                            .frame(height: 160 / 5, alignment: .top)
+                    } else {
+                        ForEach(yAxisValues.reversed(), id: \.self) { value in
+                            Text("\(value)")
+                                .font(.appNumber(size: 12))
+                                .foregroundColor(AppColors.Text.secondary)
+                                .frame(height: 160 / 5, alignment: .top)
+                        }
                     }
                 }
-                .frame(width: 30)
+                .frame(width: 30, height: 160)
                 .padding(.trailing, 5)
 
                 VStack(spacing: 8) {
@@ -783,6 +792,28 @@ private func generateMonthlyData(from dataByDate: [ConcentrationDataByDate]) -> 
     }
 
     return monthlyData
+}
+
+// 生成年数据的辅助函数
+private func generateYearlyData(from dataByDate: [ConcentrationDataByDate]) -> [BarData] {
+    var yearlyData: [BarData] = []
+
+    // 创建12个月的数据，初始值为0
+    for month in 1...12 {
+        yearlyData.append(BarData(day: "\(month)", value: 0))
+    }
+
+    // 填充实际数据
+    for dayData in dataByDate {
+        let dateComponents = dayData.date.split(separator: "-")
+        if dateComponents.count >= 2,
+           let month = Int(dateComponents[1]),
+           month >= 1 && month <= 12 {
+            yearlyData[month - 1] = BarData(day: "\(month)", value: dayData.durationTotal)
+        }
+    }
+
+    return yearlyData
 }
 
 // 格式化日期显示
