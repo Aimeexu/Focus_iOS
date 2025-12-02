@@ -122,6 +122,9 @@ struct HomeView: View {
     @State private var showExitHint: Bool = false
     @State private var showExitConfirmation: Bool = false
     @State private var animationStateBeforePause: PetState = .child
+    @State private var isTimerBlinking: Bool = true
+    @State private var blinkTimer: Timer?
+    @State private var pausedTimeSnapshot: Int = 0
     
     @ViewBuilder
     private var mainContent: some View {
@@ -317,6 +320,31 @@ struct HomeView: View {
                     step = 3
                 }
             }
+            
+            // 顶部倒计时（闪动效果）
+            VStack {
+                HStack {
+                    Spacer()
+                    
+                    // 中间：倒计时显示（闪动）- 使用暂停时的固定时间
+                    Text(backgroundTimerManager.timeString(from: pausedTimeSnapshot))
+                        .font(.appNumber(size: 32))
+                        .foregroundColor(AppColors.Semantic.darkBrown)
+                        .opacity(isTimerBlinking ? 1.0 : 0.0)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 30)
+                .padding(.top, geometry.safeAreaInsets.top + 50)
+
+                Spacer()
+            }
+        }
+        .onAppear {
+            startBlinkTimer()
+        }
+        .onDisappear {
+            stopBlinkTimer()
         }
     }
     
@@ -484,6 +512,24 @@ struct HomeView: View {
         focusTime = selectedMinutes * 60
     }
     
+    private func startBlinkTimer() {
+        // 停止之前的定时器（如果存在）
+        stopBlinkTimer()
+        
+        // 创建新的定时器，每1秒切换一次显示状态
+        blinkTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                isTimerBlinking.toggle()
+            }
+        }
+    }
+    
+    private func stopBlinkTimer() {
+        blinkTimer?.invalidate()
+        blinkTimer = nil
+        isTimerBlinking = true // 重置为显示状态
+    }
+    
     private func handleMusicChange(_ newMusic: String) {
         userManager.updateSelectedMusic(newMusic)
         let audioManager = AudioManager.shared
@@ -559,6 +605,9 @@ struct HomeView: View {
         // 保存当前动画状态
         animationStateBeforePause = concentrationService.currentAnimationState
         
+        // 保存暂停时的剩余时间快照
+        pausedTimeSnapshot = backgroundTimerManager.remainingTime
+        
         // 暂停计时器
         backgroundTimerManager.pauseTimer()
         
@@ -568,7 +617,7 @@ struct HomeView: View {
         // 切换到睡眠动画
         concentrationService.switchToSleepAnimation()
         
-        print("⏸️ 计时器已暂停，切换到睡眠动画")
+        print("⏸️ 计时器已暂停，切换到睡眠动画，剩余时间: \(pausedTimeSnapshot)秒")
     }
     
     private func resumeTimer() {
