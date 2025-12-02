@@ -83,6 +83,10 @@ class BackgroundTimerManager: ObservableObject {
         timer?.invalidate()
         timer = nil
         showCompletionMessage = false
+        
+        // 取消所有待发送的通知
+        cancelScheduledNotification()
+        
         print("⏹️ 计时已停止")
     }
     
@@ -166,11 +170,17 @@ class BackgroundTimerManager: ObservableObject {
         
         print("📱 应用进入后台，记录时间: \(backgroundTime!)")
         print("   剩余时间: \(remainingTime) 秒")
+        
+        // 安排本地通知，在剩余时间后触发
+        scheduleCompletionNotification(after: TimeInterval(remainingTime))
     }
     
     // MARK: - 应用回到前台
     @objc private func appWillEnterForeground() {
         guard isTimerRunning, let backgroundTime = backgroundTime else { return }
+        
+        // 取消之前安排的通知（因为App已回到前台）
+        cancelScheduledNotification()
         
         let foregroundTime = Date()
         let backgroundDuration = Int(foregroundTime.timeIntervalSince(backgroundTime))
@@ -194,9 +204,6 @@ class BackgroundTimerManager: ObservableObject {
             
             // 触发震动反馈（如果设置已启用）
             triggerHapticFeedback()
-            
-            // 发送本地通知
-            NotificationManager.shared.sendFocusCompletionNotification()
             
             // 2秒后隐藏完成消息并执行完成逻辑
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -231,9 +238,55 @@ class BackgroundTimerManager: ObservableObject {
         return Double(elapsed) / Double(originalDuration)
     }
     
+    // MARK: - 安排完成通知
+    private func scheduleCompletionNotification(after timeInterval: TimeInterval) {
+        // 先取消之前的通知
+        cancelScheduledNotification()
+        
+        Task {
+            let status = await NotificationManager.shared.checkAuthorizationStatus()
+            
+            guard status == .authorized || status == .provisional else {
+                print("⚠️ 通知权限未授予，无法安排后台通知")
+                return
+            }
+            
+            let content = UNMutableNotificationContent()
+            content.title = "Focus"
+            content.body = "A new pal has joined your collection!"
+            content.sound = .default
+            content.badge = 1
+            
+            // 设置触发时间
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: "focusCompletionScheduled",
+                content: content,
+                trigger: trigger
+            )
+            
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("❌ 安排后台通知失败: \(error)")
+                } else {
+                    print("✅ 后台通知已安排，将在 \(timeInterval) 秒后触发")
+                }
+            }
+        }
+    }
+    
+    // MARK: - 取消安排的通知
+    private nonisolated func cancelScheduledNotification() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: ["focusCompletionScheduled"]
+        )
+        print("🗑️ 已取消安排的后台通知")
+    }
+    
     deinit {
         NotificationCenter.default.removeObserver(self)
         timer?.invalidate()
+        cancelScheduledNotification()
     }
 }
 

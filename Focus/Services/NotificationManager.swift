@@ -35,8 +35,12 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // 即使应用在前台也显示通知
-        completionHandler([.banner, .sound, .badge])
+        // 即使应用在前台也显示通知、播放声音和显示角标
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .sound, .badge, .list])
+        } else {
+            completionHandler([.alert, .sound, .badge])
+        }
         print("📬 前台显示通知")
     }
     
