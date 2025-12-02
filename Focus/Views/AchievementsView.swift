@@ -15,8 +15,6 @@ struct AchievementsView: View {
     @State private var selectedTab: AchievementTab = .friends
     @State private var showShareView = false
     @State private var selectedAchievement: Achievement?
-    @State private var canExchange: Bool = false
-    @State private var showNewpopView = false
 
     enum AchievementTab: String, CaseIterable {
         case friends = "Friends"
@@ -31,15 +29,6 @@ struct AchievementsView: View {
         .overlay(shareOverlay)
         .onAppear {
             loadAchievementsFromUserData()
-            Task {
-                    do {
-                        let response = try await NetworkManager.shared.checkPosterExchange()
-                        print("🎫 海报兑换资格检查API请求返回 \(response.data.canExchange)")
-                        self.canExchange = response.data.canExchange
-                    } catch {
-                        print("❌ 检查海报兑换资格失败: \(error)")
-                    }
-            }
         }
         .onChange(of: userManager.currentUser) { _ in
             loadAchievementsFromUserData()
@@ -142,7 +131,7 @@ struct AchievementsView: View {
                 ForEach(AchievementCategory.allCases, id: \.self) { category in
                     AchievementSection(
                         category: category,
-                        canExchange: canExchange,
+                        canExchange: false,
                         achievements: achievementManager.achievements.filter { $0.category == category && $0.tab == .friends},
                         onAchievementTap: handleAchievementTap,
                         onNewTap: handleNewTap
@@ -161,8 +150,6 @@ struct AchievementsView: View {
                     achievement: achievement,
                     isPresented: $showShareView
                 )
-            } else if showNewpopView {
-                NewTagPopupView(isPresented: $showNewpopView)
             }
         }
     }
@@ -175,7 +162,6 @@ struct AchievementsView: View {
     }
 
     private func handleNewTap() {
-        showNewpopView = true
     }
 
     // MARK: - 辅助方法
