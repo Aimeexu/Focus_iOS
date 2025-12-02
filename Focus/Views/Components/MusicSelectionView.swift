@@ -186,6 +186,11 @@ struct MusicSelectionView: View {
             .onAppear {
                 // 根据当前选中的音乐图标设置selectedSound
                 selectedSound = SoundType.allCases.first { $0.icon == selectedMusic } ?? .silence
+                
+                // 如果当前选中的不是静音，播放对应的音乐
+                if selectedSound != .silence {
+                    playSound(for: selectedSound)
+                }
             }
         }
     }
