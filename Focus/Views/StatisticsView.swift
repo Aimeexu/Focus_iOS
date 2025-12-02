@@ -634,7 +634,7 @@ struct StatisticsView: View {
                     Text("Daily Focus")
                         .font(.appBody(size: 14))
                         .foregroundColor(AppColors.Text.secondary)
-                    Text("\(dailyAverage) m")
+                    Text(dailyAverage == 0 && totalFocus > 0 ? "< 1 m" : "\(dailyAverage) m")
                         .font(.appNumber(size: 18))
                         .foregroundColor(AppColors.Text.primary)
                 }
