@@ -177,7 +177,6 @@ struct StatisticsView: View {
                     }
                 }
                 .offset(x: dragOffset)
-                .gesture(dayModeGesture)
 
                 Spacer().frame(height: 20)
 
@@ -209,6 +208,8 @@ struct StatisticsView: View {
             }
         }
         .scrollDisabled(true)  // 禁用滚动，只是为了避免被遮挡
+        .contentShape(Rectangle())  // 确保整个区域可以响应手势
+        .gesture(dayModeGesture)  // 将手势应用到整个内容区域
     }
 
     // Week/Month/Year模式内容
@@ -249,7 +250,8 @@ struct StatisticsView: View {
 
             Spacer()
         }
-        .gesture(weekMonthYearModeGesture)
+        .contentShape(Rectangle())  // 确保整个区域可以响应手势
+        .gesture(weekMonthYearModeGesture)  // 将手势应用到整个内容区域
     }
 
     // Day模式手势
@@ -659,14 +661,14 @@ struct StatisticsView: View {
         let gapDegrees: Double = 3
         let previousTotal = focusData.prefix(index).reduce(0) { $0 + $1.minutes }
         let currentValue = focusData[index].minutes
-        
+
         // 计算扇形的起始和结束角度（考虑间隙）
         let totalDataCount = focusData.count
         let effectiveDegrees = 360 - Double(totalDataCount) * gapDegrees
-        
+
         let startAngle = Double(previousTotal) / Double(responseData.data.totalDuration) * effectiveDegrees + Double(index) * gapDegrees - 90
         let endAngle = Double(previousTotal + currentValue) / Double(responseData.data.totalDuration) * effectiveDegrees + Double(index) * gapDegrees - 90
-        
+
         // 返回扇形的中点角度
         return Angle(degrees: (startAngle + endAngle) / 2)
     }
