@@ -185,10 +185,12 @@ struct HomeView: View {
             )
             .contentShape(Rectangle())
             .onTapGesture {
-                // 单击进入暂停状态，使用动画
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    pauseTimer()
-                    step = 4
+                // 只有在非成年状态时才允许单击进入暂停状态
+                if concentrationService.currentAnimationState != .adult {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        pauseTimer()
+                        step = 4
+                    }
                 }
             }
             .onLongPressGesture(minimumDuration: 1.0) {
