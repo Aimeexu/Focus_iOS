@@ -139,8 +139,8 @@ struct StatisticsView: View {
     // Day模式内容 - 使用ScrollView确保不被遮挡
     private var dayModeContent: some View {
         ScrollView {
-            VStack(spacing: 30) {
-                Spacer().frame(height: 20)
+            VStack(spacing: 20) {
+                Spacer().frame(height: 10)
 
                 // 显示当前日期
                 VStack(spacing: 4) {
@@ -178,6 +178,8 @@ struct StatisticsView: View {
                 }
                 .offset(x: dragOffset)
                 .gesture(dayModeGesture)
+
+                Spacer().frame(height: 20)
 
                 HStack(spacing: 40) {
                     VStack(spacing: 8) {
