@@ -216,8 +216,9 @@ struct Achievement: Identifiable {
     let badgeNumber: Int?
     let isRemoteImage: Bool // 新增字段，标识是否为远程图片
     let tab : AchievementTab
+    let shareText: String? // 分享时显示的文字，由后台返回
 
-    init(id: Int, title: String, description: String, image: String, isUnlocked: Bool, category: AchievementCategory, badgeNumber: Int?, isRemoteImage: Bool = false, tab: AchievementTab) {
+    init(id: Int, title: String, description: String, image: String, isUnlocked: Bool, category: AchievementCategory, badgeNumber: Int?, isRemoteImage: Bool = false, tab: AchievementTab, shareText: String? = nil) {
         self.id = id
         self.title = title
         self.description = description
@@ -227,6 +228,7 @@ struct Achievement: Identifiable {
         self.badgeNumber = badgeNumber
         self.isRemoteImage = isRemoteImage
         self.tab = tab
+        self.shareText = shareText
     }
 }
 

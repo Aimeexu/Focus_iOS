@@ -35,7 +35,7 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if userManager.isLoggedIn {
+            if !userManager.isLoggedIn {
                 // 已登录，显示主界面
                 ZStack {
                     if isActive {

@@ -22,6 +22,7 @@ struct PostingView: View {
                 postersList
             }
         }
+        .overlay(shareOverlay)
         .onAppear {
             loadPostersFromUserData()
         }
@@ -66,6 +67,17 @@ struct PostingView: View {
         if achievement.isUnlocked {
             selectedAchievement = achievement
             showShareView = true
+        }
+    }
+    
+    private var shareOverlay: some View {
+        Group {
+            if showShareView, let achievement = selectedAchievement {
+                ShareAchievementView(
+                    achievement: achievement,
+                    isPresented: $showShareView
+                )
+            }
         }
     }
 }
