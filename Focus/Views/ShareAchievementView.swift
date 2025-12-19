@@ -121,7 +121,7 @@ struct ShareAchievementView: View {
                 .font(.appButton(size: 18))
                 .foregroundColor(AppColors.Text.primary)
             
-            HStack(spacing: 20) {
+            HStack(spacing: 16) {
                 // Facebook 分享按钮
                 ShareAchievementButton(
                     icon: "facebook_logo",
@@ -130,6 +130,16 @@ struct ShareAchievementView: View {
                     isLoading: isSharing
                 ) {
                     shareToFacebook()
+                }
+                
+                // Instagram 分享按钮
+                ShareAchievementButton(
+                    icon: "instagram_logo",
+                    title: "Instagram",
+                    color: Color(red: 193/255, green: 53/255, blue: 132/255),
+                    isLoading: isSharing
+                ) {
+                    shareToInstagram()
                 }
                 
                 // 更多分享选项
@@ -234,7 +244,64 @@ struct ShareAchievementView: View {
         return "🎉 我在 Focus 应用中获得了成就：\(achievement.title)！\n\n\(achievement.description)"
     }
     
-
+    // MARK: - 分享到 Instagram
+    private func shareToInstagram() {
+        guard !isSharing else { return }
+        isSharing = true
+        
+        // 确保图片已加载
+        guard let image = shareImage else {
+            alertMessage = "图片加载中，请稍后再试"
+            showAlert = true
+            isSharing = false
+            return
+        }
+        
+        // 检查是否安装了 Instagram
+        guard UIApplication.shared.canOpenURL(URL(string: "instagram://app")!) else {
+            alertMessage = "请先安装 Instagram 应用"
+            showAlert = true
+            isSharing = false
+            return
+        }
+        
+        // 保存图片到相册并打开 Instagram
+        shareToInstagramFeed(image: image)
+        
+        // 显示提示
+        alertMessage = "图片已保存到相册\n请在 Instagram 中选择该图片发布"
+        showAlert = true
+        
+        isSharing = false
+        
+        // 延迟关闭分享视图
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isPresented = false
+        }
+    }
+    
+    // MARK: - 分享到 Instagram Feed
+    private func shareToInstagramFeed(image: UIImage) -> Bool {
+        // 检查是否安装了 Instagram
+        guard let instagramURL = URL(string: "instagram://library?AssetPath="),
+              UIApplication.shared.canOpenURL(instagramURL) else {
+            return false
+        }
+        
+        // 保存图片到相册
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        
+        // 打开 Instagram 相册选择界面
+        UIApplication.shared.open(instagramURL, options: [:]) { success in
+            if success {
+                print("✅ 成功打开 Instagram")
+            } else {
+                print("❌ 打开 Instagram 失败")
+            }
+        }
+        
+        return true
+    }
     
     // MARK: - 分享到其他平台（使用系统分享）
     private func shareToOthers() {

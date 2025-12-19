@@ -48,6 +48,8 @@
 		<string>fb-messenger-share-api</string>
 		<string>fbauth2</string>
 		<string>fbshareextension</string>
+		<string>instagram</string>
+		<string>instagram-stories</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
@@ -70,5 +72,9 @@
 		<string>remote-notification</string>
 		<string>audio</string>
 	</array>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>需要保存图片到相册以便分享到 Instagram</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问相册以便分享图片到 Instagram</string>
 </dict>
 </plist>
