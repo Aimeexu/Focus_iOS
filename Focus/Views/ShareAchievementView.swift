@@ -17,6 +17,7 @@ struct ShareAchievementView: View {
     @State private var isSharing = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var shareImage: UIImage?
     
     var body: some View {
         ZStack {
@@ -44,6 +45,9 @@ struct ShareAchievementView: View {
             Button("确定", role: .cancel) { }
         } message: {
             Text(alertMessage)
+        }
+        .onAppear {
+            loadShareImage()
         }
     }
     
@@ -117,7 +121,7 @@ struct ShareAchievementView: View {
                 .font(.appButton(size: 18))
                 .foregroundColor(AppColors.Text.primary)
             
-            HStack(spacing: 16) {
+            HStack(spacing: 20) {
                 // Facebook 分享按钮
                 ShareAchievementButton(
                     icon: "facebook_logo",
@@ -126,16 +130,6 @@ struct ShareAchievementView: View {
                     isLoading: isSharing
                 ) {
                     shareToFacebook()
-                }
-                
-                // Instagram 分享按钮
-                ShareAchievementButton(
-                    icon: "instagram_logo",
-                    title: "Instagram",
-                    color: Color(red: 193/255, green: 53/255, blue: 132/255),
-                    isLoading: isSharing
-                ) {
-                    shareToInstagram()
                 }
                 
                 // 更多分享选项
@@ -155,26 +149,79 @@ struct ShareAchievementView: View {
         .shareCornerRadius(20, corners: [.bottomLeft, .bottomRight])
     }
     
-    // MARK: - 分享到 Facebook（使用系统分享面板）
+    // MARK: - 预加载分享图片
+    private func loadShareImage() {
+        if achievement.isRemoteImage, let imageURL = URL(string: achievement.shareImage ?? achievement.image) {
+            Task {
+                do {
+                    let (data, _) = try await URLSession.shared.data(from: imageURL)
+                    if let image = UIImage(data: data) {
+                        await MainActor.run {
+                            self.shareImage = image
+                        }
+                    }
+                } catch {
+                    print("❌ 预加载图片失败: \(error)")
+                }
+            }
+        } else if !achievement.isRemoteImage {
+            shareImage = UIImage(named: achievement.shareImage ?? achievement.image)
+        }
+    }
+    
+    // MARK: - 分享到 Facebook（使用 Facebook SDK）
     private func shareToFacebook() {
         guard !isSharing else { return }
         isSharing = true
         
-        let shareText = getShareText()
-        
-        // 使用系统分享面板，这样文字和图片都能传递给 Facebook
-        loadImageForShare { image in
-            var itemsToShare: [Any] = [shareText]
-            
-            if let image = image {
-                itemsToShare.append(image)
-            }
-            
-            // 显示系统分享面板
-            self.presentShareSheet(items: itemsToShare)
-            
-            self.isSharing = false
+        // 确保图片已加载
+        guard let image = shareImage else {
+            alertMessage = "图片加载中，请稍后再试"
+            showAlert = true
+            isSharing = false
+            return
         }
+        
+        // 获取当前视图控制器
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let viewController = windowScene.windows.first?.rootViewController else {
+            alertMessage = "无法打开分享对话框"
+            showAlert = true
+            isSharing = false
+            return
+        }
+        
+        // 使用 Facebook SDK 分享图片
+        let photo = SharePhoto(image: image, isUserGenerated: true)
+        let content = SharePhotoContent()
+        content.photos = [photo]
+        
+        let dialog = ShareDialog(viewController: viewController, content: content, delegate: nil)
+        dialog.mode = .automatic
+        
+        // 验证并显示分享对话框
+        do {
+            try dialog.validate()
+            dialog.show()
+            print("✅ Facebook 分享对话框已显示")
+            
+            // 延迟关闭分享视图
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isPresented = false
+            }
+        } catch {
+            print("❌ Facebook 分享失败: \(error.localizedDescription)")
+            // 回退到系统分享
+            fallbackToSystemShare(image: image)
+        }
+        
+        isSharing = false
+    }
+    
+    // MARK: - 回退到系统分享
+    private func fallbackToSystemShare(image: UIImage) {
+        let shareText = getShareText()
+        presentShareSheet(items: [shareText, image])
     }
     
     // MARK: - 获取分享文字
@@ -187,201 +234,7 @@ struct ShareAchievementView: View {
         return "🎉 我在 Focus 应用中获得了成就：\(achievement.title)！\n\n\(achievement.description)"
     }
     
-    // MARK: - 加载图片用于分享（不合成文字）
-    private func loadImageForShare(completion: @escaping (UIImage?) -> Void) {
-        if achievement.isRemoteImage, let imageURL = URL(string: achievement.shareImage ?? achievement.image) {
-            Task {
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: imageURL)
-                    if let image = UIImage(data: data) {
-                        await MainActor.run {
-                            completion(image)
-                        }
-                    } else {
-                        await MainActor.run {
-                            completion(nil)
-                        }
-                    }
-                } catch {
-                    print("❌ 下载图片失败: \(error)")
-                    await MainActor.run {
-                        completion(nil)
-                    }
-                }
-            }
-        } else if !achievement.isRemoteImage {
-            // 本地图片
-            if let image = UIImage(named: achievement.shareImage ?? achievement.image) {
-                completion(image)
-            } else {
-                completion(nil)
-            }
-        } else {
-            completion(nil)
-        }
-    }
-    
-    // MARK: - 使用系统分享面板
-    private func shareWithSystemSheet(text: String) {
-        var itemsToShare: [Any] = [text]
-        
-        // 如果有远程图片，先下载图片
-        if achievement.isRemoteImage, let imageURL = URL(string: achievement.shareImage ?? achievement.image) {
-            Task {
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: imageURL)
-                    if let image = UIImage(data: data) {
-                        await MainActor.run {
-                            itemsToShare.append(image)
-                            presentShareSheet(items: itemsToShare)
-                        }
-                    } else {
-                        await MainActor.run {
-                            presentShareSheet(items: itemsToShare)
-                        }
-                    }
-                } catch {
-                    print("❌ 下载图片失败: \(error)")
-                    await MainActor.run {
-                        presentShareSheet(items: itemsToShare)
-                    }
-                }
-            }
-        } else if !achievement.isRemoteImage {
-            // 本地图片
-            if let image = UIImage(named: achievement.shareImage ?? achievement.image) {
-                itemsToShare.append(image)
-            }
-            presentShareSheet(items: itemsToShare)
-        } else {
-            presentShareSheet(items: itemsToShare)
-        }
-    }
-    
-    // MARK: - 分享到 Instagram
-    private func shareToInstagram() {
-        guard !isSharing else { return }
-        isSharing = true
-        
-        // 先加载图片（不合成文字）
-        loadImageForShare { image in
-            guard let image = image else {
-                // 如果没有图片，回退到系统分享
-                let shareText = self.getShareText()
-                self.shareWithSystemSheet(text: shareText)
-                self.isSharing = false
-                return
-            }
-            
-            // Instagram Stories 分享
-            if self.shareToInstagramStories(image: image) {
-                print("✅ Instagram Stories 分享成功")
-            } else {
-                // 如果 Instagram Stories 失败，尝试 Instagram Feed
-                if self.shareToInstagramFeed(image: image) {
-                    print("✅ Instagram Feed 分享成功")
-                } else {
-                    // 如果都失败，使用系统分享
-                    print("⚠️ Instagram 未安装，使用系统分享")
-                    let shareText = self.getShareText()
-                    var items: [Any] = [shareText, image]
-                    self.presentShareSheet(items: items)
-                }
-            }
-            
-            self.isSharing = false
-            
-            // 延迟关闭分享视图
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.isPresented = false
-            }
-        }
-    }
-    
-    // MARK: - 分享到 Instagram Stories
-    private func shareToInstagramStories(image: UIImage) -> Bool {
-        // 检查是否安装了 Instagram
-        guard let instagramURL = URL(string: "instagram-stories://share"),
-              UIApplication.shared.canOpenURL(instagramURL) else {
-            return false
-        }
-        
-        // 准备分享数据
-        guard let imageData = image.pngData() else {
-            return false
-        }
-        
-        // 创建粘贴板项目
-        let pasteboardItems: [[String: Any]] = [
-            [
-                "com.instagram.sharedSticker.stickerImage": imageData,
-                "com.instagram.sharedSticker.backgroundTopColor": "#6A5446",
-                "com.instagram.sharedSticker.backgroundBottomColor": "#F2E9DA"
-            ]
-        ]
-        
-        let pasteboardOptions: [UIPasteboard.OptionsKey: Any] = [
-            .expirationDate: Date().addingTimeInterval(60 * 5) // 5分钟过期
-        ]
-        
-        // 设置粘贴板
-        UIPasteboard.general.setItems(pasteboardItems, options: pasteboardOptions)
-        
-        // 打开 Instagram
-        UIApplication.shared.open(instagramURL, options: [:]) { success in
-            if success {
-                print("✅ 成功打开 Instagram Stories")
-            }
-        }
-        
-        return true
-    }
-    
-    // MARK: - 分享到 Instagram Feed
-    private func shareToInstagramFeed(image: UIImage) -> Bool {
-        // 检查是否安装了 Instagram
-        guard let instagramURL = URL(string: "instagram://app"),
-              UIApplication.shared.canOpenURL(instagramURL) else {
-            return false
-        }
-        
-        // 保存图片到临时目录
-        guard let imageData = image.jpegData(compressionQuality: 0.9) else {
-            return false
-        }
-        
-        let tempDir = FileManager.default.temporaryDirectory
-        let imageURL = tempDir.appendingPathComponent("share_image.igo")
-        
-        do {
-            try imageData.write(to: imageURL)
-            
-            // 使用 Document Interaction Controller
-            let documentController = UIDocumentInteractionController(url: imageURL)
-            documentController.uti = "com.instagram.exclusivegram"
-            documentController.annotation = [
-                "InstagramCaption": getShareText()
-            ]
-            
-            // 获取当前视图控制器
-            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                  let viewController = windowScene.windows.first?.rootViewController else {
-                return false
-            }
-            
-            // 显示分享菜单
-            documentController.presentOpenInMenu(
-                from: viewController.view.bounds,
-                in: viewController.view,
-                animated: true
-            )
-            
-            return true
-        } catch {
-            print("❌ 保存图片失败: \(error)")
-            return false
-        }
-    }
+
     
     // MARK: - 分享到其他平台（使用系统分享）
     private func shareToOthers() {
@@ -390,42 +243,14 @@ struct ShareAchievementView: View {
         
         let shareText = getShareText()
         
-        var itemsToShare: [Any] = [shareText]
-        
-        // 如果有远程图片，先下载图片（不合成文字）
-        if achievement.isRemoteImage, let imageURL = URL(string: achievement.shareImage ?? achievement.image) {
-            Task {
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: imageURL)
-                    if let image = UIImage(data: data) {
-                        await MainActor.run {
-                            itemsToShare.append(image)
-                            presentShareSheet(items: itemsToShare)
-                        }
-                    } else {
-                        await MainActor.run {
-                            presentShareSheet(items: itemsToShare)
-                        }
-                    }
-                } catch {
-                    print("❌ 下载图片失败: \(error)")
-                    await MainActor.run {
-                        presentShareSheet(items: itemsToShare)
-                    }
-                }
-                isSharing = false
-            }
-        } else if !achievement.isRemoteImage {
-            // 本地图片
-            if let image = UIImage(named: achievement.shareImage ?? achievement.image) {
-                itemsToShare.append(image)
-            }
-            presentShareSheet(items: itemsToShare)
-            isSharing = false
+        // 使用预加载的图片
+        if let image = shareImage {
+            presentShareSheet(items: [shareText, image])
         } else {
-            presentShareSheet(items: itemsToShare)
-            isSharing = false
+            presentShareSheet(items: [shareText])
         }
+        
+        isSharing = false
     }
     
     // MARK: - 显示系统分享面板
