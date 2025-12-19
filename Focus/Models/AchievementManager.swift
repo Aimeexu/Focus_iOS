@@ -132,7 +132,8 @@ class AchievementManager: ObservableObject {
                         category: .iceSands,
                         badgeNumber: pet.amount,
                         isRemoteImage: true,
-                        tab: .friends
+                        tab: .friends,
+                        shareImage: pet.userStuffBase.shareImage
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -152,7 +153,8 @@ class AchievementManager: ObservableObject {
                         category: .tropicalWilds,
                         badgeNumber: pet.amount,
                         isRemoteImage: true,
-                        tab: .friends
+                        tab: .friends,
+                        shareImage: pet.userStuffBase.shareImage
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -215,7 +217,8 @@ class AchievementManager: ObservableObject {
                         category: .tropicalWilds,
                         badgeNumber: poster.amount,
                         isRemoteImage: true,
-                        tab: .posting
+                        tab: .posting,
+                        shareImage: poster.userStuffBase.shareImage
                     )
                     generatedAchievements.append(achievement)
                     achievementId += 1
@@ -259,7 +262,8 @@ class AchievementManager: ObservableObject {
                             category: category,
                             badgeNumber: s.amount,
                             isRemoteImage: true,
-                            tab: .friends
+                            tab: .friends,
+                            shareImage: s.userStuffBase.shareImage
                         )
                         results.append(achievement)
                     } else {

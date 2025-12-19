@@ -121,7 +121,8 @@ struct AchievementUserStuff: Codable {
 
 struct AchievementUserStuffBase: Codable {
     let attachment: StuffAttachment?
-    let stuffPrices: [StuffPrice]
+    let shareImage: String
+//    let stuffPrices: [StuffPrice]
     let userStuffType: String
     let userStuffScene: String
     let uuid: String
@@ -257,7 +258,7 @@ struct UserStuffBase: Codable, Identifiable {
     let icon: String
     let userStuffType: UserStuffType
     let userStuffScene: String?
-    let stuffPrices: [StuffPrice]
+//    let stuffPrices: [StuffPrice]
     let attachment: StuffAttachment?
     
     var id: String { uuid }
@@ -643,133 +644,4 @@ class StuffManager: ObservableObject {
 
 }
 
-// MARK: - 物品列表测试视图
-struct StuffListView: View {
-    @StateObject private var stuffManager = StuffManager.shared
-    @State private var selectedType: UserStuffType = .poster
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                // 类型选择器
-                Picker("物品类型", selection: $selectedType) {
-                    ForEach(UserStuffType.allCases, id: \.self) { type in
-                        Label(type.displayName, systemImage: type.icon)
-                            .tag(type)
-                    }
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
-                
-                // 物品列表
-                if stuffManager.isLoading {
-                    ProgressView("加载中...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage = stuffManager.errorMessage {
-                    VStack {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.largeTitle)
-                            .foregroundColor(.orange)
-                        Text("加载失败")
-                            .font(.headline)
-                        Text(errorMessage)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                        
-                        Button("重试") {
-                            Task {
-                                try? await stuffManager.fetchStuffList()
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    let filteredItems = stuffManager.getUserStuffBases(by: selectedType)
-                    
-                    if filteredItems.isEmpty {
-                        VStack {
-                            Image(systemName: selectedType.icon)
-                                .font(.largeTitle)
-                                .foregroundColor(.secondary)
-                            Text("暂无\(selectedType.displayName)")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        List(filteredItems) { item in
-                            StuffItemRow(item: item)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("物品商店")
-            .onAppear {
-                if stuffManager.userStuffBases.isEmpty {
-                    Task {
-                        try? await stuffManager.fetchStuffList()
-                    }
-                }
-            }
-        }
-    }
-}
-
-// 物品行视图
-struct StuffItemRow: View {
-    let item: UserStuffBase
-    
-    var body: some View {
-        HStack {
-            // 图标
-            AsyncImage(url: URL(string: item.icon)) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } placeholder: {
-                Image(systemName: item.userStuffType.icon)
-                    .foregroundColor(.secondary)
-            }
-            .frame(width: 50, height: 50)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.name)
-                    .font(.headline)
-                
-                Text(item.description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-                
-                HStack {
-                    Label(item.userStuffType.displayName, systemImage: item.userStuffType.icon)
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                    
-                    Spacer()
-                    
-                    if let firstPrice = item.stuffPrices.first {
-                        Text("\(firstPrice.amount) 金币")
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            // 如果是宠物且有附件，显示动画指示器
-            if item.userStuffType == .pet && item.attachment != nil {
-                Image(systemName: "play.circle.fill")
-                    .foregroundColor(.green)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}
 

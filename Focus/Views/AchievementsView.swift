@@ -211,6 +211,7 @@ struct Achievement: Identifiable {
     let title: String
     let description: String
     let image: String
+    let shareImage: String?
     let isUnlocked: Bool
     let category: AchievementCategory
     let badgeNumber: Int?
@@ -218,11 +219,12 @@ struct Achievement: Identifiable {
     let tab : AchievementTab
     let shareText: String? // 分享时显示的文字，由后台返回
 
-    init(id: Int, title: String, description: String, image: String, isUnlocked: Bool, category: AchievementCategory, badgeNumber: Int?, isRemoteImage: Bool = false, tab: AchievementTab, shareText: String? = nil) {
+    init(id: Int, title: String, description: String, image: String, isUnlocked: Bool, category: AchievementCategory, badgeNumber: Int?, isRemoteImage: Bool = false, tab: AchievementTab, shareText: String? = nil, shareImage: String? = nil) {
         self.id = id
         self.title = title
         self.description = description
         self.image = image
+        self.shareImage = shareImage
         self.isUnlocked = isUnlocked
         self.category = category
         self.badgeNumber = badgeNumber
