@@ -325,24 +325,25 @@ struct StuffAttachment: Codable {
             return adult
         case .sleep:
             return sleep
+        case .transitioningToAdult:
+            
         }
     }
 }
 
 // 宠物状态枚举
-enum PetState: String, CaseIterable {
-    case child = "child"
-    case adult = "adult"
-    case sleep = "sleep"
-    
+enum PetState {
+    case child
+    case adult
+    case sleep
+    case transitioningToAdult
+
     var displayName: String {
         switch self {
-        case .child:
-            return "Child"
-        case .adult:
-            return "Adult"
-        case .sleep:
-            return "Sleep"
+        case .child: return "Child"
+        case .adult: return "Adult"
+        case .sleep: return "Sleep"
+        case .transitioningToAdult: return "TransitioningToAdult"
         }
     }
 }

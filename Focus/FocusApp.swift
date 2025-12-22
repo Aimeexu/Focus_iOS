@@ -42,6 +42,11 @@ struct FocusApp: App {
                     Task {
                         await NotificationManager.shared.requestAuthorization()
                     }
+                    if #available(iOS 17.0, *) {
+                            UNUserNotificationCenter.current().setBadgeCount(0)
+                    } else {
+                            UIApplication.shared.applicationIconBadgeNumber = 0
+                    }
                 }
                 .onOpenURL { url in
                     // 处理Facebook登录回调

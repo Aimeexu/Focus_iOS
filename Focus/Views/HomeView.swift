@@ -125,7 +125,9 @@ struct HomeView: View {
     @State private var isTimerBlinking: Bool = true
     @State private var blinkTimer: Timer?
     @State private var pausedTimeSnapshot: Int = 0
-    
+    @State private var isComplete: Bool = false
+    @State private var adultIsComplete: Bool = false
+
     @ViewBuilder
     private var mainContent: some View {
         GeometryReader { geometry in
@@ -139,7 +141,7 @@ struct HomeView: View {
             } else if step == 1 {
                 ZStack {
                     LottieView(name: "prepare", loopMode: .loop) {}
-                        .frame(width: 260, height: 260)
+                        .frame(width: 260, height: 300)
                         .position(x: geometry.size.width / 2, y: geometry.size.height * 0.45)
                     
                     LottieView(name: "take_breath", loopMode: .playOnce, speed: 1.5) {
@@ -186,11 +188,15 @@ struct HomeView: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 // 只有在非成年状态时才允许单击进入暂停状态
-                if concentrationService.currentAnimationState != .adult {
+                if !isComplete {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         pauseTimer()
                         step = 4
                     }
+                } else {
+                    // 开始动画
+                    handleBackgroundTimerCompletion()
+                    adultIsComplete = true
                 }
             }
             .onLongPressGesture(minimumDuration: 1.0) {
@@ -246,7 +252,57 @@ struct HomeView: View {
                     .padding(.bottom, 100)
                 }
             }
-            
+
+            // 完成动画（屏幕中下方）
+            if isComplete && !adultIsComplete {
+                VStack {
+                    Spacer()
+                    Image("complete")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 320, height: 200)
+                        .padding(.bottom, 100)
+                }
+            }
+
+            if adultIsComplete {
+                VStack {
+                    Spacer()
+
+                    HStack(spacing: 20) {
+                        Button(action: {
+                            // share
+
+                        }) {
+                            Text("Go share")
+                                .font(.appButton())
+                                .foregroundColor(.white)
+                                .frame(width: 120, height: 50)
+                                .background(AppColors.Brand.primary)
+                                .cornerRadius(18)
+                        }
+
+                        Button(action: {
+                            // home
+                            showExitConfirmation = false
+                            showExitHint = false
+                            stopTimer()
+                            step = -1
+                            isComplete = false
+                            adultIsComplete = false
+                        }) {
+                            Text("Home")
+                                .font(.appButton())
+                                .foregroundColor(.white)
+                                .frame(width: 120, height: 50)
+                                .background(AppColors.Semantic.darkBrown)
+                                .cornerRadius(18)
+                        }
+                    }
+                    .padding(.bottom, 100)
+                }
+            }
+
             // 退出确认对话框
             if showExitConfirmation {
                 Color.black.opacity(0.4)
@@ -256,11 +312,11 @@ struct HomeView: View {
                     }
                 
                 VStack(spacing: 20) {
-                    Text("确定要退出吗？")
+                    Text("Are you sure you want to quit?")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(AppColors.Semantic.darkBrown)
                     
-                    Text("退出后将不会获得奖励")
+                    Text("You will not receive any rewards after quitting.")
                         .font(.system(size: 16))
                         .foregroundColor(AppColors.Semantic.darkBrown.opacity(0.7))
                     
@@ -268,7 +324,7 @@ struct HomeView: View {
                         Button(action: {
                             showExitConfirmation = false
                         }) {
-                            Text("取消")
+                            Text("Cancel")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(AppColors.Semantic.darkBrown)
                                 .frame(maxWidth: .infinity)
@@ -282,8 +338,10 @@ struct HomeView: View {
                             showExitHint = false
                             stopTimer()
                             step = -1
+                            isComplete = false
+                            adultIsComplete = false
                         }) {
-                            Text("确定")
+                            Text("OK")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -500,11 +558,24 @@ struct HomeView: View {
                 loadUserPreferences()
             }
             .onReceive(NotificationCenter.default.publisher(for: .timerCompletedInBackground)) { _ in
-                handleBackgroundTimerCompletion()
+                self.isComplete = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .timerCompleted)) { _ in
-                handleBackgroundTimerCompletion()
+                self.isComplete = true
             }
+            .overlay(shareOverlay)
+    }
+
+
+    private var shareOverlay: some View {
+        Group {
+//            if showShareView, let achievement = selectedAchievement {
+//                ShareAchievementView(
+//                    achievement: achievement,
+//                    isPresented: $showShareView
+//                )
+//            }
+        }
     }
 
     private func loadUserPreferences() {
