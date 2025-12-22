@@ -205,7 +205,6 @@ struct CurrentDropStuff: Codable {
     let name: String
     let description: String
     let attachment: StuffAttachment?
-    let stuffPrices: [StuffPrice]
     
     // 计算属性：获取物品类型枚举
     var stuffType: UserStuffType? {
