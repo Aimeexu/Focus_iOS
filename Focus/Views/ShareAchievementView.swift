@@ -227,7 +227,7 @@ struct ShareAchievementView: View {
             return shareText
         }
         // 否则使用默认格式
-        return "🎉 我在 Focus 应用中获得了成就：\(achievement.title)！\n\n\(achievement.description)"
+        return "🎉 I achieved an accomplishment in the Focus application：\(achievement.title)！\n\n\(achievement.description)"
     }
     
 
