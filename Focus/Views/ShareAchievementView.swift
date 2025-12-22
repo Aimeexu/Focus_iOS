@@ -41,8 +41,8 @@ struct ShareAchievementView: View {
             .padding(.horizontal, 40)
             .shadow(radius: 20)
         }
-        .alert("提示", isPresented: $showAlert) {
-            Button("确定", role: .cancel) { }
+        .alert("Tips", isPresented: $showAlert) {
+            Button("OK", role: .cancel) { }
         } message: {
             Text(alertMessage)
         }
@@ -117,7 +117,7 @@ struct ShareAchievementView: View {
     // MARK: - 分享按钮区域
     private var shareButtonsSection: some View {
         VStack(spacing: 16) {
-            Text("分享你的成就")
+            Text("Share your achievements")
                 .font(.appButton(size: 18))
                 .foregroundColor(AppColors.Text.primary)
             
@@ -176,7 +176,7 @@ struct ShareAchievementView: View {
         
         // 确保图片已加载
         guard let image = shareImage else {
-            alertMessage = "图片加载中，请稍后再试"
+            alertMessage = "Image loading in progress. Please try again later"
             showAlert = true
             isSharing = false
             return
@@ -185,7 +185,7 @@ struct ShareAchievementView: View {
         // 获取当前视图控制器
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let viewController = windowScene.windows.first?.rootViewController else {
-            alertMessage = "无法打开分享对话框"
+            alertMessage = "Cannot open the sharing dialog box"
             showAlert = true
             isSharing = false
             return
@@ -204,11 +204,7 @@ struct ShareAchievementView: View {
             try dialog.validate()
             dialog.show()
             print("✅ Facebook 分享对话框已显示")
-            
-            // 延迟关闭分享视图
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isPresented = false
-            }
+
         } catch {
             print("❌ Facebook 分享失败: \(error.localizedDescription)")
             // 回退到系统分享
@@ -280,10 +276,6 @@ struct ShareAchievementView: View {
         }
         
         viewController.present(activityViewController, animated: true) {
-            // 分享面板显示后关闭当前视图
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                isPresented = false
-            }
         }
     }
 }
