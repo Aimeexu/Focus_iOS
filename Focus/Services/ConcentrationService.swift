@@ -28,7 +28,7 @@ class ConcentrationService: ObservableObject {
     private init() {}
     
     // MARK: - 开始专注计时并获取动画
-    func startConcentrationWithAnimation(duration: Int, concentrationPlanTag: String) async throws -> (ConcentrationPlan, String?) {
+    func startConcentrationWithAnimation(duration: Int, concentrationPlanTag: String) async throws -> (ConcentrationPlan, String?, CurrentDropStuff) {
         isLoading = true
         errorMessage = nil
         
@@ -61,7 +61,7 @@ class ConcentrationService: ObservableObject {
             
             print("🎨 场景信息: \(currentStuffScene ?? "无")")
             
-            return (plan, currentLottieAnimationURL)
+            return (plan, currentLottieAnimationURL, data.currentDropStuff)
 
         } catch {
             isLoading = false

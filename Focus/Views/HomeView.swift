@@ -10,98 +10,6 @@ import AVFoundation
 import Lottie
 import Foundation
 
-// Slide to Quit 按钮组件
-struct SlideToQuitButton: View {
-    let action: () -> Void
-    @State private var dragOffset: CGFloat = 0
-    @State private var isSliding = false
-    
-    private let buttonHeight: CGFloat = 66
-    private let slideThreshold: CGFloat = 200
-    
-    var body: some View {
-        ZStack {
-            // 背景轨道
-            RoundedRectangle(cornerRadius: 33)
-                .fill(AppColors.Brand.primary)
-                .frame(height: buttonHeight)
-            
-            // 滑动按钮
-            HStack {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.Semantic.beige)
-                        .frame(width: 50, height: 50)
-                    
-                    Image(systemName: "arrow.right")
-                            .font(.appButton(size: 20))
-                        .foregroundColor(AppColors.Semantic.darkBrown)
-                }
-                .offset(x: dragOffset)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let translation = max(0, min(slideThreshold, value.translation.width))
-                            dragOffset = translation
-                            isSliding = translation > 0
-                        }
-                        .onEnded { value in
-                            if dragOffset >= slideThreshold {
-                                // 滑动完成，执行退出操作
-                                action()
-                            }
-                            
-                            // 重置位置
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                dragOffset = 0
-                                isSliding = false
-                            }
-                        }
-                )
-                
-                Spacer()
-            }
-            .padding(.horizontal, 8)
-            
-            // 文字
-            Text("Slide to Quit")
-                    .font(.appButton(size: 18))
-                .foregroundColor(.white)
-                .opacity(isSliding ? 0.5 : 1.0)
-        }
-    }
-}
-
-// 猫头鹰Lottie动画视图包装器
-struct OwlAnimationView: UIViewRepresentable {
-    let animationName: String
-    
-    func makeUIView(context: Context) -> UIView {
-        let containerView = UIView()
-        let animationView = LottieAnimationView(name: animationName)
-        
-        animationView.contentMode = .scaleAspectFit
-        animationView.loopMode = .loop
-        animationView.animationSpeed = 1.0
-        animationView.play()
-        
-        containerView.addSubview(animationView)
-        animationView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            animationView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            animationView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            animationView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
-            animationView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
-        ])
-        
-        return containerView
-    }
-    
-    func updateUIView(_ uiView: UIView, context: Context) {
-        // 不需要更新
-    }
-}
-
 struct HomeView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var tabBarVisibility: TabBarVisibility
@@ -127,6 +35,8 @@ struct HomeView: View {
     @State private var pausedTimeSnapshot: Int = 0
     @State private var isComplete: Bool = false
     @State private var adultIsComplete: Bool = false
+    @State private var showShareView: Bool = false
+    @State private var currentAchievement: Achievement?
 
     @ViewBuilder
     private var mainContent: some View {
@@ -272,7 +182,7 @@ struct HomeView: View {
                     HStack(spacing: 10) {
                         Button(action: {
                             // share
-
+                            showShareView = true
                         }) {
                             Text("Go share")
                                 .font(.appEmphasis())
@@ -570,12 +480,12 @@ struct HomeView: View {
 
     private var shareOverlay: some View {
         Group {
-//            if showShareView, let achievement = selectedAchievement {
-//                ShareAchievementView(
-//                    achievement: achievement,
-//                    isPresented: $showShareView
-//                )
-//            }
+            if showShareView, let achievement = currentAchievement {
+                ShareAchievementView(
+                    achievement: achievement,
+                    isPresented: $showShareView
+                )
+            }
         }
     }
 
@@ -634,7 +544,7 @@ struct HomeView: View {
         Task {
             do {
                 // 使用新的专注计时服务，它会自动获取物品列表并找到对应的动画
-                let (plan, animationURL) = try await concentrationService.startConcentrationWithAnimation(
+                let (plan, animationURL, currentDropStuff) = try await concentrationService.startConcentrationWithAnimation(
                     duration: selectedMinutes,
                     concentrationPlanTag: selectedLocation
                 )
@@ -648,7 +558,19 @@ struct HomeView: View {
                             await lottieAnimationManager.loadAnimation(from: animationURL)
                         }
                     }
-                    
+
+                    currentAchievement = Achievement(id: 0,
+                                                     title: currentDropStuff.name,
+                                                     description: currentDropStuff.description,
+                                                     image: currentDropStuff.shareImage ?? "",
+                                                     isUnlocked: false,
+                                                     category: .calmFields,
+                                                     badgeNumber: 1,
+                                                     isRemoteImage: true,
+                                                     tab: .friends,
+                                                     shareText: currentDropStuff.name,
+                                                     shareImage: currentDropStuff.shareImage)
+
                     // 使用BackgroundTimerManager开始计时
                     let durationInSeconds = selectedMinutes * 60
                     backgroundTimerManager.startTimer(duration: durationInSeconds)

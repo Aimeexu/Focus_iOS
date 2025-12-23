@@ -200,6 +200,7 @@ struct ConcentrationPlan: Codable {
 struct CurrentDropStuff: Codable {
     let uuid: String
     let userStuffType: String
+    let shareImage: String?
     let userStuffScene: String
     let icon: String
     let name: String
