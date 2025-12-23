@@ -32,6 +32,7 @@ struct LottieView: UIViewRepresentable {
 struct ContentView: View {
     @EnvironmentObject var userManager: UserManager
     @State private var isActive = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -79,7 +80,15 @@ struct ContentView: View {
             print("🔄 收到Token续期失败通知，强制用户重新登录")
             userManager.logout()
         }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                UIApplication.shared.applicationIconBadgeNumber = 0
+            }
+
     }
+
+    }
+
 }
 
 #Preview {
