@@ -54,7 +54,7 @@ class ConcentrationService: ObservableObject {
             // 2. 更新状态 - 开始时使用child动画
             currentPlan = plan
             currentAnimationState = .child
-            currentLottieAnimationURL = data.currentDropStuff.attachment?.child
+            currentLottieAnimationURL = data.currentDropStuff.attachment?.animationURL(for: .child)
             currentStuffScene = data.currentDropStuff.userStuffScene
             isLoading = false
             currentStuffAttachment = data.currentDropStuff.attachment
@@ -99,11 +99,11 @@ class ConcentrationService: ObservableObject {
         let animationURL: String?
         switch state {
         case .child:
-            animationURL = attachment.child
+            animationURL = attachment.animationURL(for: .child)
         case .adult:
-            animationURL = attachment.adult
+            animationURL = attachment.animationURL(for: .adult)
         case .sleep:
-            animationURL = attachment.sleep
+            animationURL = attachment.animationURL(for: .sleep)
         }
         
         if let url = animationURL {
@@ -135,11 +135,11 @@ class ConcentrationService: ObservableObject {
         
         switch state {
         case .child:
-            return attachment.child
+            return attachment.animationURL(for: .child)
         case .adult:
-            return attachment.adult
+            return attachment.animationURL(for: .adult)
         case .sleep:
-            return attachment.sleep
+            return attachment.animationURL(for: .sleep)
         }
     }
     

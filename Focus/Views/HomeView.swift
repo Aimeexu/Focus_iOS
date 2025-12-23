@@ -260,7 +260,7 @@ struct HomeView: View {
                     Image("complete")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 320, height: 200)
+                        .frame(width: 280, height: 120)
                         .padding(.bottom, 100)
                 }
             }
@@ -269,15 +269,15 @@ struct HomeView: View {
                 VStack {
                     Spacer()
 
-                    HStack(spacing: 20) {
+                    HStack(spacing: 10) {
                         Button(action: {
                             // share
 
                         }) {
                             Text("Go share")
-                                .font(.appButton())
+                                .font(.appEmphasis())
                                 .foregroundColor(.white)
-                                .frame(width: 120, height: 50)
+                                .frame(width: 168, height: 66)
                                 .background(AppColors.Brand.primary)
                                 .cornerRadius(18)
                         }
@@ -292,14 +292,15 @@ struct HomeView: View {
                             adultIsComplete = false
                         }) {
                             Text("Home")
-                                .font(.appButton())
+                                .font(.appEmphasis())
                                 .foregroundColor(.white)
-                                .frame(width: 120, height: 50)
-                                .background(AppColors.Semantic.darkBrown)
+                                .frame(width: 118, height: 66)
+                                .background(AppColors.Neutral.gray100)
                                 .cornerRadius(18)
                         }
                     }
-                    .padding(.bottom, 100)
+                    .frame(height: 66)
+                    .padding(.bottom, 120)
                 }
             }
 

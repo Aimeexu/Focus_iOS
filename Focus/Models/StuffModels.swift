@@ -121,7 +121,7 @@ struct AchievementUserStuff: Codable {
 
 struct AchievementUserStuffBase: Codable {
     let attachment: StuffAttachment?
-    let shareImage: String
+    var shareImage: String = "http://www.cdbolv.com/assets/file/fp/shareimage.png"
 //    let stuffPrices: [StuffPrice]
     let userStuffType: String
     let userStuffScene: String
@@ -310,25 +310,33 @@ struct StuffAttachment: Codable {
     let child: String?
     let adult: String?
     let sleep: String?
-    
-    // 获取所有动画URL
-    var allAnimationURLs: [String] {
-        return [child, adult, sleep].compactMap { $0 }
-    }
-    
-    // 根据状态获取动画URL
-    func getAnimationURL(for state: PetState) -> String? {
-        switch state {
-        case .child:
-            return child
-        case .adult:
-            return adult
-        case .sleep:
-            return sleep
-        case .transitioningToAdult:
-            
+    static let defaultChild =
+            "http://www.cdbolv.com/assets/file/fp/owl_child.json"
+        static let defaultAdult =
+            "http://www.cdbolv.com/assets/file/fp/owl_adult.json"
+        static let defaultSleep =
+            "http://www.cdbolv.com/assets/file/fp/owl_sleep.json"
+
+    /// 根据状态获取动画 URL（带兜底）
+        func animationURL(for state: PetState) -> String {
+            switch state {
+            case .child:
+                return child ?? Self.defaultChild
+            case .adult:
+                return adult ?? Self.defaultAdult
+            case .sleep:
+                return sleep ?? Self.defaultSleep
+            }
         }
-    }
+
+        /// 所有动画 URL（自动补默认）
+        var allAnimationURLs: [String] {
+            [
+                child ?? Self.defaultChild,
+                adult ?? Self.defaultAdult,
+                sleep ?? Self.defaultSleep
+            ]
+        }
 }
 
 // 宠物状态枚举
@@ -336,14 +344,12 @@ enum PetState {
     case child
     case adult
     case sleep
-    case transitioningToAdult
 
     var displayName: String {
         switch self {
         case .child: return "Child"
         case .adult: return "Adult"
         case .sleep: return "Sleep"
-        case .transitioningToAdult: return "TransitioningToAdult"
         }
     }
 }

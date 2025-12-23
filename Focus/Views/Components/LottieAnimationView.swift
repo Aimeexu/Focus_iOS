@@ -103,6 +103,11 @@ struct ConcentrationAnimationView: View {
     let size: CGSize
     let showStateIndicator: Bool
     
+    // 为成人态 Reveal 增加本地动画状态
+    @State private var isRevealingAdult = false
+    @State private var revealProgress: CGFloat = 0.0
+    private let revealDuration: Double = 0.8
+    
     init(size: CGSize = CGSize(width: 200, height: 200), showStateIndicator: Bool = false) {
         self.size = size
         self.showStateIndicator = showStateIndicator
@@ -110,15 +115,37 @@ struct ConcentrationAnimationView: View {
     
     var body: some View {
         ZStack {
-            if concentrationService.isLoading {
-                // 加载中状态
-                VStack {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                    Text("Loading...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 8)
+            // 当处于成人态切换的 Reveal 阶段，叠加渲染 child 与 adult
+            if isRevealingAdult,
+               let childURL = concentrationService.getAnimationURL(for: .child),
+               let adultURL = concentrationService.getAnimationURL(for: .adult) {
+    
+                GeometryReader { geo in
+                    let maxRadius = sqrt(pow(geo.size.width / 2, 2) + pow(geo.size.height / 2, 2))
+                    let currentRadius = maxRadius * revealProgress
+    
+                    ZStack {
+                        // 底层：child 持续播放
+                        NetworkLottieView(
+                            animationURL: childURL,
+                            loopMode: .loop,
+                            animationSpeed: 1.0
+                        )
+                        .id(childURL)
+    
+                        // 顶层：adult，通过圆形遮罩从中心放大 Reveal
+                        NetworkLottieView(
+                            animationURL: adultURL,
+                            loopMode: .loop,
+                            animationSpeed: 1.0
+                        )
+                        .id(adultURL)
+                        .mask(
+                            Circle()
+                                .frame(width: currentRadius * 2, height: currentRadius * 2)
+                                .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                        )
+                    }
                 }
             } else if let animationURL = concentrationService.currentLottieAnimationURL {
                 // 显示网络动画 - 使用id来强制重新创建视图当URL改变时
@@ -128,27 +155,6 @@ struct ConcentrationAnimationView: View {
                     animationSpeed: 1.0
                 )
                 .id(animationURL) // 关键：当URL改变时强制重新创建视图
-                
-                // 状态切换指示器
-//                if concentrationService.isAnimationSwitching {
-//                    VStack {
-//                        Spacer()
-//                        HStack {
-//                            Spacer()
-//                            VStack {
-//                                Image(systemName: "arrow.triangle.2.circlepath")
-//                                    .font(.system(size: 16))
-//                                    .foregroundColor(.white)
-//
-//                            }
-//                            .padding(8)
-//                            .background(Color.blue.opacity(0.8))
-//                            .cornerRadius(8)
-//                            .padding(.trailing, 8)
-//                            .padding(.bottom, 8)
-//                        }
-//                    }
-//                }
                 
                 // 状态指示器
                 if showStateIndicator {
@@ -184,6 +190,20 @@ struct ConcentrationAnimationView: View {
         }
         .frame(width: size.width, height: size.height)
         .background(Color.clear)
+        // 监听动画态切换到 adult，触发 Reveal
+        .onChange(of: concentrationService.currentAnimationState) { newState in
+            guard newState == .adult else { return }
+            // 启动 overlay，并从 0→1 做半径动画
+            isRevealingAdult = true
+            revealProgress = 0.0
+            withAnimation(.easeInOut(duration: revealDuration)) {
+                revealProgress = 1.0
+            }
+            // 动画完成后移除 overlay，回到仅 adult（service 已切 URL）
+            DispatchQueue.main.asyncAfter(deadline: .now() + revealDuration) {
+                isRevealingAdult = false
+            }
+        }
     }
 }
 
