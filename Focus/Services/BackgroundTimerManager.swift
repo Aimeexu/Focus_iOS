@@ -170,7 +170,11 @@ class BackgroundTimerManager: ObservableObject {
         
         print("📱 应用进入后台，记录时间: \(backgroundTime!)")
         print("   剩余时间: \(remainingTime) 秒")
-        
+
+        if remainingTime == 0 {
+            remainingTime = 1
+        }
+
         // 安排本地通知，在剩余时间后触发
         scheduleCompletionNotification(after: TimeInterval(remainingTime))
     }
@@ -206,7 +210,7 @@ class BackgroundTimerManager: ObservableObject {
             triggerHapticFeedback()
             
             // 2秒后隐藏完成消息并执行完成逻辑
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.showCompletionMessage = false
                 self.isTimerRunning = false
                 // 通知外部计时完成

@@ -50,15 +50,17 @@ struct HomeView: View {
                 }
             } else if step == 1 {
                 ZStack {
-                    LottieView(name: "prepare", loopMode: .loop) {}
-                        .frame(width: 260, height: 300)
-                        .position(x: geometry.size.width / 2, y: geometry.size.height * 0.45)
-                    
+
                     LottieView(name: "take_breath", loopMode: .playOnce, speed: 1.5) {
                         step = 2
                     }
                     .frame(width: 230, height: 230)
                     .position(x: geometry.size.width / 2, y: geometry.size.height * 0.7)
+
+                    LottieView(name: "prepare", loopMode: .loop) {}
+                        .frame(width: 260, height: 260)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height * 0.45)
+
                 }
             } else if step == 2 {
                 LottieView(name: "switch", loopMode: .playOnce, speed: 1) {
