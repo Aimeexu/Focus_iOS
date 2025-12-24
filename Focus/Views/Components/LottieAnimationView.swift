@@ -152,10 +152,10 @@ struct ConcentrationAnimationView: View {
                 VStack {
                     Image(systemName: "pawprint.circle.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(.gray.opacity(0.3))
-                    Text("No Animation")
+                        .foregroundColor(AppColors.Brand.primary)
+                    Text("loading...")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.Brand.primary)
                 }
             }
             
