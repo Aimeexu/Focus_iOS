@@ -303,10 +303,15 @@ struct AchievementSection: View {
                 }
             }
             .frame(width: 30)
+            .zIndex(1)
 
             // 右侧可滚动的成就卡片
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
+                    // 添加左侧占位空间，防止内容被标题遮挡
+                    Color.clear
+                        .frame(width: 20)
+                    
                     ForEach(achievements) { achievement in
                         AchievementCard(
                             achievement: achievement,
@@ -316,7 +321,7 @@ struct AchievementSection: View {
                         )
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.trailing, 20)
             }
         }
     }
@@ -348,7 +353,7 @@ struct AchievementCard: View {
                         .frame(width: 156, height: 172)
                 }
             } else {
-                Image("achieve_bg")
+                Image(achievement.category == .calmFields ? "achieve_bg1" : (achievement.category == .iceSands ? "achieve_bg2" : "achieve_bg3"))
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 156, height: 172)

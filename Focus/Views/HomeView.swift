@@ -37,6 +37,7 @@ struct HomeView: View {
     @State private var adultIsComplete: Bool = false
     @State private var showShareView: Bool = false
     @State private var currentAchievement: Achievement?
+    @State private var backgroundImageOpacity: Double = 0.0
 
     @ViewBuilder
     private var mainContent: some View {
@@ -89,7 +90,13 @@ struct HomeView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
                     .ignoresSafeArea()
-                    .transition(.opacity)
+                    .opacity(backgroundImageOpacity)
+                    .id(sceneBackground)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.2)) {
+                            backgroundImageOpacity = 1.0
+                        }
+                    }
             }
             
             // 背景动画（添加单击和长按手势）
@@ -436,6 +443,16 @@ struct HomeView: View {
             .onChange(of: step) { oldStep, newStep in
                 withAnimation(.easeInOut(duration: 0.3)) {
                     tabBarVisibility.isHidden = (newStep >= 0)
+                }
+                
+                // 当从 step 2 进入 step 3 时，重置背景图片透明度并启动淡入动画
+                if oldStep == 2 && newStep == 3 {
+                    backgroundImageOpacity = 0.0
+                }
+                
+                // 当退出 step 3 时，重置背景图片透明度
+                if oldStep == 3 && newStep != 3 {
+                    backgroundImageOpacity = 0.0
                 }
                 
                 // 当从 step 2 进入 step 3 时，启动计时器并播放音乐
