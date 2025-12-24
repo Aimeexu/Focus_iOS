@@ -113,19 +113,14 @@ struct LoginPageView: View {
                             }
                             
                             // 社交登录按钮
-                            HStack(spacing: 50) {
-                                // Facebook按钮
-                                FacebookIconButton(
-                                    action: signInWithFacebook,
-                                    isLoading: isFacebookLoading
-                                )
-                                
+                            HStack() {
                                 // Google按钮
                                 GoogleIconButton(
                                     action: signInWithGoogle,
                                     isLoading: isGoogleLoading
                                 )
                             }
+                            .padding(.bottom, 4)
                         }
                         .padding(32)
                         .background(AppColors.Background.card)
