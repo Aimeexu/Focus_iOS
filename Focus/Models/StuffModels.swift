@@ -322,22 +322,31 @@ struct StuffAttachment: Codable {
         func animationURL(for state: PetState) -> String {
             switch state {
             case .child:
-                return child ?? Self.defaultChild
+                return validURL(child) ?? Self.defaultChild
             case .adult:
-                return adult ?? Self.defaultAdult
+                return validURL(adult) ?? Self.defaultAdult
             case .sleep:
-                return sleep ?? Self.defaultSleep
+                return validURL(sleep) ?? Self.defaultSleep
             }
         }
 
         /// 所有动画 URL（自动补默认）
         var allAnimationURLs: [String] {
             [
-                child ?? Self.defaultChild,
-                adult ?? Self.defaultAdult,
-                sleep ?? Self.defaultSleep
+                validURL(child) ?? Self.defaultChild,
+                validURL(adult) ?? Self.defaultAdult,
+                validURL(sleep) ?? Self.defaultSleep
             ]
         }
+    
+        /// 验证 URL 是否有效（非空且不是空字符串）
+        private func validURL(_ url: String?) -> String? {
+            guard let url = url, !url.isEmpty else {
+                return nil
+            }
+            return url
+        }
+
 }
 
 // 宠物状态枚举
