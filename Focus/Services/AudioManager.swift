@@ -18,8 +18,14 @@ class AudioManager: ObservableObject {
     func playSound(fileName: String) {
         stopSound()
         
-        guard let url = Bundle.main.url(forResource: fileName, withExtension: "mp3") else {
-            print("找不到音频文件: \(fileName).wav")
+        // 尝试查找 m4a 或 mp3 格式的文件
+        var url = Bundle.main.url(forResource: fileName, withExtension: "m4a")
+        if url == nil {
+            url = Bundle.main.url(forResource: fileName, withExtension: "mp3")
+        }
+        
+        guard let audioURL = url else {
+            print("找不到音频文件: \(fileName).m4a 或 \(fileName).mp3")
             return
         }
         
@@ -27,7 +33,7 @@ class AudioManager: ObservableObject {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)
             
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer = try AVAudioPlayer(contentsOf: audioURL)
             audioPlayer?.numberOfLoops = -1 // 无限循环播放
             audioPlayer?.volume = 0.3 // 设置音量为30%
             audioPlayer?.play()

@@ -10,26 +10,11 @@ import SwiftUI
 // MARK: - 字体扩展
 extension Font {
     
-    // MARK: - ShangguRound字体系列
-    
-    /// ShangguRound ExtraLight
-    static func shangguRoundExtraLight(size: CGFloat) -> Font {
-        return Font.custom("ShangguRound-ExtraLight", size: size)
-    }
-    
-    /// ShangguRound Light
-    static func shangguRoundLight(size: CGFloat) -> Font {
-        return Font.custom("ShangguRound-Light", size: size)
-    }
+    // MARK: - ShangguRound字体系列（仅保留使用中的字体）
     
     /// ShangguRound Regular (默认字体)
     static func shangguRoundRegular(size: CGFloat) -> Font {
         return Font.custom("ShangguRound-Regular", size: size)
-    }
-    
-    /// ShangguRound Normal
-    static func shangguRoundNormal(size: CGFloat) -> Font {
-        return Font.custom("ShangguRound-Normal", size: size)
     }
     
     /// ShangguRound Medium
@@ -40,11 +25,6 @@ extension Font {
     /// ShangguRound Bold
     static func shangguRoundBold(size: CGFloat) -> Font {
         return Font.custom("ShangguRound-Bold", size: size)
-    }
-    
-    /// ShangguRound Heavy
-    static func shangguRoundHeavy(size: CGFloat) -> Font {
-        return Font.custom("ShangguRound-Heavy", size: size)
     }
     
     // MARK: - 语义化字体定义

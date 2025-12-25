@@ -46,11 +46,7 @@
 			buildPhase = F2B61A672E447C5000CC4F17 /* Sources */;
 			membershipExceptions = (
 				"Resource/ShangguRound-Bold.ttf",
-				"Resource/ShangguRound-ExtraLight.ttf",
-				"Resource/ShangguRound-Heavy.ttf",
-				"Resource/ShangguRound-Light.ttf",
 				"Resource/ShangguRound-Medium.ttf",
-				"Resource/ShangguRound-Normal.ttf",
 				"Resource/ShangguRound-Regular.ttf",
 			);
 		};
