@@ -10,6 +10,8 @@ import SwiftUI
 struct SettingsView: View {
     @State private var showLogoutAlert = false
     @State private var showClearCacheAlert = false
+    @State private var showPrivacyPolicy = false
+    @State private var showTermsOfUse = false
     @State private var keepScreenOn = UserDefaults.standard.bool(forKey: "keepScreenOn")
     @State private var endOfFocusSounds = UserDefaults.standard.bool(forKey: "endOfFocusSounds")
     @State private var endOfFocusHaptics = UserDefaults.standard.bool(forKey: "endOfFocusHaptics")
@@ -107,14 +109,14 @@ struct SettingsView: View {
                             SettingsRowCard(
                                 title: "Privacy Policy",
                                 action: {
-                                    // 隐私政策逻辑
+                                    showPrivacyPolicy = true
                                 }
                             )
                             
                             SettingsRowCard(
                                 title: "Term of Use",
                                 action: {
-                                    // 使用条款逻辑
+                                    showTermsOfUse = true
                                 }
                             )
                             
@@ -184,6 +186,16 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("Are you sure you want to log out?")
+            }
+            .fullScreenCover(isPresented: $showPrivacyPolicy) {
+                if let url = URL(string: "https://www.flowhaventech.com/privacy-policy.html") {
+                    WebViewScreen(url: url, title: "Privacy Policy")
+                }
+            }
+            .fullScreenCover(isPresented: $showTermsOfUse) {
+                if let url = URL(string: "https://www.flowhaventech.com/terms-of-use.html") {
+                    WebViewScreen(url: url, title: "Terms of Use")
+                }
             }
             .onAppear {
                 // 应用保存的屏幕常亮设置
